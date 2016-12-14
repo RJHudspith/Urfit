@@ -45,4 +45,6 @@ struct fit_descriptor {
 
 #define UNINIT_FLAG (123456789)
 
+#include "fitfunc.h"
+
 #endif
