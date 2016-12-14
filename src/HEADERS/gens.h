@@ -11,9 +11,15 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_complex.h>
 
+// fit types
 typedef enum { 
   UNWEIGHTED , UNCORRELATED , CORRELATED
 } corrtype ;
+
+// effective mass types
+typedef enum {
+  LOG_EFFMASS , LOG2_EFFMASS , ACOSH_EFFMASS , 
+  ASINH_EFFMASS , ATANH_EFFMASS , EVALUE_EFFMASS } effmass_type ;
 
 struct data {
   size_t n;
