@@ -1,8 +1,13 @@
 #ifndef GENS_H
 #define GENS_H
 
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
+
 #include <math.h>
+#include <complex.h>
+
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_matrix.h>
@@ -10,6 +15,9 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_complex.h>
+
+#define SUCCESS GSL_SUCCESS
+#define FAILURE !SUCCESS
 
 // fit types
 typedef enum { 
@@ -21,9 +29,32 @@ typedef enum {
   LOG_EFFMASS , LOG2_EFFMASS , ACOSH_EFFMASS , 
   ASINH_EFFMASS , ATANH_EFFMASS , EVALUE_EFFMASS } effmass_type ;
 
+// fit types
+typedef enum {
+  EXP , COSH , SINH , EXP_PLUSC , PADE , POLY 
+} fittype ;
+
+typedef enum {
+  PLUS_PLUS , PLUS_MINUS , MINUS_PLUS , MINUS_MINUS , NOFOLD 
+} foldtype ;
+
+// error types
+enum { ERR , HI , LO , AVE } errtype ;
+
+// what type of data do we use
+typedef enum { RAWDATA , JACKDATA , BOOTDATA } resample_type ;
+
+struct x_desc {
+  double X ;
+  size_t LT ;
+} ;
+
 struct data {
-  size_t n;
-  double *y;
+  size_t n ;
+  double *x ;
+  double *y ;
+  size_t LT ;
+  size_t Npars ;
 };
 
 struct ffunction {
@@ -41,12 +72,35 @@ struct ffunction {
 
 struct fit_descriptor {
   struct ffunction f ;
+  double (*func)( const struct x_desc X , const double *fparams , const size_t Npars ) ;
   void (*F) ( double *f , const void *data , const double *fparams ) ;
   void (*dF) ( double **df , const void *data , const double *fparams ) ;
   void (*d2F) ( double **d2f , const void *data , const double *fparams ) ;
   void (*guesses) ( double *fparams ) ;
   void (*set_priors) ( double *priors , double *err_priors ) ;
   size_t NPARAMS ;
+} ;
+
+// input parameters
+struct input_params {
+  resample_type resample ;
+  size_t NBOOTS ;
+  size_t *NDATA ;
+  size_t *binning ;
+  size_t *traj_beg ;
+  size_t *traj_end ;
+  size_t *traj_inc ;
+} ;
+
+// struct containing our statistics
+struct resampled {
+  double *resampled ;
+  double avg ;
+  double err_hi ;
+  double err_lo ;
+  double err ;
+  size_t NSAMPLES ;
+  resample_type restype ;
 } ;
 
 #define UNINIT_FLAG (123456789)

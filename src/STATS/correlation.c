@@ -109,7 +109,7 @@ correlations( double **correlation ,
   compute_upper_correlation( correlation , data , NDATA , CORRFIT ) ;
 
   // divide by sigma^2
-  modified_covariance( correlation , NDATA ) ;
+  //modified_covariance( correlation , NDATA ) ;
 
   // correlation matrix is symmetric
   fill_lower_triangular( correlation , NDATA ) ;

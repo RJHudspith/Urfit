@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "fitfunc.h"
+#include "gens.h"
 #include "bootstrap.h"
 #include "jacknife.h"
 
@@ -56,7 +56,7 @@ compute_err( struct resampled *replicas )
 {
   switch( replicas -> restype ) {
   case RAWDATA :
-    raw_err( replicas ) ;
+    //raw_err( replicas ) ;
     break ;
   case JACKDATA :
     jackknife_error( replicas ) ;
@@ -104,7 +104,7 @@ resample_data( const struct resampled *RAW ,
 	for( k = 0 ; k < NRAW ; k++ ) {
 	  BOOT[ i ].resampled[ k ] = RAW[ i ].resampled[ k ] ;
 	}
-	raw_err( &BOOT[i] ) ;
+	//raw_err( &BOOT[i] ) ;
 	break ;
       case BOOTDATA :
 	BOOT[i].resampled = (double*)malloc( NBOOTS * sizeof( double ) ) ;

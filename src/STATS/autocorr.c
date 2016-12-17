@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "fitfunc.h"
+#include "gens.h"
 
 #include <complex.h>
 

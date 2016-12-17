@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "fitfunc.h"
+#include "gens.h"
 #include "rng.h"      // for the bootstraps
 #include "stats.h"
 

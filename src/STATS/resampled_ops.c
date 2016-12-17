@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "fitfunc.h"
+#include "gens.h"
 
 static void
 NSAMPLES_ERR( const char *OP , const size_t a , const size_t b ) 
@@ -141,7 +141,7 @@ equate_constant( struct resampled *a ,
 // init to zero for (NULL,NSAMPLES,restype) else init to *d
 struct resampled
 init_dist( struct resampled *d , 
-	   const int NSAMPLES , 
+	   const size_t NSAMPLES , 
 	   const resample_type restype )
 {
   struct resampled sample ;

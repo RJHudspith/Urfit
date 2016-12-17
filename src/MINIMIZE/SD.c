@@ -96,14 +96,15 @@ sd_iter( struct fit_descriptor *fdesc ,
   // tell us how many iterations we hit
   if( iters == SDMAX ) {
     printf( "\n[SD] stopped by max iterations %zu \n" , iters ) ;
-  } else {
-    printf( "\n[SD] FINISHED in %zu iterations \n" , iters ) ;
   }
-  printf( "[SD] chisq :: %e -> DIFF %e \n\n" , fdesc -> f.chisq , chisq_diff ) ;
 
+  //#ifdef VERBOSE
+  printf( "\n[SD] FINISHED in %zu iterations \n" , iters ) ;
+  printf( "[SD] chisq :: %e -> DIFF %e \n\n" , fdesc -> f.chisq , chisq_diff ) ;
   for( i = 0 ; i < fdesc -> f.NPARAMS ; i++ ) {
     printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
   }
+  //#endif
 
   // free the gradient
   free( grad ) ;

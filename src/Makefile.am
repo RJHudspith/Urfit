@@ -8,9 +8,14 @@ AM_CFLAGS=-I${TOPDIR}/src/HEADERS/
 
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
-FITS_FILES=./FITS/exp.c
+FITS_FILES=./FITS/exp_plusc.c ./FITS/exp.c ./FITS/cosh.c ./FITS/sinh.c \
+	./FITS/poly.c ./FITS/pade.c
 
-IO_FILES=
+GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
+
+IO_FILES=./IO/GLU_bswap.c ./IO/read_corr.c ./IO/tfold.c
+
+RUN_FILES=./RUN/bootfit.c ./RUN/fit_chooser.c
 
 MINIMIZE_FILES=./MINIMIZE/CG.c ./MINIMIZE/GA.c ./MINIMIZE/line_search.c \
 	./MINIMIZE/LM.c ./MINIMIZE/SD.c
@@ -24,9 +29,11 @@ UTILS_FILES=./UTILS/chisq.c ./UTILS/ffunction.c ./UTILS/rng.c ./UTILS/svd.c \
 ## all the source files apart from ./Run/Mainfile.c
 libURFIT_a_SOURCES = \
 	${EFFMASS_FILES} \
-	${IO_FILES} \
 	${FITS_FILES} \
+	${GRAPH_FILES} \
+	${IO_FILES} \
 	${MINIMIZE_FILES} \
+	${RUN_FILES} \
 	${STATS_FILES} \
 	${UTILS_FILES}
 
@@ -34,12 +41,15 @@ libURFIT_a_SOURCES = \
 include_HEADERS = 
 	$(EFFMASS_FILES:./EFFMASS/%.c=./HEADERS/%.h) \
 	$(FITS_FILES:./FITS/%.c=./HEADERS/%.h) \
+	$(GRAPH_FILES:./GRAPH/%.c=./HEADERS/%.h) \
 	$(IO_FILES:./IO/%.c=./HEADERS/%.h) \
 	$(MINIMIZE_FILES:./MINIMIZE/%.c=./HEADERS/%.h) \
+	$(RUN_FILES:./RUN/%.c=./RUN/%.h) \
 	$(STATS_FILES:./STATS/%.c=./HEADERS/%.h) \
 	$(UTILS_FILES:./UTILS/%.c=./HEADERS/%.h) \
 	./HEADERS/gens.h \
 	./HEADERS/fitfunc.h \
+	./HEADERS/fits.h \
 	../config.h
 
 if !PREF

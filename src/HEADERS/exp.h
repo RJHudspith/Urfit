@@ -1,6 +1,9 @@
 #ifndef EXP_H
 #define EXP_H
 
+double
+fexp( const struct x_desc X , const double *fparams , const size_t Npars ) ;
+
 void
 exp_f( double *f , const void *data , const double *fparams ) ;
 

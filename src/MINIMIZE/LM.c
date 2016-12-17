@@ -165,7 +165,7 @@ ml_step( struct ffunction *f ,
   for( i = 0 ; i < f -> NPARAMS ; i++ ) {
     f -> fparams[i] = old_params[i] + gsl_vector_get( delta , i ) ;
     #ifdef VERBOSE
-    printf( "[ML] NEW PARAMS :: %f \n" , f.fparams[p] ) ;
+    printf( "[ML] NEW PARAMS :: %f \n" , f -> fparams[i] ) ;
     #endif
   }
   // evaluate these functions
@@ -263,18 +263,19 @@ ml_iter( struct fit_descriptor *fdesc ,
     iters++ ;
   }
 
+  // tell us how many iterations we hit
+  if( iters == LMMAX ) {
+    printf( "\n[ML] stopped by max iterations %zu \n" , iters ) ;
+  }
+
+#ifdef VERBOSE
+  printf( "\n[ML] FINISHED in %zu iterations \n" , iters ) ;
+  printf( "[ML] chisq :: %e \n\n" , fdesc -> f.chisq ) ;
   // tell us the fit parameters
   for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
     printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
   }
-
-  // tell us how many iterations we hit
-  if( iters == LMMAX ) {
-    printf( "\n[ML] stopped by max iterations %zu \n" , iters ) ;
-  } else {
-    printf( "\n[ML] FINISHED in %zu iterations \n" , iters ) ;
-  }
-  printf( "[ML] chisq :: %e \n\n" , fdesc -> f.chisq ) ;
+#endif
 
   // free gsl stuff
   gsl_vector_free( beta ) ;

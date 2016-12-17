@@ -39,15 +39,15 @@
 // verbose output
 //#define VERBOSE
 
-#define Ngen (600) // number of generations in gene pool
+#define Ngen (400) // number of generations in gene pool
 
-#define NBREED (35) // number that persist from the previous generation
+#define NBREED (40) // number that persist from the previous generation
 
-#define NCHILD (70) // number of children
+#define NCHILD (120) // number of children
 
 #define NMUTANTS (Ngen - NBREED - NCHILD) // number of mutants
 
-#define NOISE (0.25) // guesses * gaussian of width NOISE to start our run
+#define NOISE (0.2) // guesses * gaussian of width NOISE to start our run
 
 // struct for holding our gene pool
 struct genes {
@@ -156,7 +156,12 @@ ga_iter( struct fit_descriptor *fdesc ,
 
   gsl_rng_env_setup( ) ;
   gsl_rng *r = gsl_rng_alloc( gsl_rng_default ) ;
-  gsl_rng_set( r , 123456 ) ;
+
+  size_t Seed ;
+  FILE *urandom = fopen( "/dev/urandom" , "r" ) ;
+  fread( &Seed , sizeof( Seed ) , 1 , urandom ) ;
+  fclose( urandom ) ;
+  gsl_rng_set( r , Seed ) ;
 
   // initialise the population as gaussian noise around initial
   // guesses
@@ -191,22 +196,28 @@ ga_iter( struct fit_descriptor *fdesc ,
       // if it is above we average we combine otherwise we pick 
       // randomly from the father or mother
       for( j = 0 ; j < fdesc -> NPARAMS ; j++ ) {
-	const double diceroll = gsl_rng_uniform( r ) ;
+	//const double diceroll = gsl_rng_uniform( r ) ;
+
 	// roll the dice to decide where the genes go!
-	if( diceroll > 0.6666666666666666 ) { 
-	  G[i].g[j] = 0.5 * ( G[father].g[j] + G[mother].g[j] ) ;
-	} else if( diceroll > 0.3333333333333333 ) {
-	  G[i].g[j] = G[ father ].g[j] ;
-	} else { 
-	  G[i].g[j] = G[ mother ].g[j] ;
-	}
+	G[i].g[j] = 0.5 * ( G[ father ].g[j] + G[ mother ].g[j] ) ;
       }
       G[i].chisq = compute_chi( &f2 , fdesc -> f , fdesc ,
 				G[i].g , data , W ) ;
     }
+
+    insertion_sort_GA( G ) ;
  
+    // recompute sigma, estimating from the breeding population
+#if 0
+    double sigma[ fdesc -> NPARAMS ] ;
+    for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+      sigma[i] = fabs( G[0].g[i] - G[NBREED+NCHILD-1].g[i] ) ;
+    }
+#endif
+
     // bottom 20 can be randomly mutated from the top 20
     for( i = Ngen - NMUTANTS ; i < Ngen ; i++ ) {
+      //const size_t mutate = gsl_rng_uniform_int( r , NBREED ) ;
       const size_t mutate = gsl_rng_uniform_int( r , NBREED ) ;
       size_t j ;
       for( j = 0 ; j < fdesc -> NPARAMS ; j++ ) {
@@ -223,7 +234,7 @@ ga_iter( struct fit_descriptor *fdesc ,
 
     // look for a static solution in the elites as an 
     // opportunity to turn off the fit
-    chisq_diff = fabs( G[0].chisq - G[NBREED-1].chisq ) ;
+    chisq_diff = fabs( G[0].chisq - G[NBREED+NCHILD-1].chisq ) ;
 
     iters++ ;
 
@@ -235,12 +246,20 @@ ga_iter( struct fit_descriptor *fdesc ,
   }
 
   // best fit parameter will be in population 1
+  if( iters == GAMAX ) {
+    printf( "[GA] finished in GAMAX %zu iterations \n" , iters ) ;
+  }
+
+
+  //#ifdef VERBOSE
   printf( "[GA] finished in %zu iterations \n" , iters ) ;
   for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
     fdesc -> f.fparams[i] = G[0].g[i] ;
     printf( "FPARAMS_%zu :: %f \n" , i , fdesc -> f.fparams[i] ) ; 
   }
+  fdesc -> f.chisq = G[0].chisq ;
   printf( "CHISQ :: %f \n" , G[0].chisq ) ;
+  //#endif
 
   // cleanse the gene pool
   for( i = 0 ; i < Ngen ; i++ ) {

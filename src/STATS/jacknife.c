@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "fitfunc.h"
+#include "gens.h"
 #include "stats.h"
 
 // the jackknife error definition incorporates the code for the average and variance

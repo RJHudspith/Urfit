@@ -1,70 +1,65 @@
 #include "gens.h"
 
-#include "ffunction.h"
-
-#include "LM.h"
-#include "SD.h"
-#include "CG.h"
-#include "GA.h"
-
-#include "exp.h"
+#include "stats.h"
+#include "bootfit.h"
+#include "correlation.h"
 
 int main( void )
 {
-  const size_t n = 40 ;
-
   gsl_rng_env_setup( ) ;
   gsl_rng *r = gsl_rng_alloc( gsl_rng_default ) ;
 
-  double y[ n ] ;
-  struct data d = { n, y } ;
+  const size_t n = 40 , NBOOTS = 500 ;
 
-  double **W = malloc( n * sizeof( double* ) ) ;
+  struct resampled *x = malloc( n * sizeof( struct resampled ) ) ;
+  struct resampled *y = malloc( n * sizeof( struct resampled ) ) ;
 
-  size_t i ;
+  size_t i , j ;
   for( i = 0 ; i < n ; i++ ) {
-    W[i] = malloc( n * sizeof( double ) ) ;
 
-    double t = i;
-    double yi = 1.0 + 5 * exp (-0.1 * t);
-    double si = 0.1 * yi;
-    double dy = gsl_ran_gaussian(r, si);
+    x[i].resampled = malloc( NBOOTS * sizeof( double ) ) ;
+    x[i].restype   = BOOTDATA ;
+    x[i].NSAMPLES  = NBOOTS ;
 
-    size_t j ;
-    for( j = 0 ; j < n ; j++ ) {
-      W[i][j] = 1.0 / ( ( 1 + fabs( j - i ) ) * si * si);
+    y[i].resampled = malloc( NBOOTS * sizeof( double ) ) ;
+    y[i].restype   = BOOTDATA ;
+    y[i].NSAMPLES  = NBOOTS ;
+
+    const double k = gsl_rng_uniform( r ) * n ;
+
+    for( j = 0 ; j < NBOOTS ; j++ ) {
+      x[i].resampled[j] = k + gsl_ran_gaussian( r , 0.01 ) ;
+      const double yy = 5 * exp ( -0.1 * x[i].resampled[j] ) ;
+      y[i].resampled[j] = yy * ( 1 + gsl_ran_gaussian( r , 0.05 ) ) ; //+ 1.0 ;
     }
-    y[i] = yi + dy;
-    //printf ("data: %zu %g %g\n", i, y[i], si);
-    printf( "{%zu,%f},\n" , i , y[i] ) ;
+
+    compute_err( &y[i] ) ;
+    compute_err( &x[i] ) ;
+    printf( "%g || %g %g \n" , x[i].avg , y[i].avg , y[i].err ) ;
   }
 
-  struct fit_descriptor fdesc ;
-  fdesc.F = exp_f ;
-  fdesc.dF = exp_df ;
-  fdesc.d2F = exp_d2f ;
-  fdesc.guesses = exp_guesses ; 
-  fdesc.set_priors = exp_priors ;
-  fdesc.NPARAMS = 3 ;
+  const corrtype CORRFIT = UNCORRELATED ;
+  const double **W = (const double**)correlations_inv( y , CORRFIT , n ) ;
 
-  fdesc.f = allocate_ffunction( fdesc.NPARAMS , n ) ;
-  fdesc.f.CORRFIT = CORRELATED ;
+  //write_corrmatrix( W , n ) ;
 
-  int (*f) ( struct fit_descriptor *fdesc ,
-	     const void *data ,
-	     const double **W ,
-	     const double TOL ) ;
-  f = ga_iter ;
+  struct resampled *fit = perform_bootfit( x , y , W , 
+					   n , 64 , EXP , CORRFIT ) ;
 
-  f( &fdesc , &d , (const double**)W , 1E-10 ) ;
+  make_xmgrace_graph( "test.agr" , "x" , "y" ) ;
 
-  // free the fitfunction
-  free_ffunction( &fdesc.f , fdesc.NPARAMS ) ;
+  plot_data( x , y , n ) ;
+
+  plot_data( x , y , n ) ;
+
+  plot_fitfunction( fit , EXP , x , n , 64 , CORRFIT ) ;
+
+  close_xmgrace_graph( ) ;
 
   for( i = 0 ; i < n ; i++ ) {
-    free( W[i] ) ;
+    free( x[i].resampled ) ; free( y[i].resampled ) ; free( (void*)W[i] ) ;
   }
-  free( W ) ;
+  free( x ) ; free( y ) ; free( (void*)W ) ;
 
   gsl_rng_free( r ) ;
 

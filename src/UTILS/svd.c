@@ -5,9 +5,9 @@
 #include "gens.h"
 
 //#define VERBOSE
-#define SVD_COL_BALANCE
-#define FAILURE 0
-#define SUCCESS !FAILURE
+//#define SVD_COL_BALANCE
+
+#define LOWEST_EV (1E-6)
 
 #ifdef VERBOSE
 // little print utility
@@ -73,13 +73,18 @@ svd_inverse( double **Ainv ,
   // loop these set 1.0 / Diag[i] to 0.0 if Diag[i] is crazy small
   for( i = 0 ; i < NCOLS ; i++ ) {
     Diag[ i ] = gsl_vector_get( S , i ) ; 
-    tmp = 1.0 / Diag[i] ;
+    if( Diag[i] < LOWEST_EV ) {
+      tmp = 0.0 ;
+    } else {
+      tmp = 1.0 / Diag[i] ;
+    }
     InvDiag[ i ] = fabs( Diag[i] ) < 1.E-32 ? 0.0 : tmp ;
     #ifdef VERBOSE
     printf( "SVD %d %le\n" , i , Diag[i] ) ;
     printf( "SVD %d %le\n" , i , InvDiag[i] ) ;
     #endif
   }
+  //exit(1) ;
 
   // test the solution to make sure it isn't too bad
   for( i = 0 ; i < NROWS ; i++ ) {
@@ -101,11 +106,13 @@ svd_inverse( double **Ainv ,
   printf( "Decomposition accuracy :: %le \n" , diff ) ;
 #endif
   diff /= (double)( NCOLS * NROWS ) ;
+  #if 0
   if( diff > 1E-8 ) {
     printf( "SVD accuracy considered too low %e \n" , diff ) ;
     FLAG = FAILURE ;
     goto FREE ;
   } 
+  #endif
 
   // compute the product Ainv = V * ( 1.0 / Diag ) * U^T
   for( i = 0 ; i < NCOLS ; i++ ) {
