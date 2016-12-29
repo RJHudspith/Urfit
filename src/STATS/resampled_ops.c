@@ -7,6 +7,7 @@
 #include <math.h>
 
 #include "gens.h"
+#include "stats.h"
 
 static void
 NSAMPLES_ERR( const char *OP , const size_t a , const size_t b ) 

@@ -4,6 +4,8 @@
 struct fit_descriptor
 init_fit( const fittype fit ,
 	  const size_t Ndata ,
-	  const corrtype CORRFIT ) ;
+	  const corrtype CORRFIT ,
+	  const size_t Nsims ,
+	  const bool *sims ) ;
 
 #endif

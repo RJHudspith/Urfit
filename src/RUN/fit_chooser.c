@@ -4,14 +4,17 @@
  */
 #include "gens.h"
 
-#include "fits.h" // is a list of fit headers
+#include "fits.h"      // is a list of fit headers
 #include "ffunction.h"
+#include "pmap.h"      // for allocating the pmap
 
 // initialise the fit
 struct fit_descriptor
 init_fit( const fittype fit ,
 	  const size_t Ndata ,
-	  const corrtype CORRFIT )
+	  const corrtype CORRFIT ,
+	  const size_t Nsims ,
+	  const bool *sims )
 {
   struct fit_descriptor fdesc ;
   switch( fit ) {
@@ -22,7 +25,7 @@ init_fit( const fittype fit ,
     fdesc.d2F        = cosh_d2f ;
     fdesc.guesses    = cosh_guesses ; 
     fdesc.set_priors = cosh_priors ;
-    fdesc.NPARAMS    = 2 ;
+    fdesc.Nparam     = 2 ;
     break ;
   case EXP : 
     fdesc.func       = fexp ;
@@ -31,7 +34,7 @@ init_fit( const fittype fit ,
     fdesc.d2F        = exp_d2f ;
     fdesc.guesses    = exp_guesses ; 
     fdesc.set_priors = exp_priors ;
-    fdesc.NPARAMS    = 2 ;
+    fdesc.Nparam     = 2 ;
     break ;
   case EXP_PLUSC : 
     fdesc.func       = fexp_plusc ;
@@ -40,7 +43,7 @@ init_fit( const fittype fit ,
     fdesc.d2F        = exp_plusc_d2f ;
     fdesc.guesses    = exp_plusc_guesses ; 
     fdesc.set_priors = exp_plusc_priors ;
-    fdesc.NPARAMS    = 3 ;
+    fdesc.Nparam     = 3 ;
     break ;
   case PADE : 
     break ;
@@ -53,11 +56,21 @@ init_fit( const fittype fit ,
     fdesc.d2F        = sinh_d2f ;
     fdesc.guesses    = sinh_guesses ; 
     fdesc.set_priors = sinh_priors ;
-    fdesc.NPARAMS    = 2 ;
+    fdesc.Nparam     = 2 ;
     break ;
   }
+
+  // count how many common parameters we have
+  size_t Ncommon = 0 , i ;
+  for( i = 0 ; i < fdesc.Nparam ; i++ ) {
+    if( sims[i] == true ) {
+      Ncommon++ ;
+    }
+  }
+  fdesc.Nlogic = Nsims * ( fdesc.Nparam - Ncommon ) + Ncommon ;
+
   // allocate the fitfunction
-  fdesc.f = allocate_ffunction( fdesc.NPARAMS , Ndata ) ;
+  fdesc.f = allocate_ffunction( fdesc.Nlogic , Ndata ) ;
   
   // corrfit
   fdesc.f.CORRFIT = CORRFIT ;

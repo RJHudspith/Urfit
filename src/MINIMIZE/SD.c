@@ -24,11 +24,11 @@ sd_iter( struct fit_descriptor *fdesc ,
 
   // allocate the temporary fitfunction for computing new steps 
   // down descent direction in the line search
-  struct ffunction f2 = allocate_ffunction( fdesc -> NPARAMS , 
+  struct ffunction f2 = allocate_ffunction( fdesc -> Nlogic , 
 					    fdesc -> f.N ) ;
 
   // allocate the gradient
-  double *grad = malloc( fdesc -> NPARAMS * sizeof( double ) ) ;
+  double *grad = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
 
   // some guesses
   fdesc -> guesses( fdesc -> f.fparams ) ;
@@ -45,7 +45,7 @@ sd_iter( struct fit_descriptor *fdesc ,
   while( chisq_diff > TOL && iters < SDMAX ) {
 
     // compute the descent direction ( - the gradient for SD! )
-    for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
       grad[i] = 0.0 ;
       size_t j , k ;
       for( j = 0 ; j < fdesc -> f.N ; j++ ) {
@@ -68,7 +68,7 @@ sd_iter( struct fit_descriptor *fdesc ,
 	  ( fdesc -> f.err_prior[i] * fdesc -> f.err_prior[i] ) ;
       }
     }
-    for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
       // line search best alpha
       const double ap = line_search( &f2 , fdesc -> f , grad , grad ,
 				     *fdesc , data , W , i , BIG_GUESS ) ;
@@ -101,7 +101,7 @@ sd_iter( struct fit_descriptor *fdesc ,
   //#ifdef VERBOSE
   printf( "\n[SD] FINISHED in %zu iterations \n" , iters ) ;
   printf( "[SD] chisq :: %e -> DIFF %e \n\n" , fdesc -> f.chisq , chisq_diff ) ;
-  for( i = 0 ; i < fdesc -> f.NPARAMS ; i++ ) {
+  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
   }
   //#endif

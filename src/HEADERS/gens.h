@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 
 #include <math.h>
@@ -16,6 +17,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_complex.h>
 
+// definitions of success and failure
 #define SUCCESS GSL_SUCCESS
 #define FAILURE !SUCCESS
 
@@ -34,6 +36,7 @@ typedef enum {
   EXP , COSH , SINH , EXP_PLUSC , PADE , POLY 
 } fittype ;
 
+// time folding types
 typedef enum {
   PLUS_PLUS , PLUS_MINUS , MINUS_PLUS , MINUS_MINUS , NOFOLD 
 } foldtype ;
@@ -44,19 +47,28 @@ enum { ERR , HI , LO , AVE } errtype ;
 // what type of data do we use
 typedef enum { RAWDATA , JACKDATA , BOOTDATA } resample_type ;
 
+// x-data descriptor
 struct x_desc {
   double X ;
   size_t LT ;
 } ;
 
+// map structure
+struct pmap {
+  size_t *p ;
+} ;
+
+// data structure in the fits
 struct data {
   size_t n ;
   double *x ;
   double *y ;
   size_t LT ;
   size_t Npars ;
+  struct pmap *map ;
 };
 
+// fit function stuff
 struct ffunction {
   double *f ; // ( y_i - f_i(a) )
   double **df ; // first derivatives
@@ -78,7 +90,8 @@ struct fit_descriptor {
   void (*d2F) ( double **d2f , const void *data , const double *fparams ) ;
   void (*guesses) ( double *fparams ) ;
   void (*set_priors) ( double *priors , double *err_priors ) ;
-  size_t NPARAMS ;
+  size_t Nparam ; // Number of parameters
+  size_t Nlogic ;  // logical Nparameters 
 } ;
 
 // input parameters
@@ -103,8 +116,7 @@ struct resampled {
   resample_type restype ;
 } ;
 
+// uninitialised flag
 #define UNINIT_FLAG (123456789)
-
-#include "fitfunc.h"
 
 #endif

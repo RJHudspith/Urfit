@@ -9,7 +9,7 @@ AM_CFLAGS=-I${TOPDIR}/src/HEADERS/
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
 FITS_FILES=./FITS/exp_plusc.c ./FITS/exp.c ./FITS/cosh.c ./FITS/sinh.c \
-	./FITS/poly.c ./FITS/pade.c
+	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c
 
 GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 

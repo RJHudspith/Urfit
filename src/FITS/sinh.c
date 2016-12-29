@@ -42,18 +42,6 @@ sinh_df( double **df , const void *data , const double *fparams )
 void
 sinh_d2f( double **d2f , const void *data , const double *fparams )
 {
-  const struct data *DATA = (const struct data*)data ;
-  size_t i ;
-  for( i = 0 ; i < DATA -> n ; i++ ) {
-    const double t = DATA -> x[i] ;
-    const double fwd = exp(-fparams[0] * t ) ;
-    const double bwd = exp(-fparams[0] * ( DATA -> LT - t ) ) ;
-    d2f[0][i] = -fparams[1] * ( t * t * fwd -
-				( DATA -> LT - t ) * ( DATA -> LT - t ) * bwd ) ;
-    d2f[1][i] = -( t * fwd - ( DATA -> LT - t ) * bwd ) ;
-    d2f[2][i] = d2f[1][i] ;
-    d2f[3][i] = 0.0 ;
-  }
   return ;
 }
 

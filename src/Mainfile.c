@@ -1,66 +1,100 @@
+/**
+   @file Mainfile.c
+   @brief Mainly a mainfile
+ */
 #include "gens.h"
 
-#include "stats.h"
 #include "bootfit.h"
 #include "correlation.h"
+#include "make_xmgrace.h"
+#include "plot_fitfunc.h"
+#include "pmap.h"
+#include "stats.h"
 
 int main( void )
 {
   gsl_rng_env_setup( ) ;
   gsl_rng *r = gsl_rng_alloc( gsl_rng_default ) ;
 
-  const size_t n = 40 , NBOOTS = 500 ;
+  const size_t Nsim      = 4 ;
+  const size_t Nboots    = 500 ;
+  const size_t n[ 4 ]    = { 10 , 10 , 10 , 10 } ;
+  const double amp[ 4 ]  = { 200 , 200 , 200 , 200 } ;
+  const double mass[ 4 ] = { 1.0 , 1.0 , 1.0 , 1.0 } ;
+  bool S[ 2 ] = { true , true } ;
+  
+  size_t h , Ndata = 0  ;
+  for( h = 0 ; h < Nsim ; h++ ) {
+    Ndata += n[h] ;
+  }
 
-  struct resampled *x = malloc( n * sizeof( struct resampled ) ) ;
-  struct resampled *y = malloc( n * sizeof( struct resampled ) ) ;
+  struct resampled *x = malloc( Ndata * sizeof( struct resampled ) ) ;
+  struct resampled *y = malloc( Ndata * sizeof( struct resampled ) ) ;
 
-  size_t i , j ;
-  for( i = 0 ; i < n ; i++ ) {
+  size_t i , j , shift = 0 ;
+  for( h = 0 ; h < Nsim ; h++ ) {
+    for( i = shift ; i < shift + n[h] ; i++ ) {
 
-    x[i].resampled = malloc( NBOOTS * sizeof( double ) ) ;
-    x[i].restype   = BOOTDATA ;
-    x[i].NSAMPLES  = NBOOTS ;
+      const size_t idx = i ;
+      x[idx].resampled = malloc( Nboots * sizeof( double ) ) ;
+      x[idx].restype   = BOOTDATA ;
+      x[idx].NSAMPLES  = Nboots ;
 
-    y[i].resampled = malloc( NBOOTS * sizeof( double ) ) ;
-    y[i].restype   = BOOTDATA ;
-    y[i].NSAMPLES  = NBOOTS ;
+      y[idx].resampled = malloc( Nboots * sizeof( double ) ) ;
+      y[idx].restype   = BOOTDATA ;
+      y[idx].NSAMPLES  = Nboots ;
 
-    const double k = gsl_rng_uniform( r ) * n ;
+      const double k = gsl_rng_uniform( r ) * n[h] ;
 
-    for( j = 0 ; j < NBOOTS ; j++ ) {
-      x[i].resampled[j] = k + gsl_ran_gaussian( r , 0.01 ) ;
-      const double yy = 5 * exp ( -0.1 * x[i].resampled[j] ) ;
-      y[i].resampled[j] = yy * ( 1 + gsl_ran_gaussian( r , 0.05 ) ) ; //+ 1.0 ;
+      for( j = 0 ; j < Nboots ; j++ ) {
+	x[idx].resampled[j] = k + gsl_ran_gaussian( r , 0.05 ) ;
+	const double yy = amp[h] * exp ( -mass[h] * x[idx].resampled[j] ) ;
+	y[idx].resampled[j] = yy * ( 1 + gsl_ran_gaussian( r , 0.05 ) ) ;
+      }
+
+      compute_err( &y[idx] ) ;
+      compute_err( &x[idx] ) ;
+      printf( "%g || %g %g \n" , x[idx].avg , y[idx].avg , y[idx].err ) ;
     }
-
-    compute_err( &y[i] ) ;
-    compute_err( &x[i] ) ;
-    printf( "%g || %g %g \n" , x[i].avg , y[i].avg , y[i].err ) ;
+    shift += n[h] ;
   }
 
   const corrtype CORRFIT = UNCORRELATED ;
-  const double **W = (const double**)correlations_inv( y , CORRFIT , n ) ;
+  const double **W = (const double**)correlations_inv( y , CORRFIT , Ndata ) ;
+  struct resampled *fit = NULL ;
 
-  //write_corrmatrix( W , n ) ;
+  write_corrmatrix( (const double**)W , Ndata ) ;
 
-  struct resampled *fit = perform_bootfit( x , y , W , 
-					   n , 64 , EXP , CORRFIT ) ;
+  size_t Npars ;
+  fit = perform_bootfit( &Npars , x , y , W , n , Nsim ,
+			 S , 64 , EXP , CORRFIT ) ;
 
+  // make the graph
   make_xmgrace_graph( "test.agr" , "x" , "y" ) ;
 
-  plot_data( x , y , n ) ;
-
-  plot_data( x , y , n ) ;
-
-  plot_fitfunction( fit , EXP , x , n , 64 , CORRFIT ) ;
+  shift = 0 ;
+  for( h = 0 ; h < Nsim ; h++ ) {
+    plot_data( x + shift , y + shift , n[h] ) ;
+    shift += n[h] ;
+  }
+  
+  plot_fitfunction( fit , EXP , x , n ,
+		    64 , CORRFIT , Nsim , S ) ;
 
   close_xmgrace_graph( ) ;
 
-  for( i = 0 ; i < n ; i++ ) {
+  // free all the data
+  for( i = 0 ; i < Ndata ; i++ ) {
     free( x[i].resampled ) ; free( y[i].resampled ) ; free( (void*)W[i] ) ;
   }
   free( x ) ; free( y ) ; free( (void*)W ) ;
 
+  // free the fit
+  for( i = 0 ; i < Npars ; i++ ) {
+    free( fit[i].resampled ) ;
+  }
+  free( fit ) ;
+  
   gsl_rng_free( r ) ;
 
   return 0 ;

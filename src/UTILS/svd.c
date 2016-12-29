@@ -49,7 +49,7 @@ svd_inverse( double **Ainv ,
   gsl_vector *S  = gsl_vector_alloc( NCOLS ) ;
   gsl_vector *WORK  = gsl_vector_alloc( NCOLS ) ;
   double Diag[ NCOLS ] , InvDiag[ NCOLS ] ;
-  register double sum , diff , tmp ;
+  register double sum , diff = 0.0 , tmp ;
   size_t i , j , k , FLAG = SUCCESS ;
 
   for( i = 0 ; i < NROWS ; i++ ){
@@ -84,9 +84,9 @@ svd_inverse( double **Ainv ,
     printf( "SVD %d %le\n" , i , InvDiag[i] ) ;
     #endif
   }
-  //exit(1) ;
 
   // test the solution to make sure it isn't too bad
+  diff = 0.0 ;
   for( i = 0 ; i < NROWS ; i++ ) {
     for( k = 0 ; k < NCOLS ; k++ ) {
       sum = 0.0 ;

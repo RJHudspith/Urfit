@@ -25,12 +25,12 @@ cg_iter( struct fit_descriptor *fdesc ,
   const size_t CGMAX = 5000 ;
 
   // allocate the fitfunction
-  struct ffunction f2 = allocate_ffunction( fdesc -> NPARAMS , 
+  struct ffunction f2 = allocate_ffunction( fdesc -> Nlogic , 
 					    fdesc -> f.N ) ;
 
   // allocate conjugate directions
-  double *s = malloc( fdesc -> NPARAMS * sizeof( double* ) ) ;
-  double *old_df = malloc( fdesc -> NPARAMS * sizeof( double* ) ) ;
+  double *s      = malloc( fdesc -> Nlogic * sizeof( double* ) ) ;
+  double *old_df = malloc( fdesc -> Nlogic * sizeof( double* ) ) ;
 
   // some guesses
   fdesc -> guesses( fdesc -> f.fparams ) ;
@@ -45,7 +45,7 @@ cg_iter( struct fit_descriptor *fdesc ,
   fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
 
   // step down the gradient initially
-  for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     old_df[i] = 0.0 ;
     // set derivatives
     for( j = 0 ; j < fdesc -> f.N ; j++ ) {
@@ -73,7 +73,7 @@ cg_iter( struct fit_descriptor *fdesc ,
 
   // line search the SD step
   double alpha = 0.0 ;
-  for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     alpha = line_search( &f2 , fdesc -> f , old_df , s , 
 			 *fdesc , data , W , i , BIG_GUESS ) ;
     fdesc -> f.fparams[i] += alpha * s[i] ;
@@ -94,7 +94,7 @@ cg_iter( struct fit_descriptor *fdesc ,
 
     // compute beta using polyak - ribiere
     register double num = 0.0 , denom = 0.0 ;
-    for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
       double newdf = 0.0 ;
       for( j = 0 ; j < fdesc -> f.N ; j++ ) {
 	// switch the types of fit we are doing
@@ -127,11 +127,11 @@ cg_iter( struct fit_descriptor *fdesc ,
     #endif
 
     // update conjugate directions "s"
-    for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
       s[i] = old_df[i] + beta * s[i] ;
     }
 
-    for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
       
       // perform a backtracking line search
       alpha = line_search( &f2 , fdesc -> f , old_df , s , 
@@ -159,7 +159,7 @@ cg_iter( struct fit_descriptor *fdesc ,
   //#ifdef VERBOSE
   printf( "\n[CG] FINISHED in %zu iterations \n" , iters ) ;
   printf( "[CG] chisq :: %e | Diff -> %e \n\n" , fdesc -> f.chisq , chisq_diff ) ;
-  for( i = 0 ; i < fdesc -> f.NPARAMS ; i++ ) {
+  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
   }
   //#endif

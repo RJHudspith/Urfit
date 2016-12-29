@@ -18,7 +18,7 @@ FREAD32( void *d , const size_t size , const size_t N , FILE *file )
   if( fread( d , size , N , file ) != N ) {
     return FAILURE ;
   }
-  if( must_swap ) bswap32( N , d ) ;
+  if( must_swap ) bswap_32( N , d ) ;
   return SUCCESS ;
 }
 
@@ -29,7 +29,7 @@ FREAD64( void *d , const size_t size , const size_t N , FILE *file )
   if( fread( d , size , N , file ) != N ) {
     return FAILURE ;
   }
-  if( must_swap ) bswap64( N , d ) ;
+  if( must_swap ) bswap_64( N , d ) ;
   return SUCCESS ;
 }
 
@@ -41,7 +41,7 @@ read_magic_gammas( FILE *file ,
 		   uint32_t *LT )
 {
   uint32_t magic[ 1 ] = { } , NMOM[ 1 ] , n[ 4 ] ;
-  size_t p , mu ;
+  size_t p ;
   
   if( fread( magic , sizeof( uint32_t ) , 1 , file ) != 1 ) {
     return FAILURE ;
@@ -60,7 +60,7 @@ read_magic_gammas( FILE *file ,
   FREAD32( NMOM , sizeof( uint32_t ) , 1 , file ) ;
 
   for( p = 0 ; p < NMOM[0] ; p++ ) {
-    FREAD( n , sizeof( uint32_t ) , 4 , file ) ;
+    FREAD32( n , sizeof( uint32_t ) , 4 , file ) ;
     if( n[ 0 ] != 4-1 ) {
       printf( "[MOMLIST] %d should be %d \n" , n[ 0 ] , 3 ) ;
       return FAILURE ;
@@ -99,7 +99,7 @@ read_corrfile( struct resampled *sample ,
   FREAD64( C , sizeof( double complex ) , LT , file ) ;
 
   // perform some folding
-  tfold( sample , C , LT , fold , meas ) ;
+  time_fold( sample , C , LT , fold , meas ) ;
   
   return SUCCESS ;
 }

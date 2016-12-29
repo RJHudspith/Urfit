@@ -53,7 +53,7 @@
 struct genes {
   double *g ;
   double chisq ;
-  size_t NPARAMS ;
+  size_t Nlogic ;
 } ;
 
 // compute the chi^2 of our fit functions
@@ -80,14 +80,14 @@ static void
 swap_genes( struct genes *G1 ,
 	    struct genes *G2 )
 {
-  double tmp[ G1->NPARAMS ] , tchi = G1->chisq ;
+  double tmp[ G1->Nlogic ] , tchi = G1->chisq ;
   // make a temporary
-  memcpy( tmp , G1->g , G1->NPARAMS * sizeof( double ) ) ;
+  memcpy( tmp   , G1->g , G1->Nlogic * sizeof( double ) ) ;
   // swap genes
-  memcpy( G1->g , G2->g , G1->NPARAMS * sizeof( double ) ) ;
+  memcpy( G1->g , G2->g , G1->Nlogic * sizeof( double ) ) ;
   G1->chisq = G2->chisq ;
   // 
-  memcpy( G2->g , tmp , G1->NPARAMS * sizeof( double ) ) ;
+  memcpy( G2->g , tmp   , G1->Nlogic * sizeof( double ) ) ;
   G2->chisq = tchi ;
   return ;
 }
@@ -115,7 +115,7 @@ print_population( struct genes *G )
 {
   size_t i , j ;
   for( i = 0 ; i < Ngen ; i++ ) {
-    for( j = 0 ; j < G[i].NPARAMS ; j++ ) {
+    for( j = 0 ; j < G[i].Nlogic ; j++ ) {
       printf( " %f " , G[i].g[j] ) ;
     }
     printf( " :: %e \n" , G[i].chisq ) ;
@@ -138,7 +138,7 @@ ga_iter( struct fit_descriptor *fdesc ,
   const size_t GAMAX = 10000 ;
 
   // allocate the fitfunction
-  struct ffunction f2 = allocate_ffunction( fdesc -> NPARAMS , 
+  struct ffunction f2 = allocate_ffunction( fdesc -> Nlogic , 
 					    fdesc -> f.N ) ;
 
   // some guesses
@@ -166,10 +166,10 @@ ga_iter( struct fit_descriptor *fdesc ,
   // initialise the population as gaussian noise around initial
   // guesses
   for( i = 0 ; i < Ngen ; i++ ) {
-    G[i].NPARAMS = fdesc -> NPARAMS ;
-    G[i].g = malloc( fdesc -> NPARAMS * sizeof( double ) ) ;
+    G[i].Nlogic = fdesc -> Nlogic ;
+    G[i].g = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
     size_t j ;
-    for( j = 0 ; j < fdesc -> NPARAMS ; j++ ) {
+    for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
       G[i].g[j] = fdesc -> f.fparams[j] * 
 	( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
     }
@@ -193,11 +193,7 @@ ga_iter( struct fit_descriptor *fdesc ,
       size_t j ;
       const size_t father = gsl_rng_uniform_int( r , NBREED ) ;
       const size_t mother = gsl_rng_uniform_int( r , NBREED ) ;
-      // if it is above we average we combine otherwise we pick 
-      // randomly from the father or mother
-      for( j = 0 ; j < fdesc -> NPARAMS ; j++ ) {
-	//const double diceroll = gsl_rng_uniform( r ) ;
-
+      for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
 	// roll the dice to decide where the genes go!
 	G[i].g[j] = 0.5 * ( G[ father ].g[j] + G[ mother ].g[j] ) ;
       }
@@ -209,20 +205,17 @@ ga_iter( struct fit_descriptor *fdesc ,
  
     // recompute sigma, estimating from the breeding population
 #if 0
-    double sigma[ fdesc -> NPARAMS ] ;
-    for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+    double sigma[ fdesc -> Nlogic ] ;
+    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
       sigma[i] = fabs( G[0].g[i] - G[NBREED+NCHILD-1].g[i] ) ;
     }
 #endif
 
     // bottom 20 can be randomly mutated from the top 20
     for( i = Ngen - NMUTANTS ; i < Ngen ; i++ ) {
-      //const size_t mutate = gsl_rng_uniform_int( r , NBREED ) ;
       const size_t mutate = gsl_rng_uniform_int( r , NBREED ) ;
       size_t j ;
-      for( j = 0 ; j < fdesc -> NPARAMS ; j++ ) {
-	// perform some noise attenuation to help vary around 
-	// most popular solution
+      for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
 	G[i].g[j] = G[ mutate ].g[j] * 
 	  ( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
       }
@@ -250,16 +243,13 @@ ga_iter( struct fit_descriptor *fdesc ,
     printf( "[GA] finished in GAMAX %zu iterations \n" , iters ) ;
   }
 
-
-  //#ifdef VERBOSE
   printf( "[GA] finished in %zu iterations \n" , iters ) ;
-  for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     fdesc -> f.fparams[i] = G[0].g[i] ;
     printf( "FPARAMS_%zu :: %f \n" , i , fdesc -> f.fparams[i] ) ; 
   }
   fdesc -> f.chisq = G[0].chisq ;
   printf( "CHISQ :: %f \n" , G[0].chisq ) ;
-  //#endif
 
   // cleanse the gene pool
   for( i = 0 ; i < Ngen ; i++ ) {
@@ -268,7 +258,7 @@ ga_iter( struct fit_descriptor *fdesc ,
   free( G ) ;
 
   // free the fitfunction
-  free_ffunction( &f2 , fdesc -> NPARAMS ) ;
+  free_ffunction( &f2 , fdesc -> Nlogic ) ;
 
   // free the rng
   gsl_rng_free( r ) ;

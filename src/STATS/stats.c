@@ -8,6 +8,7 @@
 #include "gens.h"
 #include "bootstrap.h"
 #include "jacknife.h"
+#include "resampled_ops.h"
 
 // compute the average and returns the unnormalised variance
 // using Knuth averaging method

@@ -76,7 +76,7 @@ get_alpha_beta( gsl_matrix *alpha ,
 	  apq += 
 	    f.df[p][i] * f.df[q][i] 
 	    #ifdef WITH_D2_DERIVS
-	    + f.d2f[q+f.NPARAMS*p][i] * f.f[i] 
+	    + f.d2f[q+f.Nlogic*p][i] * f.f[i] 
 	    #endif
 	    ;
 	}
@@ -86,7 +86,7 @@ get_alpha_beta( gsl_matrix *alpha ,
 	  apq += 
 	    W[i][i] * ( f.df[p][i] * f.df[q][i] 
                         #ifdef WITH_D2_DERIVS
-			+ f.d2f[q+f.NPARAMS*p][i] * f.f[i]
+			+ f.d2f[q+f.Nlogic*p][i] * f.f[i]
 			#endif
 			)
 	    ;
@@ -98,7 +98,7 @@ get_alpha_beta( gsl_matrix *alpha ,
 	    apq += 
 	      W[i][j] * ( f.df[p][i] * f.df[q][j] 
 			  #ifdef WITH_D2_DERIVS
-			  + f.d2f[q+f.NPARAMS*p][i] * f.f[j] 
+			  + f.d2f[q+f.Nlogic*p][i] * f.f[j] 
 			  #endif
 			  ) 
 	      ;
@@ -197,17 +197,17 @@ ml_iter( struct fit_descriptor *fdesc ,
   fdesc -> set_priors( fdesc -> f.prior , fdesc -> f.err_prior ) ;
 
   // allocate alpha, beta, delta and permutation matrices
-  gsl_matrix *alpha = gsl_matrix_alloc( fdesc -> NPARAMS , 
-					fdesc -> NPARAMS ) ;
-  gsl_matrix *alpha_new = gsl_matrix_alloc( fdesc -> NPARAMS , 
-					    fdesc -> NPARAMS ) ;
-  gsl_vector *beta = gsl_vector_alloc( fdesc -> NPARAMS ) ;
-  gsl_vector *delta = gsl_vector_alloc( fdesc -> NPARAMS ) ;
-  gsl_permutation *perm = gsl_permutation_alloc( fdesc -> NPARAMS ) ;
+  gsl_matrix *alpha     = gsl_matrix_alloc( fdesc -> Nlogic , 
+					    fdesc -> Nlogic ) ;
+  gsl_matrix *alpha_new = gsl_matrix_alloc( fdesc -> Nlogic , 
+					    fdesc -> Nlogic ) ;
+  gsl_vector *beta  = gsl_vector_alloc( fdesc -> Nlogic ) ;
+  gsl_vector *delta = gsl_vector_alloc( fdesc -> Nlogic ) ;
+  gsl_permutation *perm = gsl_permutation_alloc( fdesc -> Nlogic ) ;
 
   // set the old parameters
-  double old_params[ fdesc -> NPARAMS ] ;
-  for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+  double old_params[ fdesc -> Nlogic ] ;
+  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     old_params[ i ] = fdesc -> f.fparams[ i ] ;
   }
 
@@ -225,8 +225,6 @@ ml_iter( struct fit_descriptor *fdesc ,
   // loop until chisq evens out
   while( chisq_diff > TOL ) {
 
-    // TODO :: line search or trust region for Lambda!
-
     double new_chisq = ml_step( &fdesc -> f , old_params , alpha_new , delta , 
 				perm , alpha , beta , *fdesc , 
 				data , W , Lambda ) ;    
@@ -242,7 +240,7 @@ ml_iter( struct fit_descriptor *fdesc ,
       Lambda /= fac ;
       chisq_diff = fabs( fdesc -> f.chisq - new_chisq ) ;
       fdesc -> f.chisq = new_chisq ;
-      for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+      for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
 	old_params[ i ] = fdesc -> f.fparams[ i ] ;
       }
       // update derivatives and alpha and beta
@@ -252,7 +250,7 @@ ml_iter( struct fit_descriptor *fdesc ,
       #endif
       get_alpha_beta( alpha , beta , fdesc -> f , W ) ;
     } else {
-      for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+      for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
 	fdesc -> f.fparams[ i ] = old_params[ i ] ;
       }
       fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ; // reset f
@@ -268,14 +266,12 @@ ml_iter( struct fit_descriptor *fdesc ,
     printf( "\n[ML] stopped by max iterations %zu \n" , iters ) ;
   }
 
-#ifdef VERBOSE
   printf( "\n[ML] FINISHED in %zu iterations \n" , iters ) ;
   printf( "[ML] chisq :: %e \n\n" , fdesc -> f.chisq ) ;
   // tell us the fit parameters
-  for( i = 0 ; i < fdesc -> NPARAMS ; i++ ) {
+  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
   }
-#endif
 
   // free gsl stuff
   gsl_vector_free( beta ) ;

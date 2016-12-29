@@ -42,10 +42,14 @@ void
 pade_f( double *f , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i ; 
+  double par[ DATA -> Npars ] ;
+  size_t i , p ; 
   for( i = 0 ; i < DATA -> n ; i++ ) {
     const struct x_desc X = { DATA -> x[i] , DATA -> LT } ;
-    f[i] = fpade( X , fparams , DATA -> Npars ) - DATA -> y[i] ;
+    for( p = 0 ; p < DATA -> Npars ; p++ ) {
+      par[ p ] = fparams[ DATA -> map[i].p[p] ] ;
+    }
+    f[i] = fpade( X , par , DATA -> Npars ) - DATA -> y[i] ;
   }
   return ;
 }
@@ -55,32 +59,32 @@ void
 pade_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i , j ;
+  size_t i , j , p ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
     const double X = DATA -> x[i] ;
     // precompute numerator
     double numerator = X * fparams[ n ] ;
     for( j = n - 1 ; j > 0 ; j-- ) {
-      numerator = X * ( fparams[j] + numerator ) ;
+      numerator = X * ( fparams[ DATA -> map[i].p[j] ] + numerator ) ;
     }
     // precompute denominator
     register double denominator = X * fparams[ n + m ] ;
     for( j = n + m - 1 ; j > n ; j-- ) {
-      denominator = X * ( fparams[j] + denominator ) ;
+      denominator = X * ( fparams[ DATA -> map[i].p[j] ] + denominator ) ;
     }
     denominator += 1.0 ;
 
     // this factor is pretty common
     const double factor = -( numerator ) / ( denominator * denominator ) ;
 
-    df[0][i] = 1.0 ;
+    df[ DATA -> map[i].p[0] ][i] = 1.0 ;
     // numerator derivatives
     for( j = 1 ; j <= n ; j++ ) {
-      df[j][i] = pow( X , j ) / denominator ;
+      df[ DATA -> map[i].p[j] ][i] = pow( X , j ) / denominator ;
     }
     // denominator  derivatives
     for( j = 0 ; j < m ; j++ ) {
-      df[j+n+1][i] = pow( X , j+1 ) * factor ;
+      df[ DATA -> map[i].p[j+n+1] ][i] = pow( X , j+1 ) * factor ;
     }
   }
   return ;
@@ -90,14 +94,6 @@ pade_df( double **df , const void *data , const double *fparams )
 void
 pade_d2f( double **d2f , const void *data , const double *fparams )
 {
-  const struct data *DATA = (const struct data*)data ;
-  size_t i , j ;
-  for( i = 0 ; i < DATA -> n ; i++ ) {
-    for( j = 0 ; j < (n+m+1)*(n+m+1) ; j++ ) {
-      // these derivatives are hard
-      d2f[j][i] = 0.0 ;
-    }
-  }
   return ;
 }
 

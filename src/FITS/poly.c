@@ -19,10 +19,14 @@ void
 poly_f( double *f , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i ; 
+  size_t i , p ; 
   for (i = 0; i < DATA -> n ; i++) {
     const struct x_desc X = { DATA -> x[i] , DATA -> LT } ;
-    f[i] = fpoly( X , fparams , DATA -> Npars ) - DATA -> y[i] ;
+    double par[ DATA -> Npars ] ;
+    for( p = 0 ; p < DATA -> Npars ; p++ ) {
+      par[ p ] = fparams[ DATA -> map[i].p[p] ] ;
+    }
+    f[i] = fpoly( X , par , DATA -> Npars ) - DATA -> y[i] ;
   }
   return ;
 }
@@ -32,11 +36,11 @@ void
 poly_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i , j ;
+  size_t i , j , p ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
     double xloc = 1.0 ;
     for( j = 0 ; j < DATA -> Npars ; j++ ) {
-      df[j][i] = xloc ;
+      df[ DATA -> map[i].p[j] ][i] = xloc ;
       xloc *= DATA->x[i] ;
     }
   }
@@ -47,13 +51,6 @@ poly_df( double **df , const void *data , const double *fparams )
 void
 poly_d2f( double **d2f , const void *data , const double *fparams )
 {
-  const struct data *DATA = (const struct data*)data ;
-  size_t i , j ;
-  for( i = 0 ; i < DATA -> n ; i++ ) {
-    for( j = 0 ; j < DATA -> Npars ; j++ ) {
-      d2f[j][i] = 0.0 ;
-    }
-  }
   return ;
 }
 

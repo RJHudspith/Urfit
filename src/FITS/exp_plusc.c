@@ -16,7 +16,11 @@ exp_plusc_f( double *f , const void *data , const double *fparams )
   size_t i ;
   for (i = 0; i < DATA -> n ; i++) {
     const struct x_desc X = { DATA -> x[i] , DATA-> LT } ;
-    f[i] = fexp_plusc( X , fparams , DATA -> Npars ) - DATA -> y[i] ;
+    f[i] = //fexp_plusc( X , fparams , DATA -> Npars )
+      fparams[ DATA -> map[i].p[1] ] *
+      exp( -fparams[ DATA -> map[i].p[0] ] * X.X ) +
+      fparams[ DATA -> map[i].p[2] ]
+      - DATA -> y[i] ;
   }
   return ;
 }
@@ -29,10 +33,10 @@ exp_plusc_df( double **df , const void *data , const double *fparams )
   size_t i ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
     const double t = DATA -> x[i] ;
-    const double e = exp(-fparams[0] * t) ;
-    df[0][i] = -t * fparams[1] * e ;
-    df[1][i] = e ;
-    df[2][i] = 1.0 ;
+    const double e = exp(-fparams[DATA -> map[i].p[0]] * t) ;
+    df[DATA -> map[i].p[0]][i] = -t * fparams[DATA -> map[i].p[1]] * e ;
+    df[DATA -> map[i].p[1]][i] = e ;
+    df[DATA -> map[i].p[2]][i] = 1.0 ;
   }
   return ;
 }
@@ -41,16 +45,6 @@ exp_plusc_df( double **df , const void *data , const double *fparams )
 void
 exp_plusc_d2f( double **d2f , const void *data , const double *fparams )
 {
-  const struct data *DATA = ( const struct data* )data ;
-  const double A = fparams[1] ;
-  size_t i ; 
-  for( i = 0 ; i < DATA -> n ; i++ ) {
-    const double t = DATA -> x[i] ;
-    const double e = exp(-fparams[0] * t) ;
-    d2f[0][i] = t*t*A*e ; d2f[1][i] = -t * e  ; d2f[2][i] = 0.0 ;
-    d2f[3][i] = -t * e  ; d2f[4][i] = 0.0     ; d2f[5][i] = 0.0 ;
-    d2f[6][i] = 0.0     ; d2f[7][i] = 0.0     ; d2f[8][i] = 0.0 ;
-  }
   return ;
 }
 
@@ -59,7 +53,7 @@ exp_plusc_guesses( double *fparams )
 {
   if( fparams[0] == UNINIT_FLAG || fparams[1] == UNINIT_FLAG ||
       fparams[2] == UNINIT_FLAG ) {
-  fparams[0] = 0.12 ; fparams[1] = 5.5 ; fparams[2] = 0.9 ;
+    fparams[0] = 0.12 ; fparams[1] = 5.5 ; fparams[2] = 10 ;
   }
   return ;
 }
@@ -67,9 +61,4 @@ exp_plusc_guesses( double *fparams )
 void
 exp_plusc_priors( double *priors , double *err_priors )
 {
-  /*
-  priors[0] = 0.1 ; err_priors[1] = 0.005 ;
-  priors[1] = 5.0 ; err_priors[0] = 0.1 ;
-  priors[2] = 1.0 ; err_priors[2] = 0.05 ;
-  */
 }

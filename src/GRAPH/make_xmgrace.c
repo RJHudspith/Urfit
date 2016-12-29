@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include "gens.h"
+#include "ffunction.h"
 #include "fitfunc.h"
 
 static FILE *file ;
