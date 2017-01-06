@@ -14,7 +14,7 @@ void
 exp_plusc_d2f( double **d2f , const void *data , const double *fparams ) ;
 
 void
-exp_plusc_guesses( double *fparams ) ;
+exp_plusc_guesses( double *fparams , const size_t Nlogic ) ;
 
 void
 exp_plusc_priors( double *priors , double *err_priors ) ;

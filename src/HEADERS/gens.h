@@ -33,7 +33,7 @@ typedef enum {
 
 // fit types
 typedef enum {
-  EXP , COSH , SINH , EXP_PLUSC , PADE , POLY 
+  EXP , COSH , SINH , EXP_PLUSC , PADE , POLY
 } fittype ;
 
 // time folding types
@@ -58,19 +58,9 @@ struct pmap {
   size_t *p ;
 } ;
 
-// data structure in the fits
-struct data {
-  size_t n ;
-  double *x ;
-  double *y ;
-  size_t LT ;
-  size_t Npars ;
-  struct pmap *map ;
-};
-
 // fit function stuff
 struct ffunction {
-  double *f ; // ( y_i - f_i(a) )
+  double *f ; // ( f_i(a) - y_i )
   double **df ; // first derivatives
   double **d2f ; // second derivatives
   double *fparams ; // fit parameters
@@ -88,21 +78,26 @@ struct fit_descriptor {
   void (*F) ( double *f , const void *data , const double *fparams ) ;
   void (*dF) ( double **df , const void *data , const double *fparams ) ;
   void (*d2F) ( double **d2f , const void *data , const double *fparams ) ;
-  void (*guesses) ( double *fparams ) ;
+  void (*guesses) ( double *fparams , const size_t Nlogic ) ;
   void (*set_priors) ( double *priors , double *err_priors ) ;
   size_t Nparam ; // Number of parameters
   size_t Nlogic ;  // logical Nparameters 
 } ;
 
-// input parameters
-struct input_params {
-  resample_type resample ;
-  size_t NBOOTS ;
-  size_t *NDATA ;
-  size_t *binning ;
-  size_t *traj_beg ;
-  size_t *traj_end ;
-  size_t *traj_inc ;
+// struct for keeping the fit information
+struct fit_info {
+  corrtype Corrfit ;
+  fittype Fitdef ;
+  size_t M ;
+  struct pmap *map ;
+  int (*Minimize) ( struct fit_descriptor *fdesc ,
+		    const void *data ,
+		    const double **W ,
+		    const double TOL ) ;
+  size_t N ;
+  size_t Nparam ;
+  bool *Sims ;
+  double Tol ;
 } ;
 
 // struct containing our statistics
@@ -114,6 +109,47 @@ struct resampled {
   double err ;
   size_t NSAMPLES ;
   resample_type restype ;
+} ;
+
+// struct describing our correlation matrix
+struct correlation {
+  double **W ;
+  double Eigenvalue_Tol ;
+  bool Divided_Covariance ;
+  bool Column_Balanced ;
+} ;
+
+// struct containing the data information
+struct data_info {
+  struct resampled *x ;
+  struct resampled *y ;
+  struct correlation Cov ;
+  size_t LT ;
+  size_t Nboots ;
+  size_t *Ndata ;
+  size_t Nsim ;
+  size_t Ntot ;
+} ;
+
+// data structure in the fits
+struct data {
+  size_t n ;
+  double *x ;
+  double *y ;
+  size_t LT ;
+  size_t Npars ;
+  struct pmap *map ;
+};
+
+// input parameters
+struct input_params {
+  resample_type resample ;
+  size_t NBOOTS ;
+  size_t *NDATA ;
+  size_t *binning ;
+  size_t *traj_beg ;
+  size_t *traj_end ;
+  size_t *traj_inc ;
 } ;
 
 // uninitialised flag

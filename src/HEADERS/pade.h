@@ -11,7 +11,8 @@ pade_get_nm( size_t *new_n ,
 
 double
 fpade( const struct x_desc X , 
-       const double *fparams ) ;
+       const double *fparams ,
+       const size_t Npars ) ;
 
 void
 pade_f( double *f , 
@@ -29,7 +30,7 @@ pade_d2f( double **d2f ,
 	  const double *fparams ) ;
 
 void
-pade_guesses( double *fparams ) ;
+pade_guesses( double *fparams , const size_t Nlogic ) ;
 
 void
 pade_priors( double *priors , 

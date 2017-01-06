@@ -14,9 +14,7 @@
    Keep the top NBREED - these are the parents
    
    For the breeding Pop ( Ngen - NBREED - NMUTANTS )
-     P(1/3) inheritance comes from the mother
-     P(1/3) inheritance comes from the father
-     P(1/3) inheritance is an average of the mother and fathers genes
+   inheritance is an average of the mother and fathers genes
 
    For the mutants we add random gaussian noise to the NBREED
    population
@@ -29,21 +27,21 @@
    Addendum : I don't know how genetics works but this seems to give 
    the right answer, please excuse use of genes when chromosomes or 
    whatever should be used.
+
+   5/01/2017 - Compute the noise based on the s.d of the kept population
  */
 #include "gens.h"
+
 #include <string.h> // memcpy
 
 #include "chisq.h"
 #include "ffunction.h"
 
-// verbose output
-//#define VERBOSE
+#define Ngen (512) // number of generations in gene pool
 
-#define Ngen (400) // number of generations in gene pool
+#define NBREED ((int)(0.15*Ngen))  // percentage that persist from the previous generation
 
-#define NBREED (40) // number that persist from the previous generation
-
-#define NCHILD (120) // number of children
+#define NCHILD ((int)(0.4*Ngen))  // percentage of pop that are children
 
 #define NMUTANTS (Ngen - NBREED - NCHILD) // number of mutants
 
@@ -54,6 +52,11 @@ struct genes {
   double *g ;
   double chisq ;
   size_t Nlogic ;
+} ;
+
+// struct for storing the standard deviation of each parameter
+struct sigma {
+  double *s ;
 } ;
 
 // compute the chi^2 of our fit functions
@@ -86,7 +89,6 @@ swap_genes( struct genes *G1 ,
   // swap genes
   memcpy( G1->g , G2->g , G1->Nlogic * sizeof( double ) ) ;
   G1->chisq = G2->chisq ;
-  // 
   memcpy( G2->g , tmp   , G1->Nlogic * sizeof( double ) ) ;
   G2->chisq = tchi ;
   return ;
@@ -124,6 +126,31 @@ print_population( struct genes *G )
 }
 #endif
 
+static void
+compute_sigma( struct sigma *Sig ,
+	       const struct genes *G ,
+	       const size_t Nlogic )
+{
+  double ave[ Nlogic ] , delta ;
+  size_t i , j ;
+  // initialise the s.d (sigma) and the average to zero
+  for( i = 0 ; i < Nlogic ; i++ ) {
+    Sig -> s[i] = ave[i] = 0.0 ;
+  }
+  // compute the variance and the average
+  for( j = 0 ; j < NBREED + NCHILD ; j++ ) {
+    for( i = 0 ; i < Nlogic ; i++ ) {
+      delta = G[j].g[i] - ave[i] ;
+      ave[i] += delta / ( (double)( i + 1 ) ) ;
+      Sig -> s[i] += delta * ( G[j].g[i] - ave[i] ) ;
+    }
+  }
+  // corrected sample standard deviation 
+  for( i = 0 ; i < Nlogic ; i++ ) {
+    Sig -> s[i] = sqrt( Sig -> s[i] / ( NBREED + NCHILD - 1 ) ) ;
+  }
+}	       
+
 // perform a minimisation using a genetic algorithm, parameters are 
 // at the top to be played around with. Does not use any derivative 
 // information!
@@ -141,8 +168,8 @@ ga_iter( struct fit_descriptor *fdesc ,
   struct ffunction f2 = allocate_ffunction( fdesc -> Nlogic , 
 					    fdesc -> f.N ) ;
 
-  // some guesses
-  fdesc -> guesses( fdesc -> f.fparams ) ;
+  // set the guesses
+  fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
 
   // get priors
   fdesc -> set_priors( fdesc -> f.prior , fdesc -> f.err_prior ) ;
@@ -150,6 +177,11 @@ ga_iter( struct fit_descriptor *fdesc ,
   // evaluate the function, its first and second derivatives
   fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
   fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
+
+  printf( "[GA] Using a population of %d \n" , Ngen ) ;
+  printf( "[GA] Keeping %d elites \n" , NBREED ) ;
+  printf( "[GA] Breeding elites into %d Children\n" , NCHILD ) ;
+  printf( "[GA] Mutating the above into a pop of %d \n" , NMUTANTS ) ;
 
   // gene pool
   struct genes *G = malloc( Ngen * sizeof( struct genes ) ) ;
@@ -165,9 +197,13 @@ ga_iter( struct fit_descriptor *fdesc ,
 
   // initialise the population as gaussian noise around initial
   // guesses
+  struct sigma Sig ;
+  Sig.s = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
+  
   for( i = 0 ; i < Ngen ; i++ ) {
     G[i].Nlogic = fdesc -> Nlogic ;
     G[i].g = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
+
     size_t j ;
     for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
       G[i].g[j] = fdesc -> f.fparams[j] * 
@@ -204,20 +240,15 @@ ga_iter( struct fit_descriptor *fdesc ,
     insertion_sort_GA( G ) ;
  
     // recompute sigma, estimating from the breeding population
-#if 0
-    double sigma[ fdesc -> Nlogic ] ;
-    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
-      sigma[i] = fabs( G[0].g[i] - G[NBREED+NCHILD-1].g[i] ) ;
-    }
-#endif
-
-    // bottom 20 can be randomly mutated from the top 20
+    compute_sigma( &Sig , G , fdesc -> Nlogic ) ;
+    
+    // bottom mutants come from mutations to the kept population
     for( i = Ngen - NMUTANTS ; i < Ngen ; i++ ) {
-      const size_t mutate = gsl_rng_uniform_int( r , NBREED ) ;
+      const size_t mutate = gsl_rng_uniform_int( r , NBREED + NCHILD ) ;
       size_t j ;
       for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
 	G[i].g[j] = G[ mutate ].g[j] * 
-	  ( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
+	  ( 1 + gsl_ran_gaussian( r , Sig.s[j] ) ) ;
       }
       G[i].chisq = compute_chi( &f2 , fdesc -> f , fdesc ,
 				G[i].g , data , W ) ;
@@ -225,12 +256,12 @@ ga_iter( struct fit_descriptor *fdesc ,
 
     insertion_sort_GA( G ) ;
 
-    // look for a static solution in the elites as an 
+    // look for a static solution in the elites and their children as an 
     // opportunity to turn off the fit
     chisq_diff = fabs( G[0].chisq - G[NBREED+NCHILD-1].chisq ) ;
-
+    
     iters++ ;
-
+	
     #ifdef VERBOSE
     print_population( G ) ;
     printf( "\nCHISQ_DIFF :: %e || %e %e \n\n" , chisq_diff , 
@@ -262,6 +293,9 @@ ga_iter( struct fit_descriptor *fdesc ,
 
   // free the rng
   gsl_rng_free( r ) ;
+
+  // free the variance
+  free( Sig.s ) ;
 
   return iters ;
 }

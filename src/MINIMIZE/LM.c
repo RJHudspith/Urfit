@@ -128,7 +128,7 @@ get_alpha_beta( gsl_matrix *alpha ,
 
 // perform trial - ML step return chisq
 double
-ml_step( struct ffunction *f , 
+lm_step( struct ffunction *f , 
 	 double *old_params ,
 	 gsl_matrix *alpha_new ,
 	 gsl_vector *delta ,
@@ -176,7 +176,7 @@ ml_step( struct ffunction *f ,
 
 // perform marquardt - levenberg updates
 int
-ml_iter( struct fit_descriptor *fdesc ,
+lm_iter( struct fit_descriptor *fdesc ,
 	 const void *data ,
 	 const double **W ,
 	 const double TOL )
@@ -191,7 +191,7 @@ ml_iter( struct fit_descriptor *fdesc ,
   size_t iters = 0 , i ;
 
   // some guesses
-  fdesc -> guesses( fdesc -> f.fparams ) ;
+  fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
 
   // get priors
   fdesc -> set_priors( fdesc -> f.prior , fdesc -> f.err_prior ) ;
@@ -225,7 +225,7 @@ ml_iter( struct fit_descriptor *fdesc ,
   // loop until chisq evens out
   while( chisq_diff > TOL ) {
 
-    double new_chisq = ml_step( &fdesc -> f , old_params , alpha_new , delta , 
+    double new_chisq = lm_step( &fdesc -> f , old_params , alpha_new , delta , 
 				perm , alpha , beta , *fdesc , 
 				data , W , Lambda ) ;    
 
@@ -264,9 +264,10 @@ ml_iter( struct fit_descriptor *fdesc ,
   // tell us how many iterations we hit
   if( iters == LMMAX ) {
     printf( "\n[ML] stopped by max iterations %zu \n" , iters ) ;
+  } else {
+    printf( "\n[ML] FINISHED in %zu iterations \n" , iters ) ;
   }
-
-  printf( "\n[ML] FINISHED in %zu iterations \n" , iters ) ;
+  
   printf( "[ML] chisq :: %e \n\n" , fdesc -> f.chisq ) ;
   // tell us the fit parameters
   for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {

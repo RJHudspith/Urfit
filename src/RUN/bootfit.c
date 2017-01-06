@@ -6,79 +6,50 @@
 
 #include "ffunction.h"
 #include "fit_chooser.h"
-#include "pmap.h"
 #include "resampled_ops.h"
 #include "stats.h"
 
-// fit types
-#include "GA.h"
-#include "CG.h"
-#include "SD.h"
-#include "LM.h"
-
 // perform a fit over bootstraps
 struct resampled *
-perform_bootfit( size_t *Npars ,
-		 const struct resampled *x ,
-		 const struct resampled *y ,
-		 const double **W ,
-		 const size_t *Ndata ,
-		 const size_t Nsims ,
-		 const bool *sims , // simultaneous fit indices
-		 const size_t LT ,
-		 const fittype fit ,
-		 const corrtype CORRFIT )
+perform_bootfit( const struct data_info Data ,
+		 const struct fit_info Fit )
 {
-  if( x[0].NSAMPLES != y[0].NSAMPLES ) {
+  if( Data.x[0].NSAMPLES != Data.y[0].NSAMPLES ) {
     printf( "[BOOTFIT] number of x  and y samples different" ) ;
     return NULL ;
   }
 
-  // compute the total amount of data there is
-  size_t i , N = 0 ;
-  for( i = 0 ; i < Nsims ; i++ ) {
-    N += Ndata[i] ;
-  }
+  // bootstrap counter
+  size_t i ;
 
   // initialise the fit
-  struct fit_descriptor fdesc = init_fit( fit , N , CORRFIT ,
-					  Nsims , sims ) ;
-  *Npars = fdesc.Nlogic ;
-
-  // initialise the type of fit
-  int (*f) ( struct fit_descriptor *fdesc ,
-	     const void *data ,
-	     const double **W ,
-	     const double TOL ) ;
-  f = ml_iter ;
-
-  // set up the param map
-  struct pmap *map = parammap( fdesc.Nparam , Nsims , Ndata , sims ) ;
+  struct fit_descriptor fdesc = init_fit( Data , Fit ) ;
   
   // allocate the fitparams
   struct resampled *fitparams = malloc( fdesc.Nlogic * sizeof( struct resampled ) ) ; 
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
-    fitparams[i] = init_dist( NULL , y[0].NSAMPLES , y[0].restype ) ;
+    fitparams[i] = init_dist( NULL , Data.y[0].NSAMPLES , Data.y[0].restype ) ;
   }
 
   // allocate the chisq
-  struct resampled chisq = init_dist( NULL , y[0].NSAMPLES , y[0].restype ) ;
+  struct resampled chisq = init_dist( NULL , Data.y[0].NSAMPLES , Data.y[0].restype ) ;
   
   // loop boots
   for( i = 0 ; i < chisq.NSAMPLES ; i++ ) { 
 
     // initialise the data we will fit
-    double *yloc = malloc( N * sizeof( double ) ) ;
-    double *xloc = malloc( N * sizeof( double ) ) ;
+    double *yloc = malloc( Data.Ntot * sizeof( double ) ) ;
+    double *xloc = malloc( Data.Ntot * sizeof( double ) ) ;
     size_t j ;
-    for( j = 0 ; j < N ; j++ ) {
-      xloc[j] = x[j].resampled[i] ;
-      yloc[j] = y[j].resampled[i] ;
+    for( j = 0 ; j < Data.Ntot ; j++ ) {
+      xloc[j] = Data.x[j].resampled[i] ;
+      yloc[j] = Data.y[j].resampled[i] ;
     }
-    struct data d = { N , xloc , yloc , LT , fdesc.Nparam , map } ;
+    struct data d = { Data.Ntot , xloc , yloc , Data.LT ,
+		      fdesc.Nparam , Fit.map } ;
 
     // do the fit, compute the chisq
-    f( &fdesc , &d , (const double**)W , 1E-10 ) ;
+    Fit.Minimize( &fdesc , &d , (const double**)Data.Cov.W , Fit.Tol ) ;
     chisq.resampled[i] = fdesc.f.chisq ;
 
     for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
@@ -88,20 +59,20 @@ perform_bootfit( size_t *Npars ,
     free( xloc ) ;
   }
 
-  // multiply by the range
-  mult_constant( &chisq , 1.0 / ( N - fdesc.Nlogic ) ) ;
+  // divide out the number of degrees of freedom
+  mult_constant( &chisq , 1.0 / ( Data.Ntot - fdesc.Nlogic ) ) ;
 
   // compute and free the chisq
   compute_err( &chisq ) ;
 
-  printf( "[CHISQ] %f %f \n" , chisq.avg , chisq.err ) ;
+  printf( "[CHISQ (d.o.f)] %f %f \n" , chisq.avg , chisq.err ) ;
 
   free( chisq.resampled ) ;
 
   // tell us what we have computed
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
     compute_err( &fitparams[i] ) ;
-    if( sims[i] == true ) {
+    if( Fit.Sims[i] == true ) {
       printf( "-> SIMUL " ) ;
     }
     printf( "PARAM_%zu %f %f \n" , i , fitparams[i].avg , fitparams[i].err ) ;
@@ -109,9 +80,6 @@ perform_bootfit( size_t *Npars ,
 
   // free the fitfunction
   free_ffunction( &fdesc.f , fdesc.Nlogic ) ;
-
-  // free the parameter map
-  free_pmap( map , N ) ;
 
   return fitparams ;
 }

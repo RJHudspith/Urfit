@@ -14,6 +14,14 @@ make_xmgrace_graph( const char *filename ,
 		    const char *x_axis , 
 		    const char *y_axis ) ;
 
+int
+make_graph( const struct resampled *fitparams ,
+	    const struct data_info Data ,
+	    const struct fit_info Fit ,
+	    const char *Graph_Name ,
+	    const char *Graph_Xaxis ,
+	    const char *Graph_Yaxis ) ;
+
 void
 plot_data( const struct resampled *x ,
 	   const struct resampled *y ,

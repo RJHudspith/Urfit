@@ -11,7 +11,7 @@
 //#define VERBOSE
 
 // depending on your function you might want to change these
-#define BIG_GUESS (0.1) // the biggest guess for the backtracker
+#define BIG_GUESS (50) // the biggest guess for the backtracker
 
 // cg iteration
 int
@@ -28,12 +28,8 @@ cg_iter( struct fit_descriptor *fdesc ,
   struct ffunction f2 = allocate_ffunction( fdesc -> Nlogic , 
 					    fdesc -> f.N ) ;
 
-  // allocate conjugate directions
-  double *s      = malloc( fdesc -> Nlogic * sizeof( double* ) ) ;
-  double *old_df = malloc( fdesc -> Nlogic * sizeof( double* ) ) ;
-
-  // some guesses
-  fdesc -> guesses( fdesc -> f.fparams ) ;
+  // set the guesses
+  fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
 
   // get priors
   fdesc -> set_priors( fdesc -> f.prior , fdesc -> f.err_prior ) ;
@@ -43,6 +39,10 @@ cg_iter( struct fit_descriptor *fdesc ,
   fdesc -> dF( fdesc -> f.df , data , fdesc -> f.fparams ) ;
   fdesc -> d2F( fdesc -> f.d2f , data , fdesc -> f.fparams ) ;
   fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
+
+  // allocate conjugate directions
+  double *s      = malloc( fdesc -> Nlogic * sizeof( double* ) ) ;
+  double *old_df = malloc( fdesc -> Nlogic * sizeof( double* ) ) ;
 
   // step down the gradient initially
   for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
@@ -154,15 +154,15 @@ cg_iter( struct fit_descriptor *fdesc ,
   // tell us how many iterations we hit
   if( iters == CGMAX ) {
     printf( "\n[CG] stopped by max iterations %zu \n" , iters ) ;
+  } else {
+    printf( "\n[CG] FINISHED in %zu iterations \n" , iters ) ;
   }
 
-  //#ifdef VERBOSE
-  printf( "\n[CG] FINISHED in %zu iterations \n" , iters ) ;
+  
   printf( "[CG] chisq :: %e | Diff -> %e \n\n" , fdesc -> f.chisq , chisq_diff ) ;
   for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
   }
-  //#endif
 
   // free the directions
   free( s ) ;

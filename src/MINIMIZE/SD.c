@@ -9,7 +9,7 @@
 #include "line_search.h" 
 
 // largest step size we use
-#define BIG_GUESS (0.1)
+#define BIG_GUESS (1000)
 
 // steepest-descent iterations
 int
@@ -30,8 +30,11 @@ sd_iter( struct fit_descriptor *fdesc ,
   // allocate the gradient
   double *grad = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
 
-  // some guesses
-  fdesc -> guesses( fdesc -> f.fparams ) ;
+  printf( "Guesses :: %f %f \n" , fdesc -> f.fparams[0] ,
+	  fdesc -> f.fparams[1] ) ;
+
+  // set the guesses
+  fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
 
   // get priors
   fdesc -> set_priors( fdesc -> f.prior , fdesc -> f.err_prior ) ;
@@ -96,15 +99,14 @@ sd_iter( struct fit_descriptor *fdesc ,
   // tell us how many iterations we hit
   if( iters == SDMAX ) {
     printf( "\n[SD] stopped by max iterations %zu \n" , iters ) ;
+  } else {
+    printf( "\n[SD] FINISHED in %zu iterations \n" , iters ) ;
   }
 
-  //#ifdef VERBOSE
-  printf( "\n[SD] FINISHED in %zu iterations \n" , iters ) ;
   printf( "[SD] chisq :: %e -> DIFF %e \n\n" , fdesc -> f.chisq , chisq_diff ) ;
   for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
   }
-  //#endif
 
   // free the gradient
   free( grad ) ;

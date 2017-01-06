@@ -14,13 +14,8 @@
  
    Where M >= N and the a's are the coefficients of the polynomial
  */
-#include <stdio.h>
-#include <stdlib.h>
-
+#include "gens.h"
 #include "svd.h"
-
-#define FAILURE (0)
-#define SUCCESS (!FAILURE)
 
 int
 compute_coefficients( double *coeffs ,
@@ -54,7 +49,8 @@ compute_coefficients( double *coeffs ,
   }
 
   // if the SVD screws up we set failure and free allocations
-  if( svd_inverse( Ainv , (const double**)A , N , M ) == FAILURE ) {
+  if( svd_inverse( Ainv , (const double**)A , N , M , 1E-8 , true
+		   ) == FAILURE ) {
     FLAG = FAILURE ;
     goto FREE ;
   }

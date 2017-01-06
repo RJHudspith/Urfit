@@ -5,11 +5,8 @@
 
    p( x ) = \pi_0 + ( \pi_1 x + ... + \pi_n x^n ) / ( 1 + ... + \pi_{n+m}x^{m} )
  */
-#include <stdlib.h>
+#include "gens.h"
 #include "svd.h"
-
-#define SUCCESS (!FAILURE)
-#define FAILURE (0)
 
 // pade coefficient function
 int
@@ -87,7 +84,8 @@ pades( double *pade_coeffs ,
 #endif
 
   // perform an inverse
-  if( svd_inverse( Ainv , (const double**)sub_solve , m , m ) == FAILURE ) {
+  if( svd_inverse( Ainv , (const double**)sub_solve ,
+		   m , m , 1E-8 , true ) == FAILURE ) {
     FLAG = FAILURE ;
     goto FREE ;
   }

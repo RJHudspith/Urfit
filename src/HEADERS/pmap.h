@@ -2,10 +2,8 @@
 #define PMAP_H
 
 struct pmap *
-parammap( const size_t Nparams ,
-	  const size_t Nsims ,
-	  const size_t *Ndata ,
-	  const bool *sim_params ) ;
+parammap( const struct data_info Data ,
+	  const struct fit_info Fit ) ;
 
 void
 free_pmap( struct pmap *map ,

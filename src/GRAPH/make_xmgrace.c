@@ -2,12 +2,11 @@
    @file make_xmgrace.c
    @brief draw an xmgrace graph
  */
-#include <stdlib.h>
-#include <stdio.h>
-
 #include "gens.h"
+
 #include "ffunction.h"
 #include "fitfunc.h"
+#include "plot_fitfunc.h"
 
 static FILE *file ;
 static size_t dataset = 0 , colorset = 1 ;
@@ -163,4 +162,30 @@ plot_data( const struct resampled *x ,
   dataset ++ ;
   colorset = ( colorset + 1 ) % 16 ;
   return ;
+}
+
+int
+make_graph( const struct resampled *fitparams ,
+	    const struct data_info Data ,
+	    const struct fit_info Fit ,
+	    const char *Graph_Name ,
+	    const char *Graph_Xaxis ,
+	    const char *Graph_Yaxis )
+{
+  // make the graph
+  make_xmgrace_graph( Graph_Name , Graph_Xaxis , Graph_Yaxis ) ;
+
+  size_t shift = 0 , i ;
+  for( i = 0 ; i < Data.Nsim ; i++ ) {
+    plot_data( Data.x + shift , Data.y + shift , Data.Ndata[i] ) ;
+    shift += Data.Ndata[i] ;
+  }
+
+  if( fitparams != NULL ) {
+    plot_fitfunction( fitparams , Data , Fit ) ;
+  }
+  
+  close_xmgrace_graph( ) ;
+  
+  return SUCCESS ;
 }

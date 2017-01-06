@@ -16,7 +16,6 @@ exp_f( double *f , const void *data , const double *fparams )
   size_t i ; 
   for( i = 0 ; i < DATA -> n ; i++ ) {
     const struct x_desc X = { DATA -> x[i] , DATA -> LT } ;
-    //f[i] = fexp( X , fparams , DATA -> Npars ) - DATA -> y[i] ;
     f[i] = fparams[ DATA-> map[i].p[1] ] *
       exp( -fparams[ DATA-> map[i].p[0] ] * X.X ) - DATA -> y[i] ;
   }
@@ -38,7 +37,7 @@ exp_df( double **df , const void *data , const double *fparams )
   return ;
 }
 
-// second derivatives
+// second derivatives? Will we ever use them - J?
 void
 exp_d2f( double **d2f , const void *data , const double *fparams )
 {
@@ -46,12 +45,24 @@ exp_d2f( double **d2f , const void *data , const double *fparams )
 }
 
 void
-exp_guesses( double *fparams )
+exp_guesses( double *fparams , const size_t Nlogic )
 {
-  if( fparams[0] == UNINIT_FLAG && fparams[1] == UNINIT_FLAG ) {
-    fparams[0] = 1.0 ; fparams[1] = 200.0 ; 
-    fparams[2] = 1.0 ; fparams[3] = 1.0 ; 
+  bool flag = false ;
+  size_t i ;
+  for( i = 0 ; i < Nlogic ; i++ ) {
+    if( fparams[i] != UNINIT_FLAG ) {
+      flag = true ;
+      continue ;
+    }
   }
+
+  // perform a guess, otherwise assume someone has set them
+  if( flag == false ) {
+    for( i = 0 ; i < Nlogic ; i++ ) {
+      fparams[i] = i + 1 ;
+    }
+  }
+
   return ;
 }
 

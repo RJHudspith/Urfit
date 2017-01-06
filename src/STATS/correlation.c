@@ -8,22 +8,6 @@
 #include "fitfunc.h"
 #include "svd.h"
 
-// fill the lower triangular part
-static void
-fill_lower_triangular( double **correlation ,
-		       const size_t NDATA )
-{
-  size_t i ;
-  #pragma omp parallel for private(i)
-  for( i = 0 ; i < NDATA ; i++ ) {
-    size_t j ;
-    for( j = 0 ; j < i ; j++ ) {
-      correlation[i][j] = correlation[j][i] ;
-    }
-  }
-  return ;
-}
-
 // computes the upper section
 static void
 compute_upper_correlation( double **correlation , 
@@ -31,6 +15,7 @@ compute_upper_correlation( double **correlation ,
 			   const size_t NDATA ,
 			   const corrtype CORRFIT )
 {
+  // initialise number of samples
   const size_t NSAMPLES = data[0].NSAMPLES ;
 
   // compute the correct normalisation
@@ -50,7 +35,7 @@ compute_upper_correlation( double **correlation ,
     break ;
   }
 
-  // set to zero
+  // set whole matrix to zero
 #pragma omp parallel for private(i)
   for( i = 0 ; i < NDATA ; i++ ) {
     size_t j ;
@@ -98,24 +83,78 @@ compute_upper_correlation( double **correlation ,
   return ;
 }
 
+// fill the lower triangular part
+static void
+fill_lower_triangular( double **correlation ,
+		       const size_t NDATA )
+{
+  size_t i ;
+  #pragma omp parallel for private(i)
+  for( i = 0 ; i < NDATA ; i++ ) {
+    size_t j ;
+    for( j = 0 ; j < i ; j++ ) {
+      correlation[i][j] = correlation[j][i] ;
+    }
+  }
+  return ;
+}
+
+// divide by sigma^2
+static void
+modified_covariance( double **correlation ,
+		     const size_t Ndata )
+{
+  // compute sigma
+  double sigma[ Ndata ] ;
+  size_t i ;
+#pragma omp parallel for private(i)
+  for( i = 0 ; i < Ndata ; i++ ) {
+    sigma[ i ] = sqrt( correlation[i][i] ) ;
+  }
+  
+  // rescale correlation matrix by variance
+#pragma omp parallel for private(i)
+  for( i = 0 ; i < Ndata ; i++ ) {
+    size_t j ;
+    for( j = i ; j < Ndata ; j++ ) {
+      // edge case that I quite often hit
+      if( sigma[i] == 0.0 || sigma[j] == 0.0 ) {
+	if( j == i ) {
+	  correlation[i][i] = 1.0 ;
+	} else {
+	  correlation[i][i] = 0.0 ;
+	}
+      // otherwise rescale
+      } else {
+	correlation[i][j] /= ( sigma[i] * sigma[j] ) ;
+      }
+      //
+    }
+  }
+  return ;
+}
+
 // compute the covariance matrix, normalised by sigma_i sigma_j
 void
 correlations( double **correlation , 
 	      const struct resampled *data ,
 	      const corrtype CORRFIT ,
-	      const size_t NDATA )
+	      const size_t Ndata ,
+	      const bool Divided )
 {
   // compute this correlation matrix
-  compute_upper_correlation( correlation , data , NDATA , CORRFIT ) ;
+  compute_upper_correlation( correlation , data , Ndata , CORRFIT ) ;
 
   // divide by sigma^2
-  //modified_covariance( correlation , NDATA ) ;
+  modified_covariance( correlation , Ndata ) ;
 
   // correlation matrix is symmetric
-  fill_lower_triangular( correlation , NDATA ) ;
-
+  if( Divided == true ) {
+    fill_lower_triangular( correlation , Ndata ) ;
+  }
+  
   // write the correlation matrix?
-  write_corrmatrix( correlation , NDATA ) ;
+  write_corrmatrix( (const double**)correlation , Ndata ) ;
 
   return ;
 }
@@ -124,17 +163,19 @@ correlations( double **correlation ,
 double **
 correlations_inv( const struct resampled *data ,
 		  const corrtype CORRFIT ,
-		  const size_t NDATA )
+		  const size_t Ndata ,
+		  const double Tolerance ,
+		  const bool Divided )
 {
-  double **Cinv = malloc( NDATA * sizeof( double* ) ) ;
-  double **C    = malloc( NDATA * sizeof( double* ) ) ;
+  double **Cinv = malloc( Ndata * sizeof( double* ) ) ;
+  double **C    = malloc( Ndata * sizeof( double* ) ) ;
 
   // set Cinv to the identity just in case
   size_t i , j ;
-  for( i = 0 ; i < NDATA ; i++ ) {
-    Cinv[ i ] = malloc( NDATA * sizeof( double ) ) ;
-    C[ i ]    = malloc( NDATA * sizeof( double ) ) ;
-    for( j = 0 ; j < NDATA ; j++ ) {
+  for( i = 0 ; i < Ndata ; i++ ) {
+    Cinv[ i ] = malloc( Ndata * sizeof( double ) ) ;
+    C[ i ]    = malloc( Ndata * sizeof( double ) ) ;
+    for( j = 0 ; j < Ndata ; j++ ) {
       if( j == i ) {
 	Cinv[ i ][ j ] = C[ i ][ j ] = 1.0 ;
       } else {
@@ -144,25 +185,31 @@ correlations_inv( const struct resampled *data ,
   }
 
   // compute this correlation matrix (false means not diagonal)
-  compute_upper_correlation( C , data , NDATA , CORRFIT ) ;
+  compute_upper_correlation( C , data , Ndata , CORRFIT ) ;
 
+  // divides elements by sigma_i sigma_j
+  if( Divided == true ) {
+    modified_covariance( C , Ndata ) ;
+  }
+  
   // correlation matrix is symmetric
-  fill_lower_triangular( C , NDATA ) ;
+  fill_lower_triangular( C , Ndata ) ;
 
   switch( CORRFIT ) {
   case UNWEIGHTED : break ;
   case  UNCORRELATED :
-    for( i = 0 ; i < NDATA ; i++ ) {
-      Cinv[i][i] = 1.0 / C[i][i] ;
+    for( i = 0 ; i < Ndata ; i++ ) {
+      Cinv[i][i] = fabs( C[i][i] ) > 1.E-32 ? 1.0 / C[i][i] : 0.0 ;
     }
     break ;
   case CORRELATED : // compute the full inverse
-    svd_inverse( Cinv , (const double**)C , NDATA , NDATA ) ;
+    svd_inverse( Cinv , (const double**)C ,
+		 Ndata , Ndata , Tolerance , false ) ;
     break ;
   }
 
   // free the correlation matrix
-  for( i = 0 ; i < NDATA ; i++ ) {
+  for( i = 0 ; i < Ndata ; i++ ) {
     free( C[i] ) ;
   }
   free( C ) ;
@@ -170,8 +217,74 @@ correlations_inv( const struct resampled *data ,
   return Cinv ;
 }
 
+// compute the inverse of the correlation matrix
+int
+inverse_correlation( struct data_info *Data ,
+		     const struct fit_info Fit )
+{
+  // space for the correlation matrix
+  double **C = NULL ;
+  size_t i ;
+  int flag = SUCCESS ;
+
+  // if we don't weight by the correlation matrix we don't allocate
+  // any space for it
+  switch( Fit.Corrfit ) {
+  case UNWEIGHTED : return flag ;
+  case UNCORRELATED :
+  case CORRELATED :
+    C = calloc( Data -> Ntot , sizeof( double* ) ) ;
+    Data -> Cov.W = calloc( Data -> Ntot , sizeof( double* ) ) ;
+    break ;
+  }
+  
+  // set W to the identity just in case
+  for( i = 0 ; i < Data -> Ntot ; i++ ) {
+    Data -> Cov.W[ i ] = calloc( Data -> Ntot , sizeof( double ) ) ;
+    C[ i ] = calloc( Data -> Ntot , sizeof( double ) ) ;
+    Data -> Cov.W[ i ][ i ] = C[ i ][ i ] = 1.0 ;
+  }
+
+  // compute this correlation matrix (false means not diagonal)
+  compute_upper_correlation( C , Data -> y , Data -> Ntot , Fit.Corrfit ) ;
+
+  // divides elements by sigma_i sigma_j
+  if( Data -> Cov.Divided_Covariance == true ) {
+    modified_covariance( C , Data -> Ntot ) ;
+  }
+  
+  // correlation matrix is symmetric
+  fill_lower_triangular( C , Data -> Ntot ) ;
+
+  // compute the inverse
+  switch( Fit.Corrfit ) {
+  case UNWEIGHTED : break ;
+  case  UNCORRELATED :
+    for( i = 0 ; i < Data -> Ntot ; i++ ) {
+      Data -> Cov.W[i][i] = fabs( C[i][i] ) > 1.E-32 ? 1.0 / C[i][i] : 0.0 ;
+    }
+    break ;
+  case CORRELATED : // compute the full inverse
+    if( svd_inverse( Data -> Cov.W , (const double**)C ,
+		     Data -> Ntot , Data -> Ntot ,
+		     Data -> Cov.Eigenvalue_Tol ,
+		     Data -> Cov.Column_Balanced ) == FAILURE ) {
+      flag = FAILURE ;
+    }
+    break ;
+  }
+
+  // free the correlation matrix
+  for( i = 0 ; i < Data -> Ntot ; i++ ) {
+    free( C[i] ) ;
+  }
+  free( C ) ;
+
+  return flag ;
+}
+
 void
-write_corrmatrix( double **correlation ,
+write_corrmatrix( const double **correlation ,
 		  const size_t NCUT )
 {
   size_t i , j ;
@@ -185,7 +298,7 @@ write_corrmatrix( double **correlation ,
 }
 
 void
-write_corrmatrix_mathematica( double **correlation ,
+write_corrmatrix_mathematica( const double **correlation ,
 			      const size_t NCUT )
 {
   size_t i , j ;

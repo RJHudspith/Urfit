@@ -51,11 +51,22 @@ cosh_d2f( double **d2f , const void *data , const double *fparams )
 }
 
 void
-cosh_guesses( double *fparams )
+cosh_guesses( double *fparams , const size_t Nlogic )
 {
-  if( fparams[0] == UNINIT_FLAG && fparams[1] == UNINIT_FLAG ) {
-    fparams[0] = 0.2 ; fparams[1] = 7.0 ; fparams[2] = 10 ;
+  size_t i , all_flagged = 0 ;
+  for( i = 0 ; i < Nlogic ; i++ ) {
+    if( fparams[i] == UNINIT_FLAG ) {
+      all_flagged++ ;
+    }
   }
+
+  // perform a guess, otherwise assume someone has set them
+  if( all_flagged == Nlogic ) {
+    for( i = 0 ; i < Nlogic ; i++ ) {
+      fparams[i] = 1 + i ;
+    }
+  }
+  
   return ;
 }
 

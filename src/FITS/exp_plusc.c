@@ -49,12 +49,21 @@ exp_plusc_d2f( double **d2f , const void *data , const double *fparams )
 }
 
 void
-exp_plusc_guesses( double *fparams )
+exp_plusc_guesses( double *fparams , const size_t Nlogic )
 {
-  if( fparams[0] == UNINIT_FLAG || fparams[1] == UNINIT_FLAG ||
-      fparams[2] == UNINIT_FLAG ) {
-    fparams[0] = 0.12 ; fparams[1] = 5.5 ; fparams[2] = 10 ;
+  size_t i , all_flagged = 0 ;
+  for( i = 0 ; i < Nlogic ; i++ ) {
+    if( fparams[i] == UNINIT_FLAG ) {
+      all_flagged++ ;
+    }
   }
+
+  // perform a guess, otherwise assume someone has set them
+  if( all_flagged == Nlogic ) {
+    fparams[0] = 1.0 ; fparams[1] = 200.0 ; 
+    fparams[2] = 1.0 ; fparams[3] = 1.0 ;
+  }
+  
   return ;
 }
 

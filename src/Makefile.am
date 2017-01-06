@@ -8,6 +8,8 @@ AM_CFLAGS=-I${TOPDIR}/src/HEADERS/
 
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
+INIT_FILES=./INIT/fake.c ./INIT/init.c
+
 FITS_FILES=./FITS/exp_plusc.c ./FITS/exp.c ./FITS/cosh.c ./FITS/sinh.c \
 	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c
 
@@ -31,6 +33,7 @@ libURFIT_a_SOURCES = \
 	${EFFMASS_FILES} \
 	${FITS_FILES} \
 	${GRAPH_FILES} \
+	${INIT_FILES} \
 	${IO_FILES} \
 	${MINIMIZE_FILES} \
 	${RUN_FILES} \
@@ -42,6 +45,7 @@ include_HEADERS =
 	$(EFFMASS_FILES:./EFFMASS/%.c=./HEADERS/%.h) \
 	$(FITS_FILES:./FITS/%.c=./HEADERS/%.h) \
 	$(GRAPH_FILES:./GRAPH/%.c=./HEADERS/%.h) \
+	$(INIT_FILES:./INIT/%.c=./HEADERS/%.h) \
 	$(IO_FILES:./IO/%.c=./HEADERS/%.h) \
 	$(MINIMIZE_FILES:./MINIMIZE/%.c=./HEADERS/%.h) \
 	$(RUN_FILES:./RUN/%.c=./RUN/%.h) \

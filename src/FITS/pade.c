@@ -59,7 +59,7 @@ void
 pade_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i , j , p ;
+  size_t i , j ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
     const double X = DATA -> x[i] ;
     // precompute numerator
@@ -83,8 +83,8 @@ pade_df( double **df , const void *data , const double *fparams )
       df[ DATA -> map[i].p[j] ][i] = pow( X , j ) / denominator ;
     }
     // denominator  derivatives
-    for( j = 0 ; j < m ; j++ ) {
-      df[ DATA -> map[i].p[j+n+1] ][i] = pow( X , j+1 ) * factor ;
+    for( j = 1 ; j <= m ; j++ ) {
+      df[ DATA -> map[i].p[j+n] ][i] = pow( X , j ) * factor ;
     }
   }
   return ;
@@ -98,8 +98,22 @@ pade_d2f( double **d2f , const void *data , const double *fparams )
 }
 
 void
-pade_guesses( double *fparams )
+pade_guesses( double *fparams , const size_t Nlogic )
 {
+  size_t i , all_flagged = 0 ;
+  for( i = 0 ; i < Nlogic ; i++ ) {
+    if( fparams[i] == UNINIT_FLAG ) {
+      all_flagged++ ;
+    }
+  }
+
+  // perform a guess, otherwise assume someone has set them
+  if( all_flagged == Nlogic ) {
+    for( i = 0 ; i < Nlogic ; i++ ) {
+      fparams[i] = i ;
+    }
+  }
+  
   return ;
 }
 

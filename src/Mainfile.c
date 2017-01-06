@@ -6,96 +6,88 @@
 
 #include "bootfit.h"
 #include "correlation.h"
+#include "fake.h"
+#include "fit_chooser.h"
+#include "init.h"
 #include "make_xmgrace.h"
 #include "plot_fitfunc.h"
 #include "pmap.h"
 #include "stats.h"
 
+// minimizers
+#include "GA.h"
+#include "CG.h"
+#include "SD.h"
+#include "LM.h"
+
 int main( void )
 {
-  gsl_rng_env_setup( ) ;
-  gsl_rng *r = gsl_rng_alloc( gsl_rng_default ) ;
+  size_t i ;
 
-  const size_t Nsim      = 4 ;
-  const size_t Nboots    = 500 ;
-  const size_t n[ 4 ]    = { 10 , 10 , 10 , 10 } ;
-  const double amp[ 4 ]  = { 200 , 200 , 200 , 200 } ;
-  const double mass[ 4 ] = { 1.0 , 1.0 , 1.0 , 1.0 } ;
-  bool S[ 2 ] = { true , true } ;
+  // data structure
+  struct data_info Data ;
+  Data.Nsim = 3 ;
+  Data.Nboots = 500 ;
+  Data.Ndata = malloc( Data.Nsim * sizeof( size_t ) ) ;
+  Data.Ntot = 0 ;
+  for( i = 0 ; i < Data.Nsim ; i++ ) {
+    Data.Ndata[i] = 35 ;
+    Data.Ntot += Data.Ndata[i] ;
+  }
+  Data.LT = 25 ;
+  Data.Cov.Divided_Covariance = false ;
+  Data.Cov.Column_Balanced = false ;
+  Data.Cov.Eigenvalue_Tol = 1E-8 ;
+
+  // fit structure
+  struct fit_info Fit ;
+  Fit.Fitdef = PADE ;
+  Fit.Corrfit = UNCORRELATED ;
+  Fit.N = 2 ;
+  Fit.M = 1 ;
+  Fit.Nparam = get_Nparam( Fit ) ;
+  Fit.Sims = malloc( Fit.Nparam * sizeof( bool ) ) ;
+  for( i = 0 ; i < Fit.Nparam ; i++ ) {
+    Fit.Sims[i] = false ; i&1 ? false : true ;
+  }
+  Fit.map = parammap( Data , Fit ) ;
+  Fit.Minimize = ga_iter ;
+  Fit.Tol = 1E-7 ;
+
+  struct resampled *fitparams = NULL ;
+
+  if( generate_fake_data( &Data , Fit , 0.001 , 0.001 ) == FAILURE ) {
+    goto free_failure ;
+  }
+
+  if( inverse_correlation( &Data , Fit ) == FAILURE ) {
+    goto free_failure ;
+  }
+
+#ifdef VERBOSE
+  write_corrmatrix( (const double**)Data.Cov.W , Data.Ntot ) ;
+#endif
   
-  size_t h , Ndata = 0  ;
-  for( h = 0 ; h < Nsim ; h++ ) {
-    Ndata += n[h] ;
+  if( ( fitparams = perform_bootfit( Data , Fit ) ) == NULL ) {
+    goto free_failure ;
   }
 
-  struct resampled *x = malloc( Ndata * sizeof( struct resampled ) ) ;
-  struct resampled *y = malloc( Ndata * sizeof( struct resampled ) ) ;
+  make_graph( fitparams , Data , Fit , "test.agr" , "x" , "y" ) ;
 
-  size_t i , j , shift = 0 ;
-  for( h = 0 ; h < Nsim ; h++ ) {
-    for( i = shift ; i < shift + n[h] ; i++ ) {
-
-      const size_t idx = i ;
-      x[idx].resampled = malloc( Nboots * sizeof( double ) ) ;
-      x[idx].restype   = BOOTDATA ;
-      x[idx].NSAMPLES  = Nboots ;
-
-      y[idx].resampled = malloc( Nboots * sizeof( double ) ) ;
-      y[idx].restype   = BOOTDATA ;
-      y[idx].NSAMPLES  = Nboots ;
-
-      const double k = gsl_rng_uniform( r ) * n[h] ;
-
-      for( j = 0 ; j < Nboots ; j++ ) {
-	x[idx].resampled[j] = k + gsl_ran_gaussian( r , 0.05 ) ;
-	const double yy = amp[h] * exp ( -mass[h] * x[idx].resampled[j] ) ;
-	y[idx].resampled[j] = yy * ( 1 + gsl_ran_gaussian( r , 0.05 ) ) ;
-      }
-
-      compute_err( &y[idx] ) ;
-      compute_err( &x[idx] ) ;
-      printf( "%g || %g %g \n" , x[idx].avg , y[idx].avg , y[idx].err ) ;
-    }
-    shift += n[h] ;
-  }
-
-  const corrtype CORRFIT = UNCORRELATED ;
-  const double **W = (const double**)correlations_inv( y , CORRFIT , Ndata ) ;
-  struct resampled *fit = NULL ;
-
-  write_corrmatrix( (const double**)W , Ndata ) ;
-
-  size_t Npars ;
-  fit = perform_bootfit( &Npars , x , y , W , n , Nsim ,
-			 S , 64 , EXP , CORRFIT ) ;
-
-  // make the graph
-  make_xmgrace_graph( "test.agr" , "x" , "y" ) ;
-
-  shift = 0 ;
-  for( h = 0 ; h < Nsim ; h++ ) {
-    plot_data( x + shift , y + shift , n[h] ) ;
-    shift += n[h] ;
-  }
-  
-  plot_fitfunction( fit , EXP , x , n ,
-		    64 , CORRFIT , Nsim , S ) ;
-
-  close_xmgrace_graph( ) ;
-
-  // free all the data
-  for( i = 0 ; i < Ndata ; i++ ) {
-    free( x[i].resampled ) ; free( y[i].resampled ) ; free( (void*)W[i] ) ;
-  }
-  free( x ) ; free( y ) ; free( (void*)W ) ;
+ free_failure :
 
   // free the fit
-  for( i = 0 ; i < Npars ; i++ ) {
-    free( fit[i].resampled ) ;
+  if( fitparams != NULL ) {
+    for( i = 0 ; i < Fit.Nparam ; i++ ) {
+      if( fitparams[i].resampled != NULL ) {
+	free( fitparams[i].resampled ) ;
+      }
+    }
+    free( fitparams ) ;
   }
-  free( fit ) ;
-  
-  gsl_rng_free( r ) ;
 
-  return 0 ;
+  free_Data( &Data ) ;
+  free_Fit( &Fit , Data ) ;
+  
+  return SUCCESS ;
 }

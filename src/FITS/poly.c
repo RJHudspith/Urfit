@@ -3,6 +3,15 @@
  */
 #include "gens.h"
 
+static size_t n = 0 ;
+
+void
+poly_set_n( const size_t new_n )
+{
+  n = new_n ;
+  return ;
+}
+
 double
 fpoly( const struct x_desc X , const double *fparams , const size_t Npars )
 {
@@ -36,7 +45,7 @@ void
 poly_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i , j , p ;
+  size_t i , j ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
     double xloc = 1.0 ;
     for( j = 0 ; j < DATA -> Npars ; j++ ) {
@@ -55,9 +64,22 @@ poly_d2f( double **d2f , const void *data , const double *fparams )
 }
 
 void
-poly_guesses( double *fparams )
+poly_guesses( double *fparams , const size_t Nlogic )
 {
   // perform a good guess
+  size_t i , all_flagged = 0 ;
+  for( i = 0 ; i < Nlogic ; i++ ) {
+    if( fparams[i] == UNINIT_FLAG ) {
+      all_flagged++ ;
+    }
+  }
+
+  // perform a guess, otherwise assume someone has set them
+  if( all_flagged == Nlogic ) {
+    for( i = 0 ; i < Nlogic ; i++ ) {
+      fparams[i] = i+1 ;
+    }
+  }
   return ;
 }
 
