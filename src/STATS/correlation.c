@@ -35,15 +35,6 @@ compute_upper_correlation( double **correlation ,
     break ;
   }
 
-  // set whole matrix to zero
-#pragma omp parallel for private(i)
-  for( i = 0 ; i < NDATA ; i++ ) {
-    size_t j ;
-    for( j = 0 ; j < NDATA ; j++ ) {
-      correlation[i][j] = 0.0 ;
-    }
-  }
-
   // diagonal one is pretty straightforward
   switch( CORRFIT ) {
   case UNWEIGHTED :
@@ -59,7 +50,7 @@ compute_upper_correlation( double **correlation ,
 	  ( data[i].resampled[k] - ave ) *  
 	  ( data[i].resampled[k] - ave ) ;
       }
-      correlation[i][i] = sum * NORM ;
+      correlation[0][i] = sum * NORM ;
     }
     break ;
   case CORRELATED :
@@ -232,53 +223,63 @@ inverse_correlation( struct data_info *Data ,
   switch( Fit.Corrfit ) {
   case UNWEIGHTED : return flag ;
   case UNCORRELATED :
+    C = calloc( 1 , sizeof( double* ) ) ;
+    C[ 0 ] = calloc( Data -> Ntot , sizeof( double ) ) ;
+    Data -> Cov.W = calloc( 1 , sizeof( double* ) ) ;
+    Data -> Cov.W[ 0 ] = calloc( Data -> Ntot , sizeof( double ) ) ;
+
+    // compute this correlation matrix (false means not diagonal)
+    compute_upper_correlation( C , Data -> y , Data -> Ntot , Fit.Corrfit ) ;
+
+    for( i = 0 ; i < Data -> Ntot ; i++ ) {
+      Data -> Cov.W[0][i] = fabs( C[0][i] ) > 1.E-32 ? 1.0 / C[0][i] : 1.E-32 ;
+    }
+
+    for( i = 0 ; i < 1 ; i++ ) {
+      free( C[0] ) ;
+    }
+    free( C ) ;
+    
+    break ;
   case CORRELATED :
+    // allocate the correlation matrices
     C = calloc( Data -> Ntot , sizeof( double* ) ) ;
     Data -> Cov.W = calloc( Data -> Ntot , sizeof( double* ) ) ;
-    break ;
-  }
-  
-  // set W to the identity just in case
-  for( i = 0 ; i < Data -> Ntot ; i++ ) {
-    Data -> Cov.W[ i ] = calloc( Data -> Ntot , sizeof( double ) ) ;
-    C[ i ] = calloc( Data -> Ntot , sizeof( double ) ) ;
-    Data -> Cov.W[ i ][ i ] = C[ i ][ i ] = 1.0 ;
-  }
-
-  // compute this correlation matrix (false means not diagonal)
-  compute_upper_correlation( C , Data -> y , Data -> Ntot , Fit.Corrfit ) ;
-
-  // divides elements by sigma_i sigma_j
-  if( Data -> Cov.Divided_Covariance == true ) {
-    modified_covariance( C , Data -> Ntot ) ;
-  }
-  
-  // correlation matrix is symmetric
-  fill_lower_triangular( C , Data -> Ntot ) ;
-
-  // compute the inverse
-  switch( Fit.Corrfit ) {
-  case UNWEIGHTED : break ;
-  case  UNCORRELATED :
+    
+    // set W to the identity just in case
     for( i = 0 ; i < Data -> Ntot ; i++ ) {
-      Data -> Cov.W[i][i] = fabs( C[i][i] ) > 1.E-32 ? 1.0 / C[i][i] : 0.0 ;
+      Data -> Cov.W[ i ] = calloc( Data -> Ntot , sizeof( double ) ) ;
+      C[ i ] = calloc( Data -> Ntot , sizeof( double ) ) ;
+      Data -> Cov.W[ i ][ i ] = C[ i ][ i ] = 1.0 ;
     }
-    break ;
-  case CORRELATED : // compute the full inverse
+
+    // compute this correlation matrix (false means not diagonal)
+    compute_upper_correlation( C , Data -> y , Data -> Ntot , Fit.Corrfit ) ;
+
+    // divides elements by sigma_i sigma_j
+    if( Data -> Cov.Divided_Covariance == true ) {
+      modified_covariance( C , Data -> Ntot ) ;
+    }
+  
+    // correlation matrix is symmetric
+    fill_lower_triangular( C , Data -> Ntot ) ;
+
+    // compute the inverse by svd
     if( svd_inverse( Data -> Cov.W , (const double**)C ,
 		     Data -> Ntot , Data -> Ntot ,
 		     Data -> Cov.Eigenvalue_Tol ,
 		     Data -> Cov.Column_Balanced ) == FAILURE ) {
       flag = FAILURE ;
     }
+
+    // free the correlation matrix
+    for( i = 0 ; i < Data -> Ntot ; i++ ) {
+      free( C[i] ) ;
+    }
+    free( C ) ;
+    
     break ;
   }
-
-  // free the correlation matrix
-  for( i = 0 ; i < Data -> Ntot ; i++ ) {
-    free( C[i] ) ;
-  }
-  free( C ) ;
 
   return flag ;
 }

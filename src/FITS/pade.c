@@ -100,17 +100,18 @@ pade_d2f( double **d2f , const void *data , const double *fparams )
 void
 pade_guesses( double *fparams , const size_t Nlogic )
 {
-  size_t i , all_flagged = 0 ;
+  size_t i ;
+  bool flagged = true ;
   for( i = 0 ; i < Nlogic ; i++ ) {
-    if( fparams[i] == UNINIT_FLAG ) {
-      all_flagged++ ;
+    if( fparams[i] != UNINIT_FLAG ) {
+      flagged = false ;
     }
   }
 
   // perform a guess, otherwise assume someone has set them
-  if( all_flagged == Nlogic ) {
+  if( flagged == true ) {
     for( i = 0 ; i < Nlogic ; i++ ) {
-      fparams[i] = i ;
+      fparams[i] = i + 1 ;
     }
   }
   

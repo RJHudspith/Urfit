@@ -4,8 +4,11 @@
  */
 #include "gens.h"
 
+#include "pmap.h"
+
 void
-free_Data( struct data_info *Data )
+free_Data( struct data_info *Data ,
+	   struct fit_info Fit )
 {
   // free all the data
   size_t i ;
@@ -16,8 +19,15 @@ free_Data( struct data_info *Data )
     if( Data -> y[i].resampled != NULL ) {
       free( Data -> y[i].resampled ) ;
     }
-    if( Data -> Cov.W[i] != NULL ) {
-      free( Data -> Cov.W[i] ) ;
+    if( Fit.Corrfit == CORRELATED ) {
+      if( Data -> Cov.W[i] != NULL ) {
+	free( Data -> Cov.W[i] ) ;
+      }
+    }
+  }
+  if( Fit.Corrfit == UNCORRELATED ) {
+    if( Data -> Cov.W[0] != NULL ) {
+      free( Data -> Cov.W[0] ) ;
     }
   }
   if( Data -> x != NULL ) {

@@ -26,12 +26,12 @@ int main( void )
 
   // data structure
   struct data_info Data ;
-  Data.Nsim = 3 ;
+  Data.Nsim = 2 ;
   Data.Nboots = 500 ;
   Data.Ndata = malloc( Data.Nsim * sizeof( size_t ) ) ;
   Data.Ntot = 0 ;
   for( i = 0 ; i < Data.Nsim ; i++ ) {
-    Data.Ndata[i] = 35 ;
+    Data.Ndata[i] = 25 ;
     Data.Ntot += Data.Ndata[i] ;
   }
   Data.LT = 25 ;
@@ -41,14 +41,14 @@ int main( void )
 
   // fit structure
   struct fit_info Fit ;
-  Fit.Fitdef = PADE ;
-  Fit.Corrfit = UNCORRELATED ;
+  Fit.Fitdef = EXP ;
+  Fit.Corrfit = CORRELATED ;
   Fit.N = 2 ;
-  Fit.M = 1 ;
+  Fit.M = 2 ;
   Fit.Nparam = get_Nparam( Fit ) ;
   Fit.Sims = malloc( Fit.Nparam * sizeof( bool ) ) ;
   for( i = 0 ; i < Fit.Nparam ; i++ ) {
-    Fit.Sims[i] = false ; i&1 ? false : true ;
+    Fit.Sims[i] = i&1 ? false : true ;
   }
   Fit.map = parammap( Data , Fit ) ;
   Fit.Minimize = ga_iter ;
@@ -63,7 +63,7 @@ int main( void )
   if( inverse_correlation( &Data , Fit ) == FAILURE ) {
     goto free_failure ;
   }
-
+  
 #ifdef VERBOSE
   write_corrmatrix( (const double**)Data.Cov.W , Data.Ntot ) ;
 #endif

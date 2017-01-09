@@ -1,5 +1,7 @@
 #include "gens.h"
 
+#include <string.h>
+
 // allocate the fit function
 struct ffunction
 allocate_ffunction( const size_t NPARAMS ,
@@ -27,6 +29,8 @@ allocate_ffunction( const size_t NPARAMS ,
   }
   return f ;
 }
+
+#define mcpy
 
 // copy the ffunction
 void

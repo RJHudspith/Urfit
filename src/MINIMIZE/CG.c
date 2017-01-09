@@ -11,7 +11,7 @@
 //#define VERBOSE
 
 // depending on your function you might want to change these
-#define BIG_GUESS (50) // the biggest guess for the backtracker
+#define BIG_GUESS (0.1) // the biggest guess for the backtracker
 
 // cg iteration
 int

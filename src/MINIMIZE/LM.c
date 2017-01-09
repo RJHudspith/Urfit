@@ -9,8 +9,6 @@
 #include "chisq.h"
 #include "ffunction.h"
 
-//#define VERBOSE
-
 // use second derivs? NRC says that they can be harmful
 // not using them makes the code run faster sometimes
 //#define WITH_D2_DERIVS 
@@ -37,7 +35,7 @@ get_alpha_beta( gsl_matrix *alpha ,
       break ;
     case UNCORRELATED :
       for( i = 0 ; i < f.N ; i++ ) {
-	bp += f.df[p][i] * W[i][i] * f.f[i] ;
+	bp += f.df[p][i] * W[0][i] * f.f[i] ;
       }
       break ;
     case CORRELATED :
@@ -84,7 +82,7 @@ get_alpha_beta( gsl_matrix *alpha ,
       case UNCORRELATED :
 	for( i = 0 ; i < f.N ; i++ ) {
 	  apq += 
-	    W[i][i] * ( f.df[p][i] * f.df[q][i] 
+	    W[0][i] * ( f.df[p][i] * f.df[q][i] 
                         #ifdef WITH_D2_DERIVS
 			+ f.d2f[q+f.Nlogic*p][i] * f.f[i]
 			#endif

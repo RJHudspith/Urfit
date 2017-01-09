@@ -1,6 +1,10 @@
 /**
    @file bootfit.c
    @brief perform a bootstrap fit
+
+   Uses the fit result of the average values as a starting guess and 
+   does the remaining bootstrap samples in parallel, threaded with 
+   openmp
  */
 #include "gens.h"
 
@@ -9,11 +13,69 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
+// perform a single bootstrap fit to our data
+static void
+single_fit( struct resampled *fitparams ,
+	    struct resampled *chisq ,
+	    struct fit_descriptor fdesc ,
+	    const struct data_info Data ,
+	    const struct fit_info Fit ,
+	    const size_t sample_idx ,
+	    const bool is_average )
+{
+  // initialise the data we will fit
+  double *yloc = malloc( Data.Ntot * sizeof( double ) ) ;
+  double *xloc = malloc( Data.Ntot * sizeof( double ) ) ;
+
+  // initialise the data we are fitting
+  size_t j ;
+  for( j = 0 ; j < Data.Ntot ; j++ ) {
+    if( is_average == true ) {
+      xloc[j] = Data.x[j].avg ;
+      yloc[j] = Data.y[j].avg ;
+    } else {
+      xloc[j] = Data.x[j].resampled[sample_idx] ;
+      yloc[j] = Data.y[j].resampled[sample_idx] ;
+    }
+  }
+  struct data d = { Data.Ntot , xloc , yloc , Data.LT ,
+		    fdesc.Nparam , Fit.map } ;
+
+  // set the data to the fit params average
+  for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
+    if( is_average != true ) {
+      fdesc.f.fparams[j] = fitparams[j].avg ;
+    }
+  }
+
+  // do the fit, compute the chisq
+  Fit.Minimize( &fdesc , &d , (const double**)Data.Cov.W , Fit.Tol ) ;
+
+  // set the chisq
+  if( is_average == true ) {
+    chisq -> avg = fdesc.f.chisq ;
+  } else {
+    chisq -> resampled[sample_idx] = fdesc.f.chisq ;
+  }
+
+  // set the fit parameters
+  for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
+    if( is_average == true ) {
+      fitparams[j].avg = fdesc.f.fparams[j] ;
+    } else {
+      fitparams[j].resampled[sample_idx] = fdesc.f.fparams[j] ;
+    }
+  }
+  free( yloc ) ;
+  free( xloc ) ;
+}	    
+
 // perform a fit over bootstraps
 struct resampled *
 perform_bootfit( const struct data_info Data ,
 		 const struct fit_info Fit )
 {
+  // TODO :: sanity check all indices?
   if( Data.x[0].NSAMPLES != Data.y[0].NSAMPLES ) {
     printf( "[BOOTFIT] number of x  and y samples different" ) ;
     return NULL ;
@@ -33,30 +95,24 @@ perform_bootfit( const struct data_info Data ,
 
   // allocate the chisq
   struct resampled chisq = init_dist( NULL , Data.y[0].NSAMPLES , Data.y[0].restype ) ;
+
+  // do the average first
+  single_fit( fitparams , &chisq , fdesc , Data , Fit , 0 , true ) ;
+
+  // do the other boots in parallel
+  #pragma omp parallel
+  {
+    // allocate another fit descriptor for the loop over boots
+    struct fit_descriptor fdesc_boot = init_fit( Data , Fit ) ;
   
-  // loop boots
-  for( i = 0 ; i < chisq.NSAMPLES ; i++ ) { 
-
-    // initialise the data we will fit
-    double *yloc = malloc( Data.Ntot * sizeof( double ) ) ;
-    double *xloc = malloc( Data.Ntot * sizeof( double ) ) ;
-    size_t j ;
-    for( j = 0 ; j < Data.Ntot ; j++ ) {
-      xloc[j] = Data.x[j].resampled[i] ;
-      yloc[j] = Data.y[j].resampled[i] ;
+    // loop boots
+    #pragma omp for private(i)
+    for( i = 0 ; i < chisq.NSAMPLES ; i++ ) { 
+      single_fit( fitparams , &chisq , fdesc_boot , Data , Fit , i , false ) ;
     }
-    struct data d = { Data.Ntot , xloc , yloc , Data.LT ,
-		      fdesc.Nparam , Fit.map } ;
 
-    // do the fit, compute the chisq
-    Fit.Minimize( &fdesc , &d , (const double**)Data.Cov.W , Fit.Tol ) ;
-    chisq.resampled[i] = fdesc.f.chisq ;
-
-    for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
-      fitparams[j].resampled[i] = fdesc.f.fparams[j] ;
-    }
-    free( yloc ) ;
-    free( xloc ) ;
+    // free the fitfunction
+    free_ffunction( &fdesc_boot.f , fdesc.Nlogic ) ;
   }
 
   // divide out the number of degrees of freedom
