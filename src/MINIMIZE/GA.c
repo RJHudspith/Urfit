@@ -333,8 +333,8 @@ ga_iter( struct fit_descriptor *fdesc ,
   
   // best fit parameter will be in population 1
   if( iters == GAMAX ) {
-    printf( "\n[GA] chisq :: %e || %zu iterations (GAMAX) \n" ,
-	    G[0].chisq , iters ) ;
+    printf( "\n[GA] chisq :: %e || %zu iterations (GAMAX) || %e \n" ,
+	    G[0].chisq , iters , chisq_diff ) ;
   } else {
     printf( "\n[GA] chisq :: %e || %zu iterations \n" ,
 	    G[0].chisq , iters ) ;

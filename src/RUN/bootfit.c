@@ -128,8 +128,10 @@ perform_bootfit( const struct data_info Data ,
   // tell us what we have computed
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
     compute_err( &fitparams[i] ) ;
-    if( Fit.Sims[i] == true ) {
-      printf( "-> SIMUL " ) ;
+    if( i < fdesc.Nparam ) {
+      if( Fit.Sims[i] == true ) {
+	printf( "-> SIMUL " ) ;
+      }
     }
     printf( "PARAM_%zu %f %f \n" , i , fitparams[i].avg , fitparams[i].err ) ;
   }

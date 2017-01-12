@@ -8,6 +8,8 @@
 #include "resampled_ops.h"
 #include "tfold.h"
 
+#if 0
+
 // do we have to byte swap?
 static bool must_swap = false ;
 
@@ -204,3 +206,4 @@ read_corr( struct resampled **x ,
   return SUCCESS ;
 }
 	   
+#endif

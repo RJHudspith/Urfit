@@ -17,6 +17,10 @@ GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 
 IO_FILES=./IO/GLU_bswap.c ./IO/read_corr.c ./IO/tfold.c
 
+INPUT_FILES=./IO/INPUT/read_inputs.c ./IO/INPUT/read_traj.c \
+	./IO/INPUT/read_fit.c ./IO/INPUT/read_graph.c \
+	./IO/INPUT/read_stats.c
+
 RUN_FILES=./RUN/bootfit.c ./RUN/fit_chooser.c
 
 MINIMIZE_FILES=./MINIMIZE/CG.c ./MINIMIZE/GA.c ./MINIMIZE/line_search.c \
@@ -34,6 +38,7 @@ libURFIT_a_SOURCES = \
 	${FITS_FILES} \
 	${GRAPH_FILES} \
 	${INIT_FILES} \
+	${INPUT_FILES} \
 	${IO_FILES} \
 	${MINIMIZE_FILES} \
 	${RUN_FILES} \
@@ -46,6 +51,7 @@ include_HEADERS =
 	$(FITS_FILES:./FITS/%.c=./HEADERS/%.h) \
 	$(GRAPH_FILES:./GRAPH/%.c=./HEADERS/%.h) \
 	$(INIT_FILES:./INIT/%.c=./HEADERS/%.h) \
+	$(INPUT_FILES:./IO/INPUT/%c=./HEADERS/%.h) \
 	$(IO_FILES:./IO/%.c=./HEADERS/%.h) \
 	$(MINIMIZE_FILES:./MINIMIZE/%.c=./HEADERS/%.h) \
 	$(RUN_FILES:./RUN/%.c=./RUN/%.h) \

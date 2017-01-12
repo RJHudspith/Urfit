@@ -84,6 +84,13 @@ struct fit_descriptor {
   size_t Nlogic ;  // logical Nparameters 
 } ;
 
+// priors struct
+struct prior {
+  double Val ;
+  double Err ;
+  bool Initialised ;
+} ;
+
 // struct for keeping the fit information
 struct fit_info {
   corrtype Corrfit ;
@@ -95,7 +102,9 @@ struct fit_info {
 		    const double **W ,
 		    const double TOL ) ;
   size_t N ;
+  size_t Nlogic ;
   size_t Nparam ;
+  struct prior *Prior ;
   bool *Sims ;
   double Tol ;
 } ;
@@ -139,20 +148,48 @@ struct data {
   size_t LT ;
   size_t Npars ;
   struct pmap *map ;
-};
-
-// input parameters
-struct input_params {
-  resample_type resample ;
-  size_t NBOOTS ;
-  size_t *NDATA ;
-  size_t *binning ;
-  size_t *traj_beg ;
-  size_t *traj_end ;
-  size_t *traj_inc ;
 } ;
 
 // uninitialised flag
 #define UNINIT_FLAG (123456789)
+
+// tokenize the input file
+struct flat_file {
+  char *Token ;
+  size_t Token_Length ;
+  char *Value ;
+  size_t Value_Length ;
+} ;
+
+// trajectory information
+struct traj {
+  size_t Begin ;
+  size_t Bin ;
+  size_t *Dimensions ;
+  size_t End ;
+  char *Filename ;
+  double Fit_High ;
+  double Fit_Low ;
+  size_t Increment ;
+  size_t Nd ;
+} ;
+
+struct fit_inputs {
+  fittype Fitdef ;
+  size_t *sims ;
+} ;
+
+struct stat_inputs {
+  resample_type restype ;
+  size_t Nsamples ;
+} ;
+
+// input parameters
+struct input_params {
+  struct fit_info Fit ;
+  struct stat_inputs *In_Stats ;
+  size_t Ntraj ;
+  struct traj *Traj ;
+} ;
 
 #endif
