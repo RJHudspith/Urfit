@@ -171,7 +171,6 @@ get_Priors( struct input_params *Input ,
     Input -> Fit.Prior[idx].Val = strtod( tok , &endptr ) ;
     tok = strtok( NULL , "," ) ;
     Input -> Fit.Prior[idx].Err = strtod( tok , &endptr ) ;
-    tok = strtok( NULL , "," ) ;
 
     if( Nprior >= Input -> Fit.Nlogic ) {
       fprintf( stderr , "[INPUTS] too many priors in input file\n" ) ;
@@ -217,7 +216,7 @@ get_fit( struct input_params *Input ,
   }
   char *tok = strtok( Flat[ tag ].Value , "," ) ;
   Input -> Fit.N = strtol( tok , &endptr , 10 ) ; tok = strtok( NULL , "," ) ;
-  Input -> Fit.M = strtol( tok , &endptr , 10 ) ; tok = strtok( NULL , "," ) ;
+  Input -> Fit.M = strtol( tok , &endptr , 10 ) ;
 
   // set Nparam
   Input -> Fit.Nparam = get_Nparam( Input -> Fit ) ;

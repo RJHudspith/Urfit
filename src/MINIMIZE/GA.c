@@ -78,10 +78,6 @@ compute_chi( struct ffunction *f2 ,
 {
   // copy f1 to f2 our temporary fit function
   copy_ffunction( f2 , f1 ) ;
-  size_t j ;
-  for( j = 0 ; j < f1.NPARAMS ; j++ ) {
-    f2 -> fparams[ j ] = fparam[ j ] ;
-  }
   fdesc -> F( f2 -> f , data , f2 -> fparams ) ;
   return compute_chisq( *f2 , W , f2 -> CORRFIT ) ;
 }
@@ -202,6 +198,8 @@ ga_iter( struct fit_descriptor *fdesc ,
 	 const double **W ,
 	 const double TOL )
 {
+  if( fdesc -> Nlogic == 0 ) return SUCCESS ; // do nothing
+  
   // counters and max iterations GAMAX
   size_t iters = 0 , i , j ;
   const size_t GAMAX = 5000 ;
@@ -228,31 +226,38 @@ ga_iter( struct fit_descriptor *fdesc ,
 #endif
   
   // gene pool
-  struct genes *G = malloc( Ngen * sizeof( struct genes ) ) ;
+  struct genes *G = NULL ;
+  struct sigma Sig ;
+  gsl_rng *r = NULL ;
+
+  G = malloc( Ngen * sizeof( struct genes ) ) ;
+  for( i = 0 ; i < Ngen ; i++ ) {
+    G[i].g = NULL ;
+    G[i].g = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
+  }
+
+  Sig.s = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
   
   // get a seed from urandom
   size_t Seed ;
   FILE *urandom = fopen( "/dev/urandom" , "r" ) ;
   if( fread( &Seed , sizeof( Seed ) , 1 , urandom ) != 1 ) {
     fprintf( stderr , "[GA] urandom read failure! \n" ) ;
-    return FAILURE ;
+    goto memfree ;
   }
   fclose( urandom ) ;
 
   // initialise gsl rng is the mersenne twister I believe
   gsl_rng_env_setup( ) ;
-  gsl_rng *r = gsl_rng_alloc( gsl_rng_default ) ;
+  r = gsl_rng_alloc( gsl_rng_default ) ;
   gsl_rng_set( r , Seed ) ;
 
   // initialise the population as gaussian noise around initial
   // guesses that are gaussian distibuted with sigma of NOISE
   // defined at the top of the file
-  struct sigma Sig ;
-  Sig.s = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
-  
   for( i = 0 ; i < Ngen ; i++ ) {
     G[i].Nlogic = fdesc -> Nlogic ;
-    G[i].g = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
+    //G[i].g = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
     for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
       G[i].g[j] = fdesc -> f.fparams[j] * 
 	( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
@@ -339,21 +344,32 @@ ga_iter( struct fit_descriptor *fdesc ,
     printf( "\n[GA] chisq :: %e || %zu iterations \n" ,
 	    G[0].chisq , iters ) ;
   }
+
+
+ memfree :
   
   // cleanse the gene pool
-  for( i = 0 ; i < Ngen ; i++ ) {
-    free( G[i].g ) ;
+  if( G != NULL ) {
+    for( i = 0 ; i < Ngen ; i++ ) {
+      if( G[i].g != NULL ) {
+	free( G[i].g ) ;
+      }
+    }
+    free( G ) ;
   }
-  free( G ) ;
 
   // free the fitfunction
   free_ffunction( &f2 , fdesc -> Nlogic ) ;
 
   // free the rng
-  gsl_rng_free( r ) ;
-
+  if( r != NULL ) {
+    gsl_rng_free( r ) ;
+  }
+  
   // free the variance
-  free( Sig.s ) ;
+  if( Sig.s != NULL ) {
+    free( Sig.s ) ;
+  }
 
   return iters ;
 }

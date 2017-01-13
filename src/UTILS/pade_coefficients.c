@@ -15,6 +15,8 @@ pades( double *pade_coeffs ,
        const size_t n ,
        const size_t m )
 {
+  if( n < 2 || m < 1 ) return FAILURE ;
+  
   // is guaranteed
   pade_coeffs[ 0 ] = poly_coeffs[ 0 ] ;
 
@@ -50,6 +52,8 @@ pades( double *pade_coeffs ,
   // the matrix order equation we must solve
   const size_t order = n + m + 1 ;
 
+  if( order <= 1 ) return FAILURE ;
+
   // initialise solve matrix and its inverse
   double **sub_solve = malloc( m * sizeof( double* ) ) ;
   double **Ainv = malloc( m * sizeof( double* ) ) ;
@@ -59,9 +63,15 @@ pades( double *pade_coeffs ,
   double *left_side = malloc( ( order - 1 ) * sizeof( double ) ) ;
   double *right_side = malloc( ( order - 1 ) * sizeof( double ) ) ;
 
+  size_t i , j , FLAG = FAILURE ;
+
+  // initialise
+  for( i = 0 ; i < order - 1 ; i++ ) {
+    left_side[i] = right_side[i] = 0 ;
+  }
+
   // set up the submatrix we need to solve for the
   // left hand side
-  size_t i , j , FLAG = FAILURE ;
   for( i = 0 ; i < m ; i++ ) {
     sub_solve[ i ] = malloc( m * sizeof( double) ) ;
     Ainv[ i ] = malloc( m * sizeof( double) ) ;

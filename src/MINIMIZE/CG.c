@@ -39,8 +39,8 @@ cg_iter( struct fit_descriptor *fdesc ,
   fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
 
   // allocate conjugate directions
-  double *s      = malloc( fdesc -> Nlogic * sizeof( double* ) ) ;
-  double *old_df = malloc( fdesc -> Nlogic * sizeof( double* ) ) ;
+  double *s      = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
+  double *old_df = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
 
   // step down the gradient initially
   for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {

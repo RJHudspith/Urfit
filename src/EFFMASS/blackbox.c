@@ -90,7 +90,7 @@ blackbox( const double *data ,
     } else {
 
       gsl_poly_complex_workspace *w = gsl_poly_complex_workspace_alloc( NSTATES + 1 ) ;
-      double *z = (double*)malloc( 2 * NSTATES * sizeof(double*) ) ;
+      double *z = malloc( 2 * NSTATES * sizeof( double ) ) ;
       double coefs[ NSTATES + 1 ] ;
 
       // compute a row of the cofactor matrix

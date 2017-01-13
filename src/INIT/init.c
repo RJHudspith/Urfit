@@ -57,11 +57,6 @@ free_Fit( struct fit_info *Fit ,
   if( Fit -> Sims != NULL ) {
     free( Fit -> Sims ) ;
   }
-
-  // free the full parameter map
-  if( Fit -> map != NULL ) {
-    free_pmap( Fit -> map , Data.Ntot ) ;
-  }
   
   // free the priors
   if( Fit -> Prior != NULL ) {

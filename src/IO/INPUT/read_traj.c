@@ -55,6 +55,8 @@ get_Ntraj( size_t *Ntraj ,
 	   const size_t Ntags )
 { 
   size_t block_idx = 0 ;
+  
+  size_t *Block = NULL ;
   *Ntraj = 0 ;
 
   // loop the indexes sanity-checking the records
@@ -81,7 +83,9 @@ get_Ntraj( size_t *Ntraj ,
     *Ntraj = *Ntraj + 1 ; block_idx += Nblock ;
   }
 
-  size_t *Block = malloc( *Ntraj * sizeof( size_t ) ) ;
+  if( *Ntraj == 0 ) return Block ;
+  
+  Block = malloc( *Ntraj * sizeof( size_t ) ) ;
   *Ntraj = 0 ; block_idx = 0 ;
   while( ( block_idx = tag_search( Flat , Record[ TrajName ] , block_idx , Ntags ) )
 	 != Ntags ) {
@@ -132,7 +136,7 @@ set_trajs( const struct flat_file *Flat ,
     tok = strtok( Flat[ Block[i] + TrajStep ].Value , "," ) ;
     Traj[i].Begin     = strtol( tok , &endptr , 10 ) ; tok = strtok( NULL , "," ) ;
     Traj[i].Increment = strtol( tok , &endptr , 10 ) ; tok = strtok( NULL , "," ) ;
-    Traj[i].End       = strtol( tok , &endptr , 10 ) ; tok = strtok( NULL , "," ) ;
+    Traj[i].End       = strtol( tok , &endptr , 10 ) ; 
 
     // set the binning
     Traj[i].Bin = strtol( Flat[ Block[i] + TrajStat ].Value , &endptr , 10 ) ;
@@ -140,7 +144,7 @@ set_trajs( const struct flat_file *Flat ,
     // set the fit range
     tok = strtok( Flat[ Block[i] + TrajFitr ].Value , "," ) ;
     Traj[i].Fit_Low  = strtod( tok , &endptr ) ; tok = strtok( NULL , "," ) ;
-    Traj[i].Fit_High = strtod( tok , &endptr ) ; tok = strtok( NULL , "," ) ;
+    Traj[i].Fit_High = strtod( tok , &endptr ) ;
     
     // set the dimensions, linked list is backwards
     size_t Ndims = 0 , j ;

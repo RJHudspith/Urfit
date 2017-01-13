@@ -76,8 +76,12 @@ resample_data( const struct resampled *RAW ,
 	       const resample_type restype ,
 	       const int NBOOTS )
 {
-  struct resampled *BOOT = malloc( N * sizeof( struct resampled ) ) ;
   const int NRAW = RAW[0].NSAMPLES ;
+
+  if( NRAW == 0 ) return NULL ;
+  
+  struct resampled *BOOT = malloc( N * sizeof( struct resampled ) ) ;
+  
   size_t i ;
 
   printf( "[STATS] NBOOTS :: %d \n" , NBOOTS ) ;
@@ -90,8 +94,8 @@ resample_data( const struct resampled *RAW ,
     size_t k ;
 
     if( RAW[i].restype != Raw ) {
-
-      BOOT[i].resampled = (double*)malloc( RAW[i].NSAMPLES * sizeof( double ) ) ;
+      
+      BOOT[i].resampled = malloc( RAW[i].NSAMPLES * sizeof( double ) ) ;
       equate( &BOOT[i] , RAW[i] ) ;
 
     } else {

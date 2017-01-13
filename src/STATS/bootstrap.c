@@ -54,6 +54,8 @@ init_boot_order( const size_t NBOOTS ,
 void
 bootstrap_error( struct resampled *replicas )
 {
+  if( replicas -> NSAMPLES == 0 ) return ;
+  
   double sorted[ replicas -> NSAMPLES ] ;
   memcpy( sorted , replicas -> resampled , sizeof( double ) * ( replicas -> NSAMPLES ) ) ;
 

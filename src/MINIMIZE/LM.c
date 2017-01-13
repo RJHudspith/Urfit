@@ -86,8 +86,7 @@ get_alpha_beta( gsl_matrix *alpha ,
                         #ifdef WITH_D2_DERIVS
 			+ f.d2f[q+f.Nlogic*p][i] * f.f[i]
 			#endif
-			)
-	    ;
+			) ;
 	}
 	break ;
       case CORRELATED :
@@ -98,8 +97,7 @@ get_alpha_beta( gsl_matrix *alpha ,
 			  #ifdef WITH_D2_DERIVS
 			  + f.d2f[q+f.Nlogic*p][i] * f.f[j] 
 			  #endif
-			  ) 
-	      ;
+			  ) ;
 	  }
 	}
 	break ;

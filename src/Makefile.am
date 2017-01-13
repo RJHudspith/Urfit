@@ -21,7 +21,7 @@ INPUT_FILES=./IO/INPUT/read_inputs.c ./IO/INPUT/read_traj.c \
 	./IO/INPUT/read_fit.c ./IO/INPUT/read_graph.c \
 	./IO/INPUT/read_stats.c
 
-RUN_FILES=./RUN/bootfit.c ./RUN/fit_chooser.c
+RUN_FILES=./RUN/bootfit.c ./RUN/fit_chooser.c ./RUN/fit_and_plot.c
 
 MINIMIZE_FILES=./MINIMIZE/CG.c ./MINIMIZE/GA.c ./MINIMIZE/line_search.c \
 	./MINIMIZE/LM.c ./MINIMIZE/SD.c

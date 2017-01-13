@@ -16,7 +16,7 @@ parammap( const struct data_info Data ,
   size_t n = 0 ;
   for( i = 0 ; i < Data.Nsim ; i++ ) {
     for( j = 0 ; j < Data.Ndata[i] ; j++ ) {
-      map[ n ].p = malloc( Fit.Nparam * sizeof( double ) ) ;
+      map[ n ].p = malloc( Fit.Nparam * sizeof( size_t ) ) ;
       n++ ;
     }
   }

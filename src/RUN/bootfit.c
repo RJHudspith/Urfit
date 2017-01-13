@@ -23,10 +23,12 @@ single_fit( struct resampled *fitparams ,
 	    const size_t sample_idx ,
 	    const bool is_average )
 {
+  if( Data.Ntot == 0 || fdesc.Nlogic == 0 ) return ;
+  
   // initialise the data we will fit
   double *yloc = malloc( Data.Ntot * sizeof( double ) ) ;
   double *xloc = malloc( Data.Ntot * sizeof( double ) ) ;
-
+  
   // initialise the data we are fitting
   size_t j ;
   for( j = 0 ; j < Data.Ntot ; j++ ) {
@@ -68,6 +70,7 @@ single_fit( struct resampled *fitparams ,
   }
   free( yloc ) ;
   free( xloc ) ;
+  return ;
 }	    
 
 // perform a fit over bootstraps
@@ -91,12 +94,16 @@ perform_bootfit( const struct data_info Data ,
   // allocate the fitparams
   struct resampled *fitparams = malloc( fdesc.Nlogic * sizeof( struct resampled ) ) ; 
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
-    fitparams[i] = init_dist( NULL , Data.y[0].NSAMPLES , Data.y[0].restype ) ;
+    fitparams[i] = init_dist( NULL , Data.y[0].NSAMPLES ,
+			      Data.y[0].restype ) ;
+    fitparams[i].avg = UNINIT_FLAG ;
   }
 
   // allocate the chisq
   struct resampled chisq = init_dist( NULL , Data.y[0].NSAMPLES ,
 				      Data.y[0].restype ) ;
+
+  if( fitparams == NULL ) goto memfree ;
 
   // do the average first
   single_fit( fitparams , &chisq , fdesc , Data , Fit , 0 , true ) ;
@@ -111,7 +118,8 @@ perform_bootfit( const struct data_info Data ,
     // loop boots
     #pragma omp for private(i)
     for( i = 0 ; i < chisq.NSAMPLES ; i++ ) { 
-      single_fit( fitparams , &chisq , fdesc_boot , Data , Fit , i , false ) ;
+      single_fit( fitparams , &chisq , fdesc_boot ,
+		  Data , Fit , i , false ) ;
     }
 
     // free the fitfunction
@@ -126,8 +134,6 @@ perform_bootfit( const struct data_info Data ,
 
   printf( "[CHISQ (d.o.f)] %f %f \n" , chisq.avg , chisq.err ) ;
 
-  free( chisq.resampled ) ;
-
   // tell us what we have computed
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
     compute_err( &fitparams[i] ) ;
@@ -139,6 +145,14 @@ perform_bootfit( const struct data_info Data ,
     printf( "PARAM_%zu %f %f \n" , i , fitparams[i].avg , fitparams[i].err ) ;
   }
 
+
+ memfree :
+
+  // free the chisq
+  if( chisq.resampled == NULL ) {
+    free( chisq.resampled ) ;
+  }
+  
   // free the fitfunction
   free_ffunction( &fdesc.f , fdesc.Nlogic ) ;
 

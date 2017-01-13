@@ -15,10 +15,12 @@
 // assumes x and y have been set
 int
 generate_fake_data( struct data_info *Data ,
-		    const struct fit_info Fit ,
+		    struct fit_info Fit ,
 		    const double xsigma ,
 		    const double ysigma )
-{  
+{
+  if( Data -> Nboots == 0 ) return FAILURE ;
+  
   // set up the gsl rng
   gsl_rng_env_setup( ) ;
   gsl_rng *r = gsl_rng_alloc( gsl_rng_default ) ;
@@ -31,6 +33,9 @@ generate_fake_data( struct data_info *Data ,
   
   // initialise the fit so we can get at the fit function
   struct fit_descriptor fdesc = init_fit( *Data , Fit ) ;
+
+  // set the param map
+  Fit.map = parammap( *Data , Fit ) ;
 
   // set the guesses
   fdesc.guesses( fdesc.f.fparams , fdesc.Nlogic ) ;
@@ -77,6 +82,11 @@ generate_fake_data( struct data_info *Data ,
 
   // free the rng
   gsl_rng_free( r ) ;
+  
+  // free the parameter map
+  if( Fit.map != NULL ) {
+    free_pmap( Fit.map , Data -> Ntot ) ;
+  }
   
   return SUCCESS ;
 }

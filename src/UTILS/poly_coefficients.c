@@ -26,6 +26,8 @@ compute_coefficients( double *coeffs ,
 		      const size_t M ,
 		      const size_t N )
 {
+  if( M == 0 || N == 0 ) return FAILURE ;
+  
   // allocate the matrices
   double **A = malloc( M * sizeof( double* ) ) ;
   double **Ainv = malloc( N * sizeof( double* ) ) ;
