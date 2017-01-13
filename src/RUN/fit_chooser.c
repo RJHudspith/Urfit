@@ -35,8 +35,7 @@ init_fit( const struct data_info Data ,
     fdesc.F          = cosh_f ;
     fdesc.dF         = cosh_df ;
     fdesc.d2F        = cosh_d2f ;
-    fdesc.guesses    = cosh_guesses ; 
-    fdesc.set_priors = cosh_priors ;
+    fdesc.guesses    = cosh_guesses ;
     break ;
   case EXP : 
     fdesc.func       = fexp ;
@@ -44,15 +43,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = exp_df ;
     fdesc.d2F        = exp_d2f ;
     fdesc.guesses    = exp_guesses ; 
-    fdesc.set_priors = exp_priors ;
     break ;
   case EXP_PLUSC : 
     fdesc.func       = fexp_plusc ;
     fdesc.F          = exp_plusc_f ;
     fdesc.dF         = exp_plusc_df ;
     fdesc.d2F        = exp_plusc_d2f ;
-    fdesc.guesses    = exp_plusc_guesses ; 
-    fdesc.set_priors = exp_plusc_priors ;
+    fdesc.guesses    = exp_plusc_guesses ;
     break ;
   case PADE :
     pade_set_nm( Fit.N , Fit.M ) ;
@@ -60,8 +57,7 @@ init_fit( const struct data_info Data ,
     fdesc.F          = pade_f ;
     fdesc.dF         = pade_df ;
     fdesc.d2F        = pade_d2f ;
-    fdesc.guesses    = pade_guesses ; 
-    fdesc.set_priors = pade_priors ;
+    fdesc.guesses    = pade_guesses ;
     break ;
   case POLY :
     poly_set_n( Fit.N + 1 ) ;
@@ -69,16 +65,14 @@ init_fit( const struct data_info Data ,
     fdesc.F          = poly_f ;
     fdesc.dF         = poly_df ;
     fdesc.d2F        = poly_d2f ;
-    fdesc.guesses    = poly_guesses ; 
-    fdesc.set_priors = poly_priors ;
+    fdesc.guesses    = poly_guesses ;
     break ;
   case SINH : 
     fdesc.func       = fsinh ;
     fdesc.F          = sinh_f ;
     fdesc.dF         = sinh_df ;
     fdesc.d2F        = sinh_d2f ;
-    fdesc.guesses    = sinh_guesses ; 
-    fdesc.set_priors = sinh_priors ;
+    fdesc.guesses    = sinh_guesses ;
     break ;
   }
 
@@ -91,7 +85,8 @@ init_fit( const struct data_info Data ,
       Ncommon++ ;
     }
   }
-  fdesc.Nlogic = Data.Nsim * ( fdesc.Nparam - Ncommon ) + Ncommon ;
+  fdesc.Nlogic = Fit.Nlogic ;
+    //Data.Nsim * ( fdesc.Nparam - Ncommon ) + Ncommon ;
 
   // allocate the fitfunction
   fdesc.f = allocate_ffunction( fdesc.Nlogic , Data.Ntot ) ;

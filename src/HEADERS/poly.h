@@ -19,7 +19,4 @@ poly_d2f( double **d2f , const void *data , const double *fparams ) ;
 void
 poly_guesses( double *fparams , const size_t Nlogic ) ;
 
-void
-poly_priors( double *priors , double *err_priors ) ;
-
 #endif

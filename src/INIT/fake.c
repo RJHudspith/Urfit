@@ -40,11 +40,11 @@ generate_fake_data( struct data_info *Data ,
     for( j = shift ; j < shift + Data -> Ndata[i] ; j++ ) {
 
       Data -> x[j].resampled = malloc( Data -> Nboots * sizeof( double ) ) ;
-      Data -> x[j].restype   = BOOTDATA ;
+      Data -> x[j].restype   = BootStrap ;
       Data -> x[j].NSAMPLES  = Data -> Nboots ;
 
       Data -> y[j].resampled = malloc( Data -> Nboots * sizeof( double ) ) ;
-      Data -> y[j].restype   = BOOTDATA ;
+      Data -> y[j].restype   = BootStrap ;
       Data -> y[j].NSAMPLES  = Data -> Nboots ;
 
       // is a random "x" value

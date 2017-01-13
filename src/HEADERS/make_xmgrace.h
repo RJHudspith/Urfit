@@ -18,9 +18,7 @@ int
 make_graph( const struct resampled *fitparams ,
 	    const struct data_info Data ,
 	    const struct fit_info Fit ,
-	    const char *Graph_Name ,
-	    const char *Graph_Xaxis ,
-	    const char *Graph_Yaxis ) ;
+	    const struct graph Graph ) ;
 
 void
 plot_data( const struct resampled *x ,

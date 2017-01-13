@@ -73,6 +73,7 @@ get_fitCorr( struct input_params *Input ,
     fprintf( stderr , "[INPUTS] FitCorr not found in input file!\n" ) ;
     return FAILURE ;
   }
+  printf( "THIS SHIT %s \n" , Flat[tag].Value ) ;
   if( are_equal( Flat[tag].Value , "CORRELATED" ) ) {
     Input -> Fit.Corrfit = CORRELATED ;
   } else if( are_equal( Flat[tag].Value , "UNCORRELATED" ) ) {
@@ -145,7 +146,7 @@ get_Priors( struct input_params *Input ,
       Ncommon++ ;
     }
   }
-  Input-> Fit.Nlogic = Input -> Ntraj * ( Input -> Fit.Nparam - Ncommon )
+  Input-> Fit.Nlogic = Input -> Data.Nsim * ( Input -> Fit.Nparam - Ncommon )
     + Ncommon ;
   
   // allocate and initialise to no priors
@@ -249,6 +250,10 @@ get_fit( struct input_params *Input ,
 	fprintf( stderr , "[INPUTS] specified simultaneous fit parameter %zu"
 		 "is greater than the number of fit parameters %zu \n" ,
 		 Node -> sim , Input -> Fit.Nparam ) ;
+	while( Node != NULL ) {
+	  free( Node ) ;
+	  Node = Node -> next ;
+	}
 	return FAILURE ;
       }
     }
@@ -260,10 +265,10 @@ get_fit( struct input_params *Input ,
   }
 
   // print out a summary of the priors and simultaneous parameters
-  fprintf( stdout , "\n[INPUTS] Fit parameter summary\n" ) ;
-  fprintf( stdout , "\n[INPUTS] Fit tolerance %e \n" , Input -> Fit.Tol ) ;
+  fprintf( stdout , "\n[INPUTS] Summary for fit parameters\n" ) ;
+  fprintf( stdout , "[INPUTS] Fit tolerance %e \n" , Input -> Fit.Tol ) ;
   for( i = 0 ; i < Input -> Fit.Nlogic ; i++ ) {
-    fprintf( stdout , "[INPUTS] PRIOR %zu %f %f \n" , i ,
+    fprintf( stdout , "[INPUTS] PRIOR %zu %d %f %f \n" , i ,
 	     Input -> Fit.Prior[i].Initialised ,
 	     Input -> Fit.Prior[i].Val ,
 	     Input -> Fit.Prior[i].Err ) ;
@@ -275,7 +280,17 @@ get_fit( struct input_params *Input ,
       fprintf( stdout , "[INPUTS] Parameter %zu IS NOT simultaneous \n" , i ) ;
     }
   }
-  fprintf( stdout , "\n" ) ;
+  switch( Input -> Fit.Corrfit ) {
+  case CORRELATED :
+    fprintf( stdout , "[INPUTS] performing a CORRELATED fit \n" ) ;
+    break ;
+  case UNCORRELATED :
+    fprintf( stdout , "[INPUTS] performing an UNCORRELATED fit \n" ) ;
+    break ;
+  case UNWEIGHTED :
+    fprintf( stdout , "[INPUTS] performing an UNWEIGHTED fit \n" ) ;
+    break ;
+  }
   
   return SUCCESS ;
 }

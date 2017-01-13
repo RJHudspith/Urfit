@@ -78,9 +78,9 @@ line_search( struct ffunction *f2 ,
       }
     }
     // add any prior stuff
-    if( f1.prior[ jidx ] != UNINIT_FLAG ) {
-      newgrad -= ( f2 -> fparams[ jidx ] - f2 -> prior[ jidx ] ) /
-	( f2 -> err_prior[ jidx ] * f2 -> err_prior[ jidx ] ) ;
+    if( f1.Prior[ jidx ].Initialised == true ) {
+      newgrad -= ( f2 -> fparams[ jidx ] - f2 -> Prior[ jidx ].Val ) /
+	( f2 -> Prior[ jidx ].Err * f2 -> Prior[ jidx ].Err) ;
     }
     curve1 = descent[jidx] * newgrad ;
     curve2 = c2 * descent[ jidx ] * grad[ jidx ] ;

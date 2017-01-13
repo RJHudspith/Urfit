@@ -48,8 +48,8 @@ compute_chisq( struct ffunction f ,
   
   // add priors to the chisq
   for( i = 0 ; i < f.NPARAMS ; i++ ) {
-    if( f.prior[i] != UNINIT_FLAG ) {
-      const double fac = ( f.fparams[i] - f.prior[i] ) / f.err_prior[i] ;
+    if( f.Prior[i].Initialised == true ) {
+      const double fac = ( f.fparams[i] - f.Prior[i].Val ) / f.Prior[i].Err ;
       chisq += fac * fac ;
     }
   }

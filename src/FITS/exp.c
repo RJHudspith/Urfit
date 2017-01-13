@@ -66,8 +66,3 @@ exp_guesses( double *fparams , const size_t Nlogic )
   return ;
 }
 
-void
-exp_priors( double *priors , double *err_priors )
-{
-  return ;
-}

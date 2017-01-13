@@ -16,7 +16,4 @@ cosh_d2f( double **d2f , const void *data , const double *fparams ) ;
 void
 cosh_guesses( double *fparams , const size_t Nlogic ) ;
 
-void
-cosh_priors( double *priors , double *err_priors ) ;
-
 #endif

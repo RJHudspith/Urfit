@@ -7,9 +7,6 @@
 #include "ffunction.h"
 #include "line_search.h"
 
-// verbose output
-//#define VERBOSE
-
 // depending on your function you might want to change these
 #define BIG_GUESS (0.1) // the biggest guess for the backtracker
 
@@ -32,7 +29,7 @@ cg_iter( struct fit_descriptor *fdesc ,
   fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
 
   // get priors
-  fdesc -> set_priors( fdesc -> f.prior , fdesc -> f.err_prior ) ;
+  fdesc -> f.Prior = fdesc -> Prior ;
 
   // evaluate the function, its first and second derivatives
   fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
@@ -64,9 +61,9 @@ cg_iter( struct fit_descriptor *fdesc ,
       }
     }
     // subtract the prior if there is one
-    if( fdesc -> f.prior[i] != UNINIT_FLAG ) {
-      old_df[i] -= ( fdesc -> f.fparams[i] - fdesc -> f.prior[i] ) / 
-	( fdesc -> f.err_prior[i] * fdesc -> f.err_prior[i] ) ;
+    if( fdesc -> f.Prior[i].Initialised == true ) {
+      old_df[i] -= ( fdesc -> f.fparams[i] - fdesc -> f.Prior[i].Val ) / 
+	( fdesc -> f.Prior[i].Err * fdesc -> f.Prior[i].Err ) ;
     }
     s[i] = old_df[i] ;   // accumulate gradient sum
   }
@@ -112,9 +109,10 @@ cg_iter( struct fit_descriptor *fdesc ,
 	  break ;
 	}
       }
-      if( fdesc -> f.prior[i] != UNINIT_FLAG ) {
-	newdf -= ( fdesc -> f.fparams[i] - fdesc -> f.prior[i] ) / 
-	  ( fdesc -> f.err_prior[i] * fdesc -> f.err_prior[i] ) ;
+      // subtract the prior if there is one
+      if( fdesc -> f.Prior[i].Initialised == true ) {
+        newdf -= ( fdesc -> f.fparams[i] - fdesc -> f.Prior[i].Val ) / 
+	  ( fdesc -> f.Prior[i].Err * fdesc -> f.Prior[i].Err ) ;
       }
       num   += newdf * ( newdf - old_df[i] ) ;
       denom += old_df[i] * old_df[i] ;

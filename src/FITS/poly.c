@@ -82,9 +82,3 @@ poly_guesses( double *fparams , const size_t Nlogic )
   }
   return ;
 }
-
-void
-poly_priors( double *priors , double *err_priors )
-{
-  return ;
-}

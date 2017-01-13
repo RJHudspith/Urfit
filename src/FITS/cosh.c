@@ -70,8 +70,3 @@ cosh_guesses( double *fparams , const size_t Nlogic )
   return ;
 }
 
-void
-cosh_priors( double *priors , double *err_priors )
-{
-  return ;
-}

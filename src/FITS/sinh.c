@@ -69,9 +69,3 @@ sinh_guesses( double *fparams , const size_t Nlogic )
   
   return ;
 }
-
-void
-sinh_priors( double *priors , double *err_priors )
-{
-  return ;
-}

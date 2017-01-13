@@ -48,13 +48,13 @@ get_alpha_beta( gsl_matrix *alpha ,
     }
 
     // add the priors if they have been set
-    if( f.prior[p] != UNINIT_FLAG ) {
-      bp += ( f.fparams[p] - f.prior[p] ) / 
-	( f.err_prior[p] * f.err_prior[p] ) ;
+    if( f.Prior[p].Initialised == true ) {
+      bp += ( f.fparams[p] - f.Prior[p].Val ) / 
+	( f.Prior[p].Err * f.Prior[p].Err ) ;
     }
 
     #ifdef VERBOSE
-    printf( "[ML] beta[%zu] %f \n" , p , bp ) ;
+    printf( "[LM] beta[%zu] %f \n" , p , bp ) ;
     #endif
 
     // set beta[p]
@@ -107,14 +107,14 @@ get_alpha_beta( gsl_matrix *alpha ,
 
       // second derivatives acting on the prior
       if( p == q ) {
-	if( f.prior[p] != UNINIT_FLAG ) {
+	if( f.Prior[p].Initialised == true ) {
 	  apq += 1.0 / 
-	    ( f.err_prior[p] * f.err_prior[p] ) ;
+	    ( f.Prior[p].Err * f.Prior[p].Err ) ;
 	}
       }
 
       #ifdef VERBOSE
-      printf( "[ML] alpha[%zu,%zu] %f \n" , p , q  , -apq ) ;
+      printf( "[LM] alpha[%zu,%zu] %f \n" , p , q  , -apq ) ;
       #endif
 
       gsl_matrix_set( alpha , p , q , -apq ) ;
@@ -152,18 +152,18 @@ lm_step( struct ffunction *f ,
   }
   // solves alpha[p][q] * delta( a[q] ) = beta[p] for delta
   if( gsl_linalg_LU_decomp( alpha_new , perm , &signum ) != GSL_SUCCESS ) {
-    printf( "[ML] LU decomp broken?\n" ) ;
+    printf( "[LM] LU decomp broken?\n" ) ;
     return !GSL_SUCCESS ;
   }
   if( gsl_linalg_LU_solve( alpha_new , perm , beta , delta ) != GSL_SUCCESS ) {
-    printf( "[ML] LU solve broken?\n" ) ;
+    printf( "[LM] LU solve broken?\n" ) ;
     return !GSL_SUCCESS ;
   }
   // update fitparams
   for( i = 0 ; i < f -> NPARAMS ; i++ ) {
     f -> fparams[i] = old_params[i] + gsl_vector_get( delta , i ) ;
     #ifdef VERBOSE
-    printf( "[ML] NEW PARAMS :: %f \n" , f -> fparams[i] ) ;
+    printf( "[LM] NEW PARAMS :: %f \n" , f -> fparams[i] ) ;
     #endif
   }
   // evaluate these functions
@@ -192,7 +192,7 @@ lm_iter( struct fit_descriptor *fdesc ,
   fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
 
   // get priors
-  fdesc -> set_priors( fdesc -> f.prior , fdesc -> f.err_prior ) ;
+  fdesc -> f.Prior = fdesc -> Prior ;
 
   // allocate alpha, beta, delta and permutation matrices
   gsl_matrix *alpha     = gsl_matrix_alloc( fdesc -> Nlogic , 
@@ -255,18 +255,25 @@ lm_iter( struct fit_descriptor *fdesc ,
       Lambda *= fac ;
     }
 
+    // if lambda misses a minimum tell us
+    if( Lambda < 1E-45 || Lambda > 1E45 ) {
+      printf( "[LM] Lambda is out of bounds %e \n" , Lambda ) ;
+      iters = LMMAX ;
+      break ;
+    }
+    
     // increment the number of iterations
     iters++ ;
   }
 
   // tell us how many iterations we hit
   if( iters == LMMAX ) {
-    printf( "\n[ML] stopped by max iterations %zu \n" , iters ) ;
+    printf( "\n[LM] stopped by max iterations %zu -> Chidiff %e\n" , iters , chisq_diff ) ;
   } else {
-    printf( "\n[ML] FINISHED in %zu iterations \n" , iters ) ;
+    printf( "\n[LM] FINISHED in %zu iterations \n" , iters ) ;
   }
   
-  printf( "[ML] chisq :: %e \n\n" , fdesc -> f.chisq ) ;
+  printf( "[LM] chisq :: %e \n\n" , fdesc -> f.chisq ) ;
   // tell us the fit parameters
   for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;

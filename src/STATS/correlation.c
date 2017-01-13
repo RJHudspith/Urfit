@@ -24,13 +24,13 @@ compute_upper_correlation( double **correlation ,
 
   // get the norm correct
   switch( data[0].restype ) {
-  case RAWDATA :
+  case Raw :
     NORM = 1.0 / (double)( NSAMPLES * ( NSAMPLES - 1.0 ) ) ;
     break ;
-  case JACKDATA :
+  case JackKnife :
     NORM = ( NSAMPLES - 1.0 ) / (double)NSAMPLES ;
     break ;
-  case BOOTDATA :
+  case BootStrap :
     NORM = 1.0 / (double)NSAMPLES ;
     break ;
   }
@@ -113,7 +113,7 @@ modified_covariance( double **correlation ,
 	if( j == i ) {
 	  correlation[i][i] = 1.0 ;
 	} else {
-	  correlation[i][i] = 0.0 ;
+	  correlation[i][j] = 0.0 ;
 	}
       // otherwise rescale
       } else {
@@ -123,89 +123,6 @@ modified_covariance( double **correlation ,
     }
   }
   return ;
-}
-
-// compute the covariance matrix, normalised by sigma_i sigma_j
-void
-correlations( double **correlation , 
-	      const struct resampled *data ,
-	      const corrtype CORRFIT ,
-	      const size_t Ndata ,
-	      const bool Divided )
-{
-  // compute this correlation matrix
-  compute_upper_correlation( correlation , data , Ndata , CORRFIT ) ;
-
-  // divide by sigma^2
-  modified_covariance( correlation , Ndata ) ;
-
-  // correlation matrix is symmetric
-  if( Divided == true ) {
-    fill_lower_triangular( correlation , Ndata ) ;
-  }
-  
-  // write the correlation matrix?
-  write_corrmatrix( (const double**)correlation , Ndata ) ;
-
-  return ;
-}
-
-// compute the inverse of the correlation matrix
-double **
-correlations_inv( const struct resampled *data ,
-		  const corrtype CORRFIT ,
-		  const size_t Ndata ,
-		  const double Tolerance ,
-		  const bool Divided )
-{
-  double **Cinv = malloc( Ndata * sizeof( double* ) ) ;
-  double **C    = malloc( Ndata * sizeof( double* ) ) ;
-
-  // set Cinv to the identity just in case
-  size_t i , j ;
-  for( i = 0 ; i < Ndata ; i++ ) {
-    Cinv[ i ] = malloc( Ndata * sizeof( double ) ) ;
-    C[ i ]    = malloc( Ndata * sizeof( double ) ) ;
-    for( j = 0 ; j < Ndata ; j++ ) {
-      if( j == i ) {
-	Cinv[ i ][ j ] = C[ i ][ j ] = 1.0 ;
-      } else {
-	Cinv[ i ][ j ] = C[ i ][ j ] = 0.0 ;
-      }
-    }
-  }
-
-  // compute this correlation matrix (false means not diagonal)
-  compute_upper_correlation( C , data , Ndata , CORRFIT ) ;
-
-  // divides elements by sigma_i sigma_j
-  if( Divided == true ) {
-    modified_covariance( C , Ndata ) ;
-  }
-  
-  // correlation matrix is symmetric
-  fill_lower_triangular( C , Ndata ) ;
-
-  switch( CORRFIT ) {
-  case UNWEIGHTED : break ;
-  case  UNCORRELATED :
-    for( i = 0 ; i < Ndata ; i++ ) {
-      Cinv[i][i] = fabs( C[i][i] ) > 1.E-32 ? 1.0 / C[i][i] : 0.0 ;
-    }
-    break ;
-  case CORRELATED : // compute the full inverse
-    svd_inverse( Cinv , (const double**)C ,
-		 Ndata , Ndata , Tolerance , false ) ;
-    break ;
-  }
-
-  // free the correlation matrix
-  for( i = 0 ; i < Ndata ; i++ ) {
-    free( C[i] ) ;
-  }
-  free( C ) ;
-
-  return Cinv ;
 }
 
 // compute the inverse of the correlation matrix
@@ -235,11 +152,7 @@ inverse_correlation( struct data_info *Data ,
       Data -> Cov.W[0][i] = fabs( C[0][i] ) > 1.E-32 ? 1.0 / C[0][i] : 1.E-32 ;
     }
 
-    for( i = 0 ; i < 1 ; i++ ) {
-      free( C[0] ) ;
-    }
-    free( C ) ;
-    
+    free( C[0] ) ; free( C ) ;
     break ;
   case CORRELATED :
     // allocate the correlation matrices
@@ -286,48 +199,21 @@ inverse_correlation( struct data_info *Data ,
 
 void
 write_corrmatrix( const double **correlation ,
-		  const size_t NCUT )
+		  const size_t NCUT ,
+		  const corrtype Corrfit )
 {
+  if( Corrfit == UNWEIGHTED ) { return ; }
   size_t i , j ;
   for( i = 0 ; i < NCUT ; i++ ) {
-    for( j = 0 ; j < NCUT ; j++ ) {
-      printf( "%f " , correlation[i][j] ) ;
+    if( Corrfit == UNCORRELATED ) {
+      printf( "%f " , correlation[0][i] ) ;
+    } else {
+      for( j = 0 ; j < NCUT ; j++ ) {
+	printf( "%f " , correlation[i][j] ) ;
+      }
+      printf( "\n" ) ;
     }
-    printf( "\n" ) ;
   }
   return ;
 }
 
-void
-write_corrmatrix_mathematica( const double **correlation ,
-			      const size_t NCUT )
-{
-  size_t i , j ;
-  printf( "\n{{" ) ;
-  for( i = 0 ; i < NCUT-1 ; i++ ) {
-    for( j = 0 ; j < NCUT-1 ; j++ ) {
-      printf( "%1.10f," , correlation[i][j] ) ;
-    }     
-    printf( "%1.10f},{\n" , correlation[i][j] ) ;
-  }
-  for( j = 0 ; j < NCUT-1 ; j++ ) {
-    printf( "%1.10f," , correlation[i][j] ) ;
-  }
-  printf( "%1.10f}}\n" , correlation[i][j] ) ;
-  return ;
-}
-
-void
-write_corrmatrix_to_file( FILE *outfile , 
-			  const double **correlation ,
-			  const size_t NCUT )
-{
-  size_t i , j ;
-  for( i = 0 ; i < NCUT ; i++ ) {
-    for( j = 0 ; j < NCUT ; j++ ) {
-      fprintf( outfile , "%1.3E " , correlation[i][j] ) ;
-    }
-    fprintf( outfile , "\n" ) ;
-  }
-  return ;
-}

@@ -21,11 +21,9 @@ allocate_ffunction( const size_t NPARAMS ,
   for( i = 0 ; i < NPARAMS*NPARAMS ; i++ ) {
     f.d2f[i] = malloc( NDATA * sizeof( double ) ) ;
   }
-  f.prior = malloc( NPARAMS * sizeof( double ) ) ;
-  f.err_prior = malloc( NPARAMS * sizeof( double ) ) ;
   // initialise priors
   for( i = 0 ; i < NPARAMS ; i++ ) {
-    f.fparams[i] = f.prior[i] = f.err_prior[i] = UNINIT_FLAG ;
+    f.fparams[i] = UNINIT_FLAG ;
   }
   return f ;
 }
@@ -51,8 +49,6 @@ copy_ffunction( struct ffunction *f1 ,
       f1 -> df[i][j] = f.df[i][j] ;
     }
     f1 -> fparams[i]   = f.fparams[i] ;
-    f1 -> prior[i]     = f.prior[i] ;
-    f1 -> err_prior[i] = f.err_prior[i] ;
   }
   // second deriv
   for( i = 0 ; i < f.NPARAMS*f.NPARAMS ; i++ ) {
@@ -79,7 +75,5 @@ free_ffunction( struct ffunction *f ,
   free( f -> f ) ;
   free( f -> df ) ;
   free( f -> d2f ) ;
-  free( f -> prior ) ;
-  free( f -> err_prior ) ;
   return ;
 }

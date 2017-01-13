@@ -45,7 +45,7 @@ typedef enum {
 enum { ERR , HI , LO , AVE } errtype ;
 
 // what type of data do we use
-typedef enum { RAWDATA , JACKDATA , BOOTDATA } resample_type ;
+typedef enum { Raw , JackKnife , BootStrap } resample_type ;
 
 // x-data descriptor
 struct x_desc {
@@ -58,14 +58,20 @@ struct pmap {
   size_t *p ;
 } ;
 
+// priors struct
+struct prior {
+  double Val ;
+  double Err ;
+  bool Initialised ;
+} ;
+
 // fit function stuff
 struct ffunction {
   double *f ; // ( f_i(a) - y_i )
   double **df ; // first derivatives
   double **d2f ; // second derivatives
   double *fparams ; // fit parameters
-  double *prior ; // prior parameters
-  double *err_prior ; // prior errors
+  const struct prior *Prior ;  
   size_t N ; // length of the fit
   size_t NPARAMS ; // number of fit parameters
   corrtype CORRFIT ; // type of fit
@@ -79,16 +85,9 @@ struct fit_descriptor {
   void (*dF) ( double **df , const void *data , const double *fparams ) ;
   void (*d2F) ( double **d2f , const void *data , const double *fparams ) ;
   void (*guesses) ( double *fparams , const size_t Nlogic ) ;
-  void (*set_priors) ( double *priors , double *err_priors ) ;
+  const struct prior *Prior ;
   size_t Nparam ; // Number of parameters
   size_t Nlogic ;  // logical Nparameters 
-} ;
-
-// priors struct
-struct prior {
-  double Val ;
-  double Err ;
-  bool Initialised ;
 } ;
 
 // struct for keeping the fit information
@@ -138,6 +137,7 @@ struct data_info {
   size_t *Ndata ;
   size_t Nsim ;
   size_t Ntot ;
+  resample_type Restype ;
 } ;
 
 // data structure in the fits
@@ -174,21 +174,19 @@ struct traj {
   size_t Nd ;
 } ;
 
-struct fit_inputs {
-  fittype Fitdef ;
-  size_t *sims ;
-} ;
 
-struct stat_inputs {
-  resample_type restype ;
-  size_t Nsamples ;
+struct graph {
+  char *Name ;
+  char *Xaxis ;
+  char *Yaxis ;
+  size_t Granularity ;
 } ;
 
 // input parameters
 struct input_params {
   struct fit_info Fit ;
-  struct stat_inputs *In_Stats ;
-  size_t Ntraj ;
+  struct data_info Data ;
+  struct graph Graph ;
   struct traj *Traj ;
 } ;
 

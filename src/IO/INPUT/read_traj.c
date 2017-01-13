@@ -166,10 +166,10 @@ get_traj( struct input_params *Input ,
   char **Record = set_record( ) ;
   int flag = SUCCESS ;
   size_t i ;
-  Input -> Ntraj = 0 ;
+  Input -> Data.Nsim = 0 ;
 
   // check the consistency of the trajectories
-  const size_t *Block = get_Ntraj( &( Input -> Ntraj ) , Flat ,
+  const size_t *Block = get_Ntraj( &( Input -> Data.Nsim ) , Flat ,
 				   (const char**)Record , Ntags ) ;
   if( Block == NULL ) {
     flag = FAILURE ;
@@ -177,14 +177,14 @@ get_traj( struct input_params *Input ,
   }
 
   // set the trajectory information into the Input struct
-  if( ( Input -> Traj = set_trajs( Flat , Block , Input -> Ntraj ) )
+  if( ( Input -> Traj = set_trajs( Flat , Block , Input -> Data.Nsim ) )
       == NULL ) {
     flag = FAILURE ;
     goto memfree ;
   }
 
   // summarise the trajectories
-  for( i = 0 ; i < Input -> Ntraj ; i++ ) {
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     printf( "\n[INPUT] Summary for Traj %zu \n" , i ) ;
     printf( "(Begin, Inc , End ) -> ( %zu , %zu , %zu ) \n" ,
 	    Input -> Traj[i].Begin , Input -> Traj[i].Increment ,

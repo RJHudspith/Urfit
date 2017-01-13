@@ -168,12 +168,10 @@ int
 make_graph( const struct resampled *fitparams ,
 	    const struct data_info Data ,
 	    const struct fit_info Fit ,
-	    const char *Graph_Name ,
-	    const char *Graph_Xaxis ,
-	    const char *Graph_Yaxis )
+	    const struct graph Graph )
 {
   // make the graph
-  make_xmgrace_graph( Graph_Name , Graph_Xaxis , Graph_Yaxis ) ;
+  make_xmgrace_graph( Graph.Name , Graph.Xaxis , Graph.Yaxis ) ;
 
   size_t shift = 0 , i ;
   for( i = 0 ; i < Data.Nsim ; i++ ) {

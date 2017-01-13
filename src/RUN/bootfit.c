@@ -86,6 +86,7 @@ perform_bootfit( const struct data_info Data ,
 
   // initialise the fit
   struct fit_descriptor fdesc = init_fit( Data , Fit ) ;
+  fdesc.Prior = (const struct prior*)Fit.Prior ;
   
   // allocate the fitparams
   struct resampled *fitparams = malloc( fdesc.Nlogic * sizeof( struct resampled ) ) ; 
@@ -94,7 +95,8 @@ perform_bootfit( const struct data_info Data ,
   }
 
   // allocate the chisq
-  struct resampled chisq = init_dist( NULL , Data.y[0].NSAMPLES , Data.y[0].restype ) ;
+  struct resampled chisq = init_dist( NULL , Data.y[0].NSAMPLES ,
+				      Data.y[0].restype ) ;
 
   // do the average first
   single_fit( fitparams , &chisq , fdesc , Data , Fit , 0 , true ) ;
@@ -104,7 +106,8 @@ perform_bootfit( const struct data_info Data ,
   {
     // allocate another fit descriptor for the loop over boots
     struct fit_descriptor fdesc_boot = init_fit( Data , Fit ) ;
-  
+    fdesc_boot.Prior = Fit.Prior ;
+    
     // loop boots
     #pragma omp for private(i)
     for( i = 0 ; i < chisq.NSAMPLES ; i++ ) { 

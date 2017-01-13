@@ -20,14 +20,18 @@ free_Data( struct data_info *Data ,
       free( Data -> y[i].resampled ) ;
     }
     if( Fit.Corrfit == CORRELATED ) {
-      if( Data -> Cov.W[i] != NULL ) {
-	free( Data -> Cov.W[i] ) ;
+      if( Data -> Cov.W != NULL ) {
+	if( Data -> Cov.W[i] != NULL ) {
+	  free( Data -> Cov.W[i] ) ;
+	}
       }
     }
   }
   if( Fit.Corrfit == UNCORRELATED ) {
-    if( Data -> Cov.W[0] != NULL ) {
-      free( Data -> Cov.W[0] ) ;
+    if( Data -> Cov.W != NULL ) {
+      if( Data -> Cov.W[0] != NULL ) {
+	free( Data -> Cov.W[0] ) ;
+      }
     }
   }
   if( Data -> x != NULL ) {
@@ -50,8 +54,18 @@ free_Fit( struct fit_info *Fit ,
 	  const struct data_info Data )
 {
   // free the simultaneous parameter map
-  free( Fit -> Sims ) ;
+  if( Fit -> Sims != NULL ) {
+    free( Fit -> Sims ) ;
+  }
 
   // free the full parameter map
-  free_pmap( Fit -> map , Data.Ntot ) ;
+  if( Fit -> map != NULL ) {
+    free_pmap( Fit -> map , Data.Ntot ) ;
+  }
+  
+  // free the priors
+  if( Fit -> Prior != NULL ) {
+    free( Fit -> Prior ) ;
+  }
+  return ;
 }

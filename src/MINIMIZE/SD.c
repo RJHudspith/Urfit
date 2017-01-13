@@ -34,7 +34,7 @@ sd_iter( struct fit_descriptor *fdesc ,
   fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
 
   // get priors
-  fdesc -> set_priors( fdesc -> f.prior , fdesc -> f.err_prior ) ;
+  fdesc -> f.Prior = fdesc -> Prior ;
 
   // evaluate the function, its first and second derivatives
   fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
@@ -63,9 +63,9 @@ sd_iter( struct fit_descriptor *fdesc ,
 	  break ;
 	}
       }
-      if( fdesc -> f.prior[i] != UNINIT_FLAG ) {
-	grad[i] -= ( fdesc -> f.fparams[i] - fdesc -> f.prior[i] ) / 
-	  ( fdesc -> f.err_prior[i] * fdesc -> f.err_prior[i] ) ;
+      if( fdesc -> f.Prior[i].Initialised == true ) {
+	grad[i] -= ( fdesc -> f.fparams[i] - fdesc -> f.Prior[i].Val ) / 
+	  ( fdesc -> f.Prior[i].Err * fdesc -> f.Prior[i].Err ) ;
       }
     }
     for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {

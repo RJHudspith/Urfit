@@ -26,7 +26,7 @@ average( double *ave , double *err ,
   return ;
 }
 
-// bins the raw data
+// bins raw data
 struct resampled
 bin_the_data( const struct resampled RAW ,
 	      const size_t binning )
@@ -36,7 +36,7 @@ bin_the_data( const struct resampled RAW ,
 
   BINNED.resampled = malloc( NBINNED * sizeof( double ) ) ;
   BINNED.NSAMPLES = NBINNED ;
-  BINNED.restype  = RAWDATA ;
+  BINNED.restype  = Raw;
 
   // OK, so we simply average within each bin
   size_t j , k ;
@@ -56,13 +56,13 @@ void
 compute_err( struct resampled *replicas )
 {
   switch( replicas -> restype ) {
-  case RAWDATA :
+  case Raw :
     //raw_err( replicas ) ;
     break ;
-  case JACKDATA :
+  case JackKnife :
     jackknife_error( replicas ) ;
     break ;
-  case BOOTDATA :
+  case BootStrap :
     bootstrap_error( replicas ) ;
     break ;
   }
@@ -89,7 +89,7 @@ resample_data( const struct resampled *RAW ,
     // resampling
     size_t k ;
 
-    if( RAW[i].restype != RAWDATA ) {
+    if( RAW[i].restype != Raw ) {
 
       BOOT[i].resampled = (double*)malloc( RAW[i].NSAMPLES * sizeof( double ) ) ;
       equate( &BOOT[i] , RAW[i] ) ;
@@ -99,7 +99,7 @@ resample_data( const struct resampled *RAW ,
       BOOT[i].restype = restype ;
 
       switch( restype ) {
-      case RAWDATA :
+      case Raw :
 	BOOT[i].resampled = (double*)malloc( NRAW * sizeof( double ) ) ;
 	BOOT[i].NSAMPLES  = NRAW ;
 	for( k = 0 ; k < NRAW ; k++ ) {
@@ -107,12 +107,12 @@ resample_data( const struct resampled *RAW ,
 	}
 	//raw_err( &BOOT[i] ) ;
 	break ;
-      case BOOTDATA :
+      case BootStrap :
 	BOOT[i].resampled = (double*)malloc( NBOOTS * sizeof( double ) ) ;
 	BOOT[i].NSAMPLES  = NBOOTS ;
 	bootstrap( &BOOT[i] , RAW[i] ) ;
 	break ;
-      case JACKDATA :
+      case JackKnife :
 	// I manipulate NBOOTS to be NRAW-1 in the input file
 	BOOT[i].resampled = (double*)malloc( NBOOTS * sizeof( double ) ) ;
 	BOOT[i].NSAMPLES  = NBOOTS ;

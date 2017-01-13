@@ -16,7 +16,4 @@ sinh_d2f( double **d2f , const void *data , const double *fparams ) ;
 void
 sinh_guesses( double *fparams , const size_t Nlogic ) ;
 
-void
-sinh_priors( double *priors , double *err_priors ) ;
-
 #endif

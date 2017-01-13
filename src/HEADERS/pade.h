@@ -32,8 +32,4 @@ pade_d2f( double **d2f ,
 void
 pade_guesses( double *fparams , const size_t Nlogic ) ;
 
-void
-pade_priors( double *priors , 
-	     double *err_priors ) ;
-
 #endif

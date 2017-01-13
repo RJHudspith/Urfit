@@ -214,7 +214,7 @@ ga_iter( struct fit_descriptor *fdesc ,
   fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
 
   // get priors
-  fdesc -> set_priors( fdesc -> f.prior , fdesc -> f.err_prior ) ;
+  fdesc -> f.Prior = fdesc -> Prior ;
 
   // evaluate the function, its first and second derivatives
   fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
