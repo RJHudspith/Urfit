@@ -30,6 +30,7 @@ cg_iter( struct fit_descriptor *fdesc ,
 
   // get priors
   fdesc -> f.Prior = fdesc -> Prior ;
+  f2.Prior = fdesc -> Prior ;
 
   // evaluate the function, its first and second derivatives
   fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
@@ -51,7 +52,7 @@ cg_iter( struct fit_descriptor *fdesc ,
 	old_df[i] += -fdesc -> f.df[i][j] * fdesc -> f.f[j] ;
 	break ;
       case UNCORRELATED :
-	old_df[i] += -fdesc -> f.df[i][j] * W[j][j] * fdesc -> f.f[j] ;
+	old_df[i] += -fdesc -> f.df[i][j] * W[0][j] * fdesc -> f.f[j] ;
 	break ;
       case CORRELATED :
 	for( k = 0 ; k < fdesc -> f.N ; k++ ) {
@@ -100,7 +101,7 @@ cg_iter( struct fit_descriptor *fdesc ,
 	  newdf += -fdesc -> f.df[i][j] * fdesc -> f.f[j] ;
 	  break ;
 	case UNCORRELATED : 
-	  newdf += -fdesc -> f.df[i][j] * W[j][j] * fdesc -> f.f[j] ;
+	  newdf += -fdesc -> f.df[i][j] * W[0][j] * fdesc -> f.f[j] ;
 	  break ;
 	case CORRELATED :
 	  for( k = 0 ; k < fdesc -> f.N ; k++ ) {

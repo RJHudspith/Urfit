@@ -35,12 +35,13 @@ sd_iter( struct fit_descriptor *fdesc ,
 
   // get priors
   fdesc -> f.Prior = fdesc -> Prior ;
+  f2.Prior = fdesc -> Prior ;
 
   // evaluate the function, its first and second derivatives
   fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
   fdesc -> dF( fdesc -> f.df , data , fdesc -> f.fparams ) ;
   fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
-
+  
   double chisq_diff = 10 ;
   while( chisq_diff > TOL && iters < SDMAX ) {
 
@@ -54,7 +55,7 @@ sd_iter( struct fit_descriptor *fdesc ,
 	  grad[i] += -fdesc -> f.df[i][j] * fdesc -> f.f[j] ;
 	  break ;
 	case UNCORRELATED :
-	  grad[i] += -fdesc -> f.df[i][j] * W[j][j] * fdesc -> f.f[j] ;
+	  grad[i] += -fdesc -> f.df[i][j] * W[0][j] * fdesc -> f.f[j] ;
 	  break ;
 	case CORRELATED :
 	  for( k = 0 ; k < fdesc -> f.N ; k++ ) {

@@ -45,7 +45,7 @@ main( const int argc , const char *argv[] )
   // need to set this after data has been read ...
   Input.Fit.map = parammap( Input.Data , Input.Fit ) ;
 
-  if( generate_fake_data( &Input.Data , Input.Fit , 0.001 , 0.001 ) == FAILURE ) {
+  if( generate_fake_data( &Input.Data , Input.Fit , 0.1 , 0.1 ) == FAILURE ) {
     goto free_failure ;
   }
 

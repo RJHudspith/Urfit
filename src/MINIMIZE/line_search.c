@@ -68,7 +68,7 @@ line_search( struct ffunction *f2 ,
 	newgrad += -f2 -> df[jidx][i] * f2 -> f[i] ;
 	break ;
       case UNCORRELATED :
-	newgrad += -f2 -> df[jidx][i] * W[i][i] * f2 -> f[i] ;
+	newgrad += -f2 -> df[jidx][i] * W[0][i] * f2 -> f[i] ;
 	break ;
       case CORRELATED :
 	for( k = 0 ; k < f1.N ; k++ ) {

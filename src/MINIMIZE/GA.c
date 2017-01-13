@@ -258,7 +258,7 @@ ga_iter( struct fit_descriptor *fdesc ,
 	( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
     }
     G[i].chisq = compute_chi( &f2 , fdesc -> f , fdesc ,
-			       G[i].g , data , W ) ;
+			      G[i].g , data , W ) ;
   }
 
   // sort by chisq
