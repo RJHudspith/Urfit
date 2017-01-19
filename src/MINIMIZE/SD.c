@@ -6,10 +6,8 @@
 
 #include "chisq.h"
 #include "ffunction.h"
-#include "line_search.h" 
-
-// largest step size we use
-#define BIG_GUESS (10)
+#include "line_search.h"
+#include "summation.h"
 
 // steepest-descent iterations
 int
@@ -29,7 +27,14 @@ sd_iter( struct fit_descriptor *fdesc ,
 
   // allocate the gradient
   double *grad = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
-
+  double *y = NULL , *t ;
+  size_t Nsum = fdesc -> f.N ;
+  switch( fdesc -> f.CORRFIT ) {
+  case UNWEIGHTED : case UNCORRELATED : break ;
+  case CORRELATED : Nsum = fdesc -> f.N * fdesc -> f.N ; break ;
+  }
+  y = malloc( Nsum * sizeof( double ) ) ;
+  
   // set the guesses
   fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
 
@@ -47,32 +52,44 @@ sd_iter( struct fit_descriptor *fdesc ,
 
     // compute the descent direction ( - the gradient for SD! )
     for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
-      grad[i] = 0.0 ;
       size_t j , k ;
-      for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-	switch( fdesc -> f.CORRFIT ) {
-	case UNWEIGHTED :
-	  grad[i] += -fdesc -> f.df[i][j] * fdesc -> f.f[j] ;
-	  break ;
-	case UNCORRELATED :
-	  grad[i] += -fdesc -> f.df[i][j] * W[0][j] * fdesc -> f.f[j] ;
-	  break ;
-	case CORRELATED :
-	  for( k = 0 ; k < fdesc -> f.N ; k++ ) {
-	    grad[i] += -fdesc -> f.df[i][j] * W[j][k] * fdesc -> f.f[k] ;
-	  }
-	  break ;
+      t = y ;
+      switch( fdesc -> f.CORRFIT ) {
+      case UNWEIGHTED :
+	for( j = 0 ; j < fdesc -> f.N ; j++ ) {
+	  *t = -fdesc -> f.df[i][j] * fdesc -> f.f[j] ; t++ ;
 	}
+	break ;
+      case UNCORRELATED :
+	for( j = 0 ; j < fdesc -> f.N ; j++ ) {
+	  *t = -fdesc -> f.df[i][j] * W[0][j] * fdesc -> f.f[j] ; t++ ;
+	}
+	break ;
+      case CORRELATED :
+	for( j = 0 ; j < fdesc -> f.N ; j++ ) {
+	  for( k = 0 ; k < fdesc -> f.N ; k++ ) {
+	    *t = -fdesc -> f.df[i][j] * W[j][k] * fdesc -> f.f[k] ; t++ ;
+	  }
+	}
+	break ;
       }
+      grad[i] = kahan_summation( y , Nsum ) ;
       if( fdesc -> f.Prior[i].Initialised == true ) {
 	grad[i] -= ( fdesc -> f.fparams[i] - fdesc -> f.Prior[i].Val ) / 
 	  ( fdesc -> f.Prior[i].Err * fdesc -> f.Prior[i].Err ) ;
       }
     }
+
+    // do the line search, it is a good idea to make the search proportional
+    // to the fparams[i] so that if there is a large difference between parameters
+    // this gets taken into account
     for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
+
       // line search best alpha
       const double ap = line_search( &f2 , fdesc -> f , grad , grad ,
-				     *fdesc , data , W , i , BIG_GUESS ) ;
+				     *fdesc , data , W , i ,
+				     fdesc -> f.fparams[i] ) ;
+      
       fdesc -> f.fparams[i] += ap * grad[i] ;
 
       #ifdef VERBOSE
@@ -104,6 +121,11 @@ sd_iter( struct fit_descriptor *fdesc ,
   printf( "[SD] chisq :: %e -> DIFF %e \n\n" , fdesc -> f.chisq , chisq_diff ) ;
   for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
+  }
+
+  // free the temporary array
+  if( y != NULL ) {
+    free( y ) ;
   }
 
   // free the gradient

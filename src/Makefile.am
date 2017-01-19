@@ -30,7 +30,8 @@ STATS_FILES=./STATS/bootstrap.c ./STATS/jacknife.c ./STATS/stats.c \
 	./STATS/resampled_ops.c ./STATS/correlation.c ./STATS/autocorr.c
 
 UTILS_FILES=./UTILS/chisq.c ./UTILS/ffunction.c ./UTILS/rng.c ./UTILS/svd.c \
-	./UTILS/poly_coefficients.c ./UTILS/pade_coefficients.c
+	./UTILS/poly_coefficients.c ./UTILS/pade_coefficients.c \
+	./UTILS/summation.c
 
 ## all the source files apart from ./Run/Mainfile.c
 libURFIT_a_SOURCES = \

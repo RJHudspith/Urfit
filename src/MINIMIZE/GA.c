@@ -39,18 +39,20 @@
 #include "chisq.h"
 #include "ffunction.h"
 
-#define Ngen (500) // number of generations in gene pool
+//#define VERBOSE
+
+#define NGEN (500) // number of generations in gene pool
 
 // percentage that persist from the previous generation
-#define NBREED ((int)(0.25*Ngen))  
+#define NBREED ((int)(0.25*NGEN))  
 
 // percentage of pop that are children
-#define NCHILD ((int)(0.65*Ngen))
+#define NCHILD ((int)(0.65*NGEN))
 
-#define NMUTANTS (Ngen - NBREED - NCHILD) // number of mutants
+#define NMUTANTS (NGEN - NBREED - NCHILD) // number of mutants
 
 // It turns out this one is very important!! WHY???
-#define NOISE (0.0001) // guesses * gaussian of width NOISE to start our run
+#define NOISE (0.1) // guesses * gaussian of width NOISE to start our run
 
 // defaults to selection sort but can use insertion sort here too
 //#define INSERTION_SORT
@@ -78,6 +80,10 @@ compute_chi( struct ffunction *f2 ,
 {
   // copy f1 to f2 our temporary fit function
   copy_ffunction( f2 , f1 ) ;
+  size_t i ;
+  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
+    f2 -> fparams[i] = fparam[i] ;
+  }
   fdesc -> F( f2 -> f , data , f2 -> fparams ) ;
   return compute_chisq( *f2 , W , f2 -> CORRFIT ) ;
 }
@@ -92,7 +98,7 @@ insertion_sort_GA( struct genes *G )
   size_t i , j , Nlogic = G -> Nlogic ;
   double gtemp [ Nlogic ] , x ;
   int hole ;
-  for( i = 1 ; i < Ngen ; i++ ) {
+  for( i = 1 ; i < NGEN ; i++ ) {
     // set up the temporaries
     x = G[i].chisq ;
     for( j = 0 ; j < Nlogic ; j++ ) {
@@ -130,7 +136,7 @@ selection_sort_GA( struct genes *G )
   size_t i , j , chimin ;
   for( i = 0 ; i < NBREED ; i++ ) {
     chimin = i ;
-    for( j = i+1 ; j < Ngen ; j++ ) {
+    for( j = i+1 ; j < NGEN ; j++ ) {
       if( G[j].chisq < G[chimin].chisq ) {
 	chimin = j ;
       }
@@ -157,7 +163,7 @@ static void
 print_population( struct genes *G )
 {
   size_t i , j ;
-  for( i = 0 ; i < Ngen ; i++ ) {
+  for( i = 0 ; i < NGEN ; i++ ) {
     for( j = 0 ; j < G[i].Nlogic ; j++ ) {
       printf( " %f " , G[i].g[j] ) ;
     }
@@ -219,7 +225,7 @@ ga_iter( struct fit_descriptor *fdesc ,
   fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
 
 #ifdef VERBOSE
-  printf( "[GA] Using a population of %d \n" , Ngen ) ;
+  printf( "[GA] Using a population of %d \n" , NGEN ) ;
   printf( "[GA] Keeping %d elites \n" , NBREED ) ;
   printf( "[GA] Breeding elites into %d Children\n" , NCHILD ) ;
   printf( "[GA] Mutating the above into a pop of %d \n" , NMUTANTS ) ;
@@ -230,8 +236,8 @@ ga_iter( struct fit_descriptor *fdesc ,
   struct sigma Sig ;
   gsl_rng *r = NULL ;
 
-  G = malloc( Ngen * sizeof( struct genes ) ) ;
-  for( i = 0 ; i < Ngen ; i++ ) {
+  G = malloc( NGEN * sizeof( struct genes ) ) ;
+  for( i = 0 ; i < NGEN ; i++ ) {
     G[i].g = NULL ;
     G[i].g = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
   }
@@ -255,9 +261,8 @@ ga_iter( struct fit_descriptor *fdesc ,
   // initialise the population as gaussian noise around initial
   // guesses that are gaussian distibuted with sigma of NOISE
   // defined at the top of the file
-  for( i = 0 ; i < Ngen ; i++ ) {
+  for( i = 0 ; i < NGEN ; i++ ) {
     G[i].Nlogic = fdesc -> Nlogic ;
-    //G[i].g = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
     for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
       G[i].g[j] = fdesc -> f.fparams[j] * 
 	( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
@@ -282,7 +287,7 @@ ga_iter( struct fit_descriptor *fdesc ,
   while( chisq_diff > TOL && iters < GAMAX ) {
 
     // keep the top NBREED breed them to create children
-    for( i = NBREED ; i < Ngen - NMUTANTS ; i++ ) {
+    for( i = NBREED ; i < NGEN - NMUTANTS ; i++ ) {
       const size_t father = gsl_rng_uniform_int( r , NBREED ) ;
       const size_t mother = gsl_rng_uniform_int( r , NBREED ) ;
       for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
@@ -297,7 +302,7 @@ ga_iter( struct fit_descriptor *fdesc ,
     compute_sigma( &Sig , G , fdesc -> Nlogic ) ;
     
     // bottom mutants come from mutations to the breeding population
-    for( i = Ngen - NMUTANTS ; i < Ngen ; i++ ) {
+    for( i = NGEN - NMUTANTS ; i < NGEN ; i++ ) {
       const size_t mutate = gsl_rng_uniform_int( r , NBREED + NCHILD ) ;
       for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
 	G[i].g[j] = G[ mutate ].g[j] * 
@@ -350,7 +355,7 @@ ga_iter( struct fit_descriptor *fdesc ,
   
   // cleanse the gene pool
   if( G != NULL ) {
-    for( i = 0 ; i < Ngen ; i++ ) {
+    for( i = 0 ; i < NGEN ; i++ ) {
       if( G[i].g != NULL ) {
 	free( G[i].g ) ;
       }

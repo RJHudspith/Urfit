@@ -8,8 +8,6 @@
 #include "resampled_ops.h"
 #include "tfold.h"
 
-#if 0
-
 // do we have to byte swap?
 static bool must_swap = false ;
 
@@ -40,12 +38,15 @@ static int
 read_magic_gammas( FILE *file , 
 		   uint32_t *NGSRC ,
 		   uint32_t *NGSNK ,
-		   uint32_t *LT )
+		   uint32_t *LT ,
+		   uint32_t *mommatch ,
+		   const uint32_t *mompoint )
 {
   uint32_t magic[ 1 ] = { } , NMOM[ 1 ] , n[ 4 ] ;
   size_t p ;
   
   if( fread( magic , sizeof( uint32_t ) , 1 , file ) != 1 ) {
+    printf( "[IO] magic read failure \n" ) ;
     return FAILURE ;
   }
   // check the magic number, tells us the edianness
@@ -61,11 +62,17 @@ read_magic_gammas( FILE *file ,
   // read the momentum list
   FREAD32( NMOM , sizeof( uint32_t ) , 1 , file ) ;
 
+  mommatch = 0 ;
   for( p = 0 ; p < NMOM[0] ; p++ ) {
     FREAD32( n , sizeof( uint32_t ) , 4 , file ) ;
     if( n[ 0 ] != 4-1 ) {
       printf( "[MOMLIST] %d should be %d \n" , n[ 0 ] , 3 ) ;
       return FAILURE ;
+    }
+    size_t mu , matches = 0 ;
+    for( mu = 0 ; mu < 3 ; mu++ ) {
+      if( n[mu] == mompoint[mu] ) matches++ ;
+      if( matches == 3 ) *mommatch = p ;
     }
   }
 
@@ -77,133 +84,152 @@ read_magic_gammas( FILE *file ,
   return SUCCESS ;
 }
 
-// read a single file
-static int
-read_corrfile( struct resampled *sample ,
-	       FILE *file ,
-	       const size_t meas ,
-	       const size_t src ,
-	       const size_t snk ,
-	       const foldtype fold )
+// read correlation files
+int
+pre_allocate( struct input_params *Input ,
+	      uint32_t *mommatch )
 {
-  uint32_t NGSRC , NGSNK , LT ;
-  if( read_magic_gammas( file , &NGSRC , &NGSNK , &LT ) == FAILURE ) {
-    return FAILURE ;
+  size_t i ;
+  uint32_t mompoint[ 3 ] = { 0 , 0 , 0 } ;
+  Input -> Data.Ndata = malloc( Input -> Data.Nsim * sizeof( size_t ) ) ;
+  Input -> Data.Ntot = 0 ;
+  // loop number of trajectories reading in the header information from the beginning ones
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+
+    // open a file
+    char str[ Input -> Traj[i].Filename_Length + 6 ] ;
+    sprintf( str , Input -> Traj[i].Filename , Input -> Traj[i].Begin ) ;
+    FILE *file = fopen( str , "rb" ) ;
+    if( file == NULL ) {
+      fprintf( stderr , "[IO] cannot open %s \n" , str ) ;
+      return FAILURE ;
+    }
+
+    // read a file to figure out how long it is
+    uint32_t Ngsrc , Ngsnk , LT ;
+    if( read_magic_gammas( file , &Ngsrc , &Ngsnk , &LT , mommatch , mompoint ) == FAILURE ) {
+      return FAILURE ;
+    }
+
+    // sanity check LT
+    if( (size_t)LT != Input -> Traj[i].Dimensions[ Input -> Traj[i].Nd - 1 ] ) {
+      fprintf( stderr , "[IO] File LT and input file LT do not match!\n" ) ;
+      return FAILURE ;
+    }
+    Input -> Data.Ndata[i] = LT ;
+    Input -> Data.Ntot += LT ;
+
+    fclose( file ) ;
   }
-  const size_t gseek = (size_t)( snk + NGSNK * src ) ;
-  const size_t cseek = gseek * ( LT * sizeof( double complex ) ) ;
-  const size_t Lseek = ( gseek - 1 ) * ( LT * sizeof( uint32_t ) ) ;
-  fseek( file , Lseek + cseek , SEEK_CUR ) ;
 
-  FREAD32( &LT , sizeof( uint32_t ) , 1 , file ) ;
+  // now set Ndata to be LT and allocate x and y
+  Input -> Data.x = malloc( Input -> Data.Ntot * sizeof( struct resampled ) ) ;
+  Input -> Data.y = malloc( Input -> Data.Ntot * sizeof( struct resampled ) ) ;
 
-  double complex C[ LT ] ;
-  FREAD64( C , sizeof( double complex ) , LT , file ) ;
-
-  // perform some folding
-  time_fold( sample , C , LT , fold , meas ) ;
+  size_t shift = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    size_t j , t = 0 ;
+    const size_t Nmeas = ( Input -> Traj[i].End - Input -> Traj[i].Begin ) \
+      / Input -> Traj[i].Increment ;
+    
+    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
+      // allocate and set x and y
+      Input -> Data.x[j].resampled = malloc( Nmeas * sizeof( double ) ) ;
+      Input -> Data.x[j].NSAMPLES  = Nmeas ;
+      Input -> Data.x[j].restype   = Raw ;
+      
+      Input -> Data.y[j].resampled = malloc( Nmeas * sizeof( double ) ) ;
+      Input -> Data.y[j].NSAMPLES = Nmeas ;
+      Input -> Data.y[j].restype = Raw ;
+      
+      // set x to "t"
+      equate_constant( &( Input -> Data.x[j] ) , t , Nmeas , Raw ) ;
+      t++ ;
+    }
+    shift += Input -> Data.Ndata[i] ;
+  }
   
   return SUCCESS ;
 }
 
-// read correlation files
-struct resampled *
-read_rawcorr( struct input_params *INPARAMS ,
-	      const char *filename ,
-	      const size_t fileno ,
-	      const foldtype fold ,
-	      const size_t src ,
-	      const size_t snk ,
-	      const size_t nfile )
-{
-  // number of measurements
-  const size_t Nmeas = ( INPARAMS -> traj_end[ fileno ] - 
-			 INPARAMS -> traj_beg[ fileno ] ) / 
-    INPARAMS -> traj_inc[fileno ] ;
-
-  char filestr[ 256 ] ;
-  sprintf( filestr , filename , INPARAMS -> traj_beg[fileno] ) ;
-
-  // open the initial file
-  FILE *file = fopen( filestr , "rb" ) ;
-  if( file == NULL ) {
-    fprintf( stdout , "[IO] read rawcorr -> cannot open %s\n" ,
-	     filestr ) ;
-    return NULL ;
-  }
-
-  // read in the magic gammas
-  uint32_t NGSRC , NGSNK , LT ;
-  if( read_magic_gammas( file , &NGSRC , &NGSNK , &LT ) == FAILURE ) {
-    return NULL ;
-  }
-
-  // set how long the data is
-  if( fold == NOFOLD ) {
-    INPARAMS -> NDATA[ nfile ] = (size_t)LT ;
-  } else {
-    INPARAMS -> NDATA[ nfile ] = (size_t)LT/2 ;
-  }
-  
-  fclose( file ) ;
-
-  // read in all the 
-  struct resampled *sample = malloc( INPARAMS -> NDATA[ nfile ] * 
-				     sizeof( struct resampled ) ) ;
-  size_t i ;
-  for( i = 0 ; i < INPARAMS -> NDATA[ nfile ] ; i++ ) {
-    sample[i].resampled = malloc( Nmeas * sizeof( double ) ) ;
-    sample[i].restype   = RAWDATA ;
-    sample[i].NSAMPLES  = Nmeas ;
-  }
-
-  
-  // loop the files
-  size_t meas = 0 ;
-  for( i =  INPARAMS -> traj_beg[nfile] ; 
-       i <  INPARAMS -> traj_end[nfile] ;
-       i += INPARAMS -> traj_inc[nfile] ) {
-    char loc_filestr[ 256 ] ;
-    sprintf( loc_filestr , filename , i ) ;
-    FILE *loc_file = fopen( loc_filestr , "rb" ) ;
-    if( loc_file == NULL ) {
-      fprintf( stdout , "[IO] read_rawcorr cannot open -> %s \n" ,
-	       loc_filestr ) ;
-      return NULL ;
-    }
-
-    if( read_corrfile( sample , loc_file , meas , src , snk , fold ) 
-	== FAILURE ) {
-      return NULL ;
-    }
-
-    meas++ ; // increment the measurement index
-  }
-  
-  return sample ;
-}
-
-// read s single correlator
+// read in the correlators into our data struct
 int
-read_corr( struct resampled **x ,
-	   struct resampled **y ,
-	   struct input_params *INPARAMS ,
-	   const char *filename ,
+read_corr( struct input_params *Input ,
 	   const foldtype fold ,
 	   const size_t src ,
-	   const size_t snk ,
-	   const size_t fileno )
+	   const size_t snk )
 {
-  *y = read_rawcorr( INPARAMS ,filename , fileno , fold , 
-		     src , snk , fileno ) ;
-  if( *y == NULL ) {
+  // go through the files and allocate x and y
+  uint32_t mompoint[ 3 ] = { 0 , 0 , 0 } , mommatch = 0 ;
+  if( pre_allocate( Input , &mommatch ) == FAILURE ) {
     return FAILURE ;
   }
-  size_t i ;
-  for( i = 0 ; i < INPARAMS -> NDATA[ fileno ] ; i++ ) {
-    init_dist( *y+i , y[i] -> NSAMPLES , y[i] -> restype ) ;
+  
+  // reread files and poke in the data
+  size_t i , j , k , shift = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+
+    // temporary string
+    char str[ Input -> Traj[i].Filename_Length + 6 ] ;
+
+    // linearised measurement index
+    register size_t meas = 0 ;
+    for( k = Input -> Traj[i].Begin ;
+	 k < Input -> Traj[i].End ;
+	 k += Input -> Traj[i].Increment ) {
+      
+      // open up a file
+      sprintf( str , Input -> Traj[i].Filename , k ) ;
+      FILE *file = fopen( str , "rb" ) ;
+      if( file == NULL ) {
+	fprintf( stderr , "[IO] cannot open %s \n" , str ) ;
+	return FAILURE ;
+      }
+
+      // read in the correlator data and poke into "y"
+      uint32_t NGSRC , NGSNK, LT ;
+      if( read_magic_gammas( file , &NGSRC , &NGSNK , &LT ,
+			     &mommatch , mompoint ) == FAILURE ) {
+	return FAILURE ;
+      }
+	
+      // mommatch is at the zero point for the moment
+      const size_t Gseek = (size_t)( snk + NGSRC * src ) * mommatch ;
+      // skip all of the correlators that are in the file
+      const size_t Cseek = Gseek * (size_t)( LT * sizeof( double complex ) ) ;
+      // skip all of the LT's that are in the file up to the one we want to check
+      const size_t Lseek = (Gseek-1) * (size_t)( sizeof( uint32_t ) ) ;
+      // skip the file to the correlator we need
+      fseek( file , Lseek + Cseek , SEEK_CUR ) ;
+
+      // read the initial LT and make sure that it is the same as Ndata
+      if( FREAD32( &LT , sizeof( uint32_t ) , 1 , file ) == FAILURE ) {
+	fprintf( stderr , "[IO] Fread failure (LT)\n" ) ;
+	return FAILURE ;
+      }
+      if( LT != Input -> Data.Ndata[i] ) {
+	fprintf( stderr , "[IO] LT mismatch (read %d) (Ndata %zu)\n" ,
+		 LT , Input -> Data.Ndata[i] ) ;
+	return FAILURE ;
+      }
+	
+      double complex C[ LT ] ;
+      if( FREAD64( C , sizeof( double complex ) , LT , file ) == FAILURE ) {
+	fprintf( stderr , "[IO] Fread failure C(t) \n" ) ;
+	return FAILURE ;
+      }
+
+      // otherwise poke C into y
+      for( j = 0 ; j < LT ; j++ ) {
+	Input -> Data.y[ shift + j ].resampled[ meas ] = -creal( C[j] ) ;
+      }
+
+      meas ++ ;
+      fclose( file ) ;
+    }
+    shift += Input -> Data.Ndata[i] ;
   }
+  
   return SUCCESS ;
 }
-	   
-#endif
+

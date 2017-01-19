@@ -46,6 +46,9 @@ free_Data( struct data_info *Data ,
   if( Data -> Ndata != NULL ) {
     free( Data -> Ndata ) ;
   }
+  if( Data -> LT != NULL ) {
+    free( Data -> LT ) ;
+  }
   return ;
 }
 
@@ -63,4 +66,19 @@ free_Fit( struct fit_info *Fit ,
     free( Fit -> Prior ) ;
   }
   return ;
+}
+
+int
+init_LT( struct data_info *Data ,
+	const struct traj *Traj )
+{
+  size_t shift = 0 , j , i ;
+  Data -> LT = malloc( Data -> Ntot * sizeof( size_t ) ) ;
+  for( i = 0 ; i < Data -> Nsim ; i++ ) {
+    for( j = shift ; j < shift + Data -> Ndata[i] ; j++ ) {
+      Data -> LT[j] = Traj[i].Dimensions[ Traj[i].Nd - 1 ] ;
+    }
+    shift += Data -> Ndata[i] ;
+  }
+  return SUCCESS ;
 }

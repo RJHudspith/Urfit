@@ -8,34 +8,59 @@
 #include "fit_and_plot.h"
 #include "init.h"
 #include "pmap.h"
+#include "read_corr.h"
 #include "read_inputs.h"
+
+#include "bootstrap.h"
+#include "jacknife.h"
+#include "rng.h"
+#include "stats.h"
 
 int
 main( const int argc , const char *argv[] )
 {
   size_t i ;
-  
+
   struct input_params Input ;
   if( read_inputs( &Input , "infile" ) == FAILURE ) {
     goto free_failure ;
   }
 
-  // data structure
-  Input.Data.Ndata = malloc( Input.Data.Nsim * sizeof( size_t ) ) ;
-  Input.Data.Ntot = 0 ;
-  for( i = 0 ; i < Input.Data.Nsim ; i++ ) {
-    Input.Data.Ndata[i] = 25 ;
-    Input.Data.Ntot += Input.Data.Ndata[i] ;
+  /*
+  if( read_corr( &Input , NOFOLD , 5 , 5 ) == FAILURE ) {
+    goto free_failure ;
   }
-  Input.Data.LT = 25 ;
-  
-  // need to set this after data has been read ...
-  Input.Fit.map = parammap( Input.Data , Input.Fit ) ;
+  */
 
-  if( generate_fake_data( &Input.Data , Input.Fit , 0.001 , 0.001 ) == FAILURE ) {
+  // data structure
+  if( generate_fake_data( &Input.Data , Input.Fit ,
+			  Input.Traj , 0 , 0.01 ) == FAILURE ) {
     goto free_failure ;
   }
 
+  // set Lt
+  if( init_LT( &Input.Data , Input.Traj ) == FAILURE ) {
+    goto free_failure ;
+  }
+  
+  // bootstrap it
+  switch( Input.Data.Restype ) {
+  case BootStrap :
+    init_rng( 123456 ) ;
+    bootstrap_full( &Input ) ;
+    break ;
+  case JackKnife :
+    jackknife_full( &Input ) ;
+    break ;
+  case Raw :
+    for( i = 0 ; i < Input.Data.Ntot ; i++ ) {
+      compute_err( &Input.Data.x[i] ) ;
+      compute_err( &Input.Data.y[i] ) ;
+    }
+    break ;
+  }
+  
+  // need to set this after data has been read ...
   if( fit_and_plot( Input ) == FAILURE ) {
     goto free_failure ;
   }

@@ -1,11 +1,12 @@
 /**
-   line_search.c
-   perform a backtracking line search
+   @file line_search.c
+   @brief perform a backtracking line search
  */
 #include "gens.h"
 
 #include "chisq.h"
 #include "ffunction.h"
+#include "summation.h"
 
 //#define VERBOSE
 
@@ -40,10 +41,20 @@ line_search( struct ffunction *f2 ,
 	     const size_t jidx ,
 	     const double alpha )
 {
-  // perform a "backtracking line search"
-  double t = 0.6180339887498547 ;
-  double abest = alpha ;
+  // perform a "backtracking line search" should use brent's method
+  // really and probably will do at some point
+  const double fac = 0.5 ;
+  double abest = alpha * 1000 ;
   size_t iters = 0 , ITERMAX = 50 ;
+
+  double *y = NULL , *t = NULL ;
+  size_t Nsum = f1.N ;
+  switch( f1.CORRFIT ) {
+  case UNWEIGHTED : case UNCORRELATED : break ;
+  case CORRELATED : Nsum = f1.N * f1.N ; break ;
+  }
+  y = malloc( Nsum * sizeof( double ) ) ;
+  
   while( iters < ITERMAX ) {
     //compute sd step 
     const double chi = test_step( f2 , descent[jidx] , f1 , fdesc , 
@@ -57,26 +68,31 @@ line_search( struct ffunction *f2 ,
     const double c1 = 0.0001 , c2 = 0.1 ;
     armijo = c1 * abest * grad[jidx] * descent[jidx] ;
     #ifdef VERBOSE
-    printf( "%e %e %e\n" , chi , f1.chisq , armijo ) ;
+    printf( "[LINE SEARCH] %e %e %e\n" , chi , f1.chisq , armijo ) ;
     #endif
 
     size_t i , k ;
-    register double newgrad = 0.0 ;
-    for( i = 0 ; i < f1.N ; i++ ) {
-      switch( f1.CORRFIT ) {
-      case UNWEIGHTED :
-	newgrad += -f2 -> df[jidx][i] * f2 -> f[i] ;
-	break ;
-      case UNCORRELATED :
-	newgrad += -f2 -> df[jidx][i] * W[0][i] * f2 -> f[i] ;
-	break ;
-      case CORRELATED :
-	for( k = 0 ; k < f1.N ; k++ ) {
-	  newgrad += -f2 -> df[jidx][i] * W[i][k] * f2 -> f[k] ;
-	}
-	break ;
+    t = y ;
+    switch( f1.CORRFIT ) {
+    case UNWEIGHTED :
+      for( i = 0 ; i < f1.N ; i++ ) {
+        *t = -f2 -> df[jidx][i] * f2 -> f[i] ; t++ ;
       }
+      break ;
+    case UNCORRELATED :
+      for( i = 0 ; i < f1.N ; i++ ) {
+	*t = -f2 -> df[jidx][i] * W[0][i] * f2 -> f[i] ; t++ ;
+      }
+      break ;
+    case CORRELATED :
+      for( i = 0 ; i < f1.N ; i++ ) {
+	for( k = 0 ; k < f1.N ; k++ ) {
+	  *t = -f2 -> df[jidx][i] * W[i][k] * f2 -> f[k] ; t++ ;
+	}
+      }
+      break ;
     }
+    register double newgrad = kahan_summation( y , Nsum ) ;
     // add any prior stuff
     if( f1.Prior[ jidx ].Initialised == true ) {
       newgrad -= ( f2 -> fparams[ jidx ] - f2 -> Prior[ jidx ].Val ) /
@@ -86,7 +102,8 @@ line_search( struct ffunction *f2 ,
     curve2 = c2 * descent[ jidx ] * grad[ jidx ] ;
 
     #ifdef VERBOSE
-    printf( "LS diff :: %e \n" , fabs( chi - ( f1.chisq + armijo ) ) ) ;
+    printf( "[LINE SEARCH] LS diff :: %e \n" ,
+	    fabs( chi - ( f1.chisq + armijo ) ) ) ;
     #endif
 
     // compute test chi  
@@ -96,13 +113,19 @@ line_search( struct ffunction *f2 ,
     }
 
     iters++ ;
-    abest *= t ;
+    abest *= fac ;
   }
+
+  // free the temporary storage
+  if( y != NULL ) {
+    free( y ) ;
+  }
+  
 #ifdef VERBOSE
   if( iters == ITERMAX ) {
-    printf( "[CG] backtracking failed\n" ) ;
+    printf( "[LINE SEARCH] backtracking failed\n" ) ;
   }
-  printf( "abest :: %e \n" , abest ) ;
+  printf( "[LINE SEARCH] abest :: %e \n" , abest ) ;
 #endif
   return abest ;
 }

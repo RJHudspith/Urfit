@@ -45,7 +45,7 @@ pade_f( double *f , const void *data , const double *fparams )
   double par[ DATA -> Npars ] ;
   size_t i , p ; 
   for( i = 0 ; i < DATA -> n ; i++ ) {
-    const struct x_desc X = { DATA -> x[i] , DATA -> LT } ;
+    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] } ;
     for( p = 0 ; p < DATA -> Npars ; p++ ) {
       par[ p ] = fparams[ DATA -> map[i].p[p] ] ;
     }

@@ -13,6 +13,7 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
+// filter the data to lie within the fit range
 static bool *
 filter( size_t *N ,
 	const struct data_info Data ,
@@ -49,6 +50,7 @@ fit_and_plot( struct input_params Input )
   Data.Nsim = Input.Data.Nsim ;
   in_fitrange = filter( &Data.Ntot , Input.Data ,
 			Input.Fit , Input.Traj ) ;
+
   size_t i , j , idx = 0 ;
 
   if( Data.Ntot == 0 ) goto memfree ;
@@ -60,7 +62,6 @@ fit_and_plot( struct input_params Input )
   Data.y = malloc( Data.Ntot * sizeof( struct resampled ) ) ;
   
   Data.Cov.W = NULL ;
-  Data.LT = 25 ;
   Data.Restype = Input.Data.Restype ;
   Data.Cov.Eigenvalue_Tol = Input.Data.Cov.Eigenvalue_Tol ;
   Data.Cov.Column_Balanced = Input.Data.Cov.Column_Balanced ;
@@ -71,8 +72,8 @@ fit_and_plot( struct input_params Input )
     size_t Ndata = 0 ;
     for( j = 0 ; j < Input.Data.Ndata[i] ; j++ ) {
       if( in_fitrange[ k ] == true ) {
-	Data.x[idx].resampled = malloc( Data.Nboots * sizeof( double ) ) ;
-	Data.y[idx].resampled = malloc( Data.Nboots * sizeof( double ) ) ;
+	Data.x[idx].resampled = malloc( Input.Data.x[k].NSAMPLES * sizeof( double ) ) ;
+	Data.y[idx].resampled = malloc( Input.Data.x[k].NSAMPLES * sizeof( double ) ) ;
 	equate( &Data.x[idx] , Input.Data.x[k] ) ;
 	equate( &Data.y[idx] , Input.Data.y[k] ) ;
 	Ndata++ ; idx++ ;
@@ -80,6 +81,11 @@ fit_and_plot( struct input_params Input )
       k ++ ;
     }
     Data.Ndata[i] = Ndata ;
+  }
+
+  // set Lt
+  if( init_LT( &Data , Input.Traj ) == FAILURE ) {
+    goto memfree ;
   }
 
   // if we have a param map allocated we remove it and redo it
@@ -99,7 +105,7 @@ fit_and_plot( struct input_params Input )
   if( ( fitparams = perform_bootfit( Data , Input.Fit ) ) == NULL ) {
     goto memfree ;
   }
-
+  
   // make the graph
   make_xmgrace_graph( Input.Graph.Name ,
 		      Input.Graph.Xaxis ,

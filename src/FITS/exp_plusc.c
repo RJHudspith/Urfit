@@ -15,8 +15,7 @@ exp_plusc_f( double *f , const void *data , const double *fparams )
   const struct data *DATA = ( const struct data* )data ;
   size_t i ;
   for (i = 0; i < DATA -> n ; i++) {
-    const struct x_desc X = { DATA -> x[i] , DATA-> LT } ;
-    f[i] = //fexp_plusc( X , fparams , DATA -> Npars )
+    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] } ;
       fparams[ DATA -> map[i].p[1] ] *
       exp( -fparams[ DATA -> map[i].p[0] ] * X.X ) +
       fparams[ DATA -> map[i].p[2] ]

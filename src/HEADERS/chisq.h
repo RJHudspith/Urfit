@@ -2,7 +2,7 @@
 #define CHISQ_H
 
 double
-compute_chisq( struct ffunction f ,
+compute_chisq( const struct ffunction f ,
 	       const double **W ,
 	       const corrtype CORRFIT ) ;
 

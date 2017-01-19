@@ -5,7 +5,6 @@ void
 jackknife_error( struct resampled *replicas ) ;
 
 void
-jackknife( struct resampled *Jackknife ,
-	   const struct resampled Raw ) ;
+jackknife_full( struct input_params *Input ) ;
 
 #endif

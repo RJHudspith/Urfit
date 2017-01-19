@@ -2,12 +2,10 @@
    @file jacknife.c
    @brief jacknife resampling
  */
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-
 #include "gens.h"
+
 #include "stats.h"
+#include "summation.h"
 
 // the jackknife error definition incorporates the code for the average and variance
 void
@@ -25,25 +23,49 @@ jackknife_error( struct resampled *replicas )
   return ;
 }
 
-// perform a jackknife on the Raw data
-// assumes Jackknife has had NRAW - 1 allocation
+// perform a bootstrap resampling on the data
 void
-jackknife( struct resampled *Jackknife ,
-	   const struct resampled Raw )
+jackknife_full( struct input_params *Input )
 {
-  const size_t N = Raw.NSAMPLES ;
-  Jackknife -> NSAMPLES = N ; // should be set anyway ..
+  size_t i , j = 0 , k , shift = 0 ;
+  
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
-  register double sum = 0.0 ;
-  size_t i ;
-  for( i = 0 ; i < N ; i++ ) {
-    sum += Raw.resampled[i] ; // compute the sum
+    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
+
+      const size_t N = Input -> Data.x[j].NSAMPLES ;
+      const double NORM = 1.0 / ( N - 1.0 ) ;
+
+      double *x = malloc( N * sizeof( double ) ) ;
+      double *y = malloc( N * sizeof( double ) ) ;
+      
+      for( k = 0 ; k < N ; k++ ) {
+	x[k] = Input -> Data.x[j].resampled[k] ;
+	y[k] = Input -> Data.y[j].resampled[k] ;
+      }
+
+      const double sumx = kahan_summation( x , N ) ;
+      const double sumy = kahan_summation( y , N ) ;
+
+      // do the jackknife
+      for( k = 0 ; k < N ; k++ ) {
+	Input -> Data.x[j].resampled[k] = ( sumx - Input -> Data.x[j].resampled[k] ) * NORM ;
+	Input -> Data.y[j].resampled[k] = ( sumy - Input -> Data.y[j].resampled[k] ) * NORM ;
+      }
+
+      Input -> Data.x[j].restype = Input -> Data.y[j].restype = JackKnife ;     
+      jackknife_error( &(Input -> Data.x[j]) ) ;
+      jackknife_error( &(Input -> Data.y[j]) ) ;
+
+      #ifdef VERBOSE
+      printf( "JACKNIFE %f %f || %f %f \n" ,
+	      Input -> Data.x[j].avg , Input -> Data.x[j].err ,
+	      Input -> Data.y[j].avg , Input -> Data.y[j].err ) ;
+      #endif
+
+      free( x ) ; free( y ) ;
+    }
+    shift += Input -> Data.Ndata[i] ;
   }
-  // subtract each element from the sum
-  const double NORM = 1.0 / ( (double)N - 1.0 ) ;
-  for( i = 0 ; i < N ; i++ ) {
-    Jackknife -> resampled[ i ] = ( sum - Raw.resampled[i] ) * NORM ;
-  }
-  jackknife_error( Jackknife ) ;
   return ;
 }

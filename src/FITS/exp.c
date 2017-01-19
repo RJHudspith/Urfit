@@ -15,7 +15,7 @@ exp_f( double *f , const void *data , const double *fparams )
   const struct data *DATA = (const struct data*)data ;
   size_t i ; 
   for( i = 0 ; i < DATA -> n ; i++ ) {
-    const struct x_desc X = { DATA -> x[i] , DATA -> LT } ;
+    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] } ;
     f[i] = fparams[ DATA-> map[i].p[1] ] *
       exp( -fparams[ DATA-> map[i].p[0] ] * X.X ) - DATA -> y[i] ;
   }
@@ -58,9 +58,13 @@ exp_guesses( double *fparams , const size_t Nlogic )
 
   // perform a guess, otherwise assume someone has set them
   if( flag == false ) {
+    /*
     for( i = 0 ; i < Nlogic ; i++ ) {
       fparams[i] = i + 1 ;
     }
+    */
+    fparams[0] = 0.5 ;
+    fparams[1] = 72000 ;
   }
 
   return ;

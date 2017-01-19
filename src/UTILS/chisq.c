@@ -1,36 +1,45 @@
+/**
+   @file chisq.c
+   @brief compute the chisq
+ */
 #include "gens.h"
-
-// macro expansion for the kahan summation
-#define KAHAN(chisq,y,t,c) {				\
-    t = chisq + y ; c = ( t - chisq ) - y ; chisq = t ; \
-  }
+#include "summation.h"
 
 // compute the chisq using Kahan summation
 double
-compute_chisq( struct ffunction f ,
+compute_chisq( const struct ffunction f ,
 	       const double **W ,
 	       const corrtype CORRFIT )
 {
-  // Kahan summation parameters
-  register double chisq = 0.0 , c = 0.0 , y , t ;
-  size_t i , j ;
-
+  // pointers and stuff
   const double *pf = f.f , *pW = *W ;
-  
+  register double chisq = 0.0 ;
+  double *y = NULL , *t ;
+  size_t i , j , Nsum ;
+
+  // allocate the array we want to sum
+  switch( CORRFIT ) {
+  case UNWEIGHTED : Nsum = f.N ; break ;
+  case UNCORRELATED : Nsum = f.N ; break ;
+  case CORRELATED : Nsum = f.N * f.N ; break ;
+  }
+  y = malloc( Nsum * sizeof( double ) ) ;
+  t = y ;
+
+  // compute the chisq within the switch
   switch( CORRFIT ) {
   case UNWEIGHTED :
     for( i = 0 ; i < f.N ; i++ ) {
-      y = *pf * ( *pf ) - c ;
-      KAHAN(chisq,y,t,c) ;
-      pf++ ;
+      *t = *pf * ( *pf ) ;
+      t++ , pf++ ;
     }
     break ;
   case UNCORRELATED :
     for( i = 0 ; i < f.N ; i++ ) {
-      y = *pf * (*pW) * ( *pf ) - c ;
-      KAHAN(chisq,y,t,c) ;
-      pf++ , pW++ ;
+      *t = *pf * (*pW) * ( *pf ) ;
+      t++ , pf++ , pW++ ;
     }
+    chisq = kahan_summation( y , f.N ) ;
     break ;
   case CORRELATED :
     for( i = 0 ; i < f.N ; i++ ) {
@@ -38,12 +47,19 @@ compute_chisq( struct ffunction f ,
       // point to the data and the W matrix
       pf = f.f ; pW = *( W + i ) ;
       for( j = 0 ; j < f.N ; j++ ) {
-	y = fi * ( *pW ) * ( *pf ) - c ;
-	KAHAN(chisq,y,t,c) ;
-	pf++ , pW++ ;
+	*t = fi * ( *pW ) * ( *pf ) ;
+	t++ , pf++ , pW++ ;
       }
     }
     break ;
+  }
+
+  // perform the round off resistant summation
+  chisq = kahan_summation( y , Nsum ) ;
+
+  // free the array
+  if( y != NULL ) {
+    free( y ) ;
   }
   
   // add priors to the chisq
@@ -55,5 +71,3 @@ compute_chisq( struct ffunction f ,
   }
   return (double)chisq ;
 }
-
-#undef KAHAN

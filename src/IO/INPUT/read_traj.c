@@ -131,12 +131,18 @@ set_trajs( const struct flat_file *Flat ,
     // set the filename
     Traj[i].Filename = malloc( Flat[ Block[i] ].Value_Length * sizeof( char ) ) ;
     sprintf( Traj[i].Filename , "%s" , Flat[ Block[i] ].Value ) ;
+    Traj[i].Filename_Length = Flat[ Block[i] ].Value_Length ;
     
-    // set the file start, increment, and end
+    // set the file start, increment, and end. Sanity check them
     tok = strtok( Flat[ Block[i] + TrajStep ].Value , "," ) ;
     Traj[i].Begin     = strtol( tok , &endptr , 10 ) ; tok = strtok( NULL , "," ) ;
     Traj[i].Increment = strtol( tok , &endptr , 10 ) ; tok = strtok( NULL , "," ) ;
-    Traj[i].End       = strtol( tok , &endptr , 10 ) ; 
+    Traj[i].End       = strtol( tok , &endptr , 10 ) ;
+    if( Traj[i].Begin >= Traj[i].End ) {
+      fprintf( stderr , "[INPUT] non-sensical trajectory beginning and end"
+	       "%zu -> %zu\n" , Traj[i].Begin , Traj[i].End ) ;
+      return NULL ;
+    }
 
     // set the binning
     Traj[i].Bin = strtol( Flat[ Block[i] + TrajStat ].Value , &endptr , 10 ) ;

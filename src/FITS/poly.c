@@ -30,7 +30,7 @@ poly_f( double *f , const void *data , const double *fparams )
   const struct data *DATA = (const struct data*)data ;
   size_t i , p ; 
   for (i = 0; i < DATA -> n ; i++) {
-    const struct x_desc X = { DATA -> x[i] , DATA -> LT } ;
+    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] } ;
     double par[ DATA -> Npars ] ;
     for( p = 0 ; p < DATA -> Npars ; p++ ) {
       par[ p ] = fparams[ DATA -> map[i].p[p] ] ;

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-
+#include <string.h>
 #include <math.h>
 #include <complex.h>
 
@@ -132,7 +132,7 @@ struct data_info {
   struct resampled *x ;
   struct resampled *y ;
   struct correlation Cov ;
-  size_t LT ;
+  size_t *LT ;
   size_t Nboots ;
   size_t *Ndata ;
   size_t Nsim ;
@@ -145,7 +145,7 @@ struct data {
   size_t n ;
   double *x ;
   double *y ;
-  size_t LT ;
+  size_t *LT ;
   size_t Npars ;
   struct pmap *map ;
 } ;
@@ -168,6 +168,7 @@ struct traj {
   size_t *Dimensions ;
   size_t End ;
   char *Filename ;
+  size_t Filename_Length ;
   double Fit_High ;
   double Fit_Low ;
   size_t Increment ;

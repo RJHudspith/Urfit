@@ -46,7 +46,7 @@ plot_fitfunction( const struct resampled *f ,
       const double extrap_x = xmin + x_step*i ;
       X[ i ] = extrap_x ;
       // evaluate the fitfunc
-      struct x_desc xdesc = { X[i] , Data.LT } ;
+      struct x_desc xdesc = { X[i] , Data.LT[shift] } ;
       double fparams[ fdesc.Nparam ] ;
       // compute the hi values
       for( p = 0 ; p < fdesc.Nparam ; p++ ) {

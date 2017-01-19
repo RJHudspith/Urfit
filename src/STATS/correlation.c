@@ -28,7 +28,7 @@ compute_upper_correlation( double **correlation ,
     NORM = 1.0 / (double)( NSAMPLES * ( NSAMPLES - 1.0 ) ) ;
     break ;
   case JackKnife :
-    NORM = ( NSAMPLES - 1.0 ) / (double)NSAMPLES ;
+    NORM = ( 1.0 - 1.0/(double)NSAMPLES ) ;
     break ;
   case BootStrap :
     NORM = 1.0 / (double)NSAMPLES ;

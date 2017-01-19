@@ -2,51 +2,26 @@
    @file bootstrap.c
    @brief bootstrapping code
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "gens.h"
-#include "rng.h"      // for the bootstraps
+
+#include "rng.h"        // for the bootstraps
 #include "stats.h"
+#include "summation.h"
 
 // either we boot average or use the ensemble average ...
-#define BOOT_AVERAGE
-
-static double *boot_order ;
+//#define BOOT_AVERAGE
 
 // qsort comparison function for the bootstrap
-static int 
+int 
 comp( const void *elem1 , 
       const void *elem2 ) 
 {
+
   const double f = *( (double*)elem1 ) ;
   const double s = *( (double*)elem2 ) ;
-  if (f > s) return  1 ;
-  if (f < s) return -1 ;
+  if (f > s) { return  1 ; }
+  if (f < s) { return -1 ; }
   return 0 ;
-}
-
-// free the bootstrap order
-void
-free_boot_order( void )
-{
-  free( boot_order ) ;
-  return ;
-}
-
-// initialise the bootstrap order
-void
-init_boot_order( const size_t NBOOTS , 
-		 const size_t NRAW )
-{
-  rng_reseed( ) ;
-  boot_order = (double*)malloc( NBOOTS * NRAW * sizeof( double ) ) ;
-  size_t i ;
-  for( i = 0 ; i < NBOOTS * NRAW  ; i++ ) {
-    boot_order[ i ] = rng_double( ) ;
-  }
-  return ;
 }
 
 // compute the error for the bootstrap assumes the data has
@@ -56,19 +31,11 @@ bootstrap_error( struct resampled *replicas )
 {
   if( replicas -> NSAMPLES == 0 ) return ;
   
-  double sorted[ replicas -> NSAMPLES ] ;
+  double *sorted = malloc( replicas -> NSAMPLES * sizeof( double ) ) ;
   memcpy( sorted , replicas -> resampled , sizeof( double ) * ( replicas -> NSAMPLES ) ) ;
-
+  
   // sort the bootstraps
   qsort( sorted , replicas -> NSAMPLES , sizeof( double ) , comp ) ;
-
-  // average is better behaved when sorted ...
-  double ave = 0.0 ;
-  size_t i ;
-  for( i = 0 ; i < ( replicas -> NSAMPLES ) ; i++ ) {
-    ave += sorted[ i ] ;
-  }
-  ave /= (double)( replicas -> NSAMPLES ) ;
 
   // confidence bounds are at 1 sigma
   const double confidence = 68.2689492 ;
@@ -77,37 +44,101 @@ bootstrap_error( struct resampled *replicas )
   const size_t top = ( ( replicas -> NSAMPLES ) - 1 - bottom ) ;
 
 #ifdef BOOT_AVERAGE
-  replicas -> avg = ave ;
+  // is the middle of the bootstrap distribution ok?
+  replicas -> avg = sorted[ replicas -> NSAMPLES / 2 ] ;
 #endif
   replicas -> err_hi = sorted[ top ] ;
   replicas -> err_lo = sorted[ bottom ] ;
   // symmetrized error
   replicas -> err    = 0.5 * ( replicas -> err_hi - replicas -> err_lo ) ;
+
+  free( sorted ) ;
+  
   return ;
 }
 
-// and the bootstrap analysis , assumes we have NBOOTS of space in Bootstrap
+// perform a bootstrap resampling on the data
 void
-bootstrap( struct resampled *Bootstrap ,
-	   const struct resampled Raw )
+bootstrap_full( struct input_params *Input )
 {
-  // reseed the rng ...
-  rng_reseed( ) ;
-  // loop the bootstrap index
-  size_t i , j ;
-  for( i = 0 ; i < Bootstrap -> NSAMPLES ; i++ ) {
-    Bootstrap -> resampled[ i ] = 0.0 ;    
-    // loop the data
-    for( j = 0 ; j < Raw.NSAMPLES ; j++ ) {
-      Bootstrap -> resampled[ i ] += 
-	Raw.resampled[ (size_t)( boot_order[ j + Raw.NSAMPLES * i ] * 
-			      ( Raw.NSAMPLES - 1 ) ) ] ;
+  size_t i , j = 0 , k , l , shift = 0 ;
+  
+  // perform a bootstrap
+  double *xstrap = malloc( Input -> Data.Nboots * sizeof( double ) ) ;
+  double *ystrap = malloc( Input -> Data.Nboots * sizeof( double ) ) ;
+
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+
+    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
+
+      rng_reseed( ) ;
+
+      const size_t N = Input -> Data.x[j].NSAMPLES ;	
+      double *x = malloc( N * sizeof( double ) ) ;
+      double *y = malloc( N * sizeof( double ) ) ;
+
+      // loop boots
+      for( k = 0 ; k < Input -> Data.Nboots ; k++ ) {
+
+	// reseed the rng ...
+	register size_t rng_idx = 0 ;
+
+	// loop raw data
+	for( l = 0 ; l < N ; l++ ) {
+	  rng_idx = rng_int( N ) ; 
+	  x[l] = Input -> Data.x[j].resampled[ rng_idx ] ;
+	  y[l] = Input -> Data.y[j].resampled[ rng_idx ] ;
+	}
+	
+	xstrap[k] = kahan_summation( x , N ) / N ;
+	ystrap[k] = kahan_summation( y , N ) / N ;	
+      }
+
+      // reallocate and copy over
+      Input -> Data.x[j].resampled = \
+	realloc( Input -> Data.x[j].resampled ,
+		 Input -> Data.Nboots * sizeof( double ) ) ;
+      Input -> Data.y[j].resampled = \
+	realloc( Input -> Data.y[j].resampled ,
+		 Input -> Data.Nboots * sizeof( double ) ) ;
+
+      for( k = 0 ; k < Input -> Data.Nboots ; k++ ) {
+	Input -> Data.x[j].resampled[k] = xstrap[k] ;
+	Input -> Data.y[j].resampled[k] = ystrap[k] ;
+      }
+      Input -> Data.x[j].restype = Input -> Data.y[j].restype = BootStrap ;
+      Input -> Data.x[j].NSAMPLES = Input -> Data.Nboots ;
+      Input -> Data.y[j].NSAMPLES = Input -> Data.Nboots ;
+
+      #ifndef BOOT_AVERAGE
+      x = realloc( x , Input -> Data.Nboots * sizeof( double ) ) ;
+      y = realloc( y , Input -> Data.Nboots * sizeof( double ) ) ;
+      for( l = 0 ; l < Input -> Data.Nboots ; l++ ) {
+	x[l] = Input -> Data.x[j].resampled[l] ;
+	y[l] = Input -> Data.y[j].resampled[l] ;
+      }
+      Input -> Data.x[j].avg = kahan_summation( x , Input -> Data.Nboots ) / Input -> Data.Nboots ;
+      Input -> Data.y[j].avg = kahan_summation( y , Input -> Data.Nboots ) / Input -> Data.Nboots ;
+      #endif
+
+      // free the temp vectors
+      free( x ) ; free( y ) ;
+      
+      // compute the error
+      bootstrap_error( &(Input -> Data.x[j]) ) ;
+      bootstrap_error( &(Input -> Data.y[j]) ) ;
+
+      #ifdef VERBOSE
+      printf( "BOOT %f %f || %f %f \n" ,
+	      Input -> Data.x[j].avg , Input -> Data.x[j].err ,
+	      Input -> Data.y[j].avg , Input -> Data.y[j].err ) ;
+      #endif
     }
-    Bootstrap -> resampled[ i ] /= (double)Raw.NSAMPLES ;
+    shift += Input -> Data.Ndata[i] ;
   }
-#ifndef BOOT_AVERAGE
-  Bootstrap -> avg = Raw.avg ;
-#endif
-  bootstrap_error( Bootstrap ) ;
+
+  free( xstrap ) ;
+  free( ystrap ) ;
+
   return ;
 }

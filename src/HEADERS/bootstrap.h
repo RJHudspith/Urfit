@@ -15,4 +15,7 @@ void
 bootstrap( struct resampled *Bootstrap ,
 	   const struct resampled Raw ) ;
 
+void
+bootstrap_full( struct input_params *Input ) ;
+
 #endif

@@ -8,6 +8,7 @@
 
 #include "chisq.h"
 #include "ffunction.h"
+#include "summation.h"
 
 // use second derivs? NRC says that they can be harmful
 // not using them makes the code run faster sometimes
@@ -20,32 +21,41 @@ get_alpha_beta( gsl_matrix *alpha ,
 		const struct ffunction f ,
 		const double **W )
 {
+  double *y = NULL , *t ;
+  size_t p , q = 0 , i , j , Nsum = f.N ;
+
+  // allocate the y-data
+  switch( f.CORRFIT ) {
+  case UNWEIGHTED : case UNCORRELATED : break ;
+  case CORRELATED : Nsum = f.N * f.N ; break ;
+  }
+  y = malloc( Nsum * sizeof( double ) ) ;
+  
   // compute beta
-  size_t p , q = 0 , i , j ;
   for( p = 0 ; p < f.NPARAMS ; p++ ) {
 
     // compute beta
-    register double bp = 0.0 ;
-
+    t = y ;
     switch( f.CORRFIT ) {
     case UNWEIGHTED : 
       for( i = 0 ; i < f.N ; i++ ) {
-	bp += f.df[p][i] * f.f[i] ;
+	*t = f.df[p][i] * f.f[i] ; t++ ;
       }
       break ;
     case UNCORRELATED :
       for( i = 0 ; i < f.N ; i++ ) {
-	bp += f.df[p][i] * W[0][i] * f.f[i] ;
+	*t = f.df[p][i] * W[0][i] * f.f[i] ; t++ ;
       }
       break ;
     case CORRELATED :
       for( i = 0 ; i < f.N ; i++ ) {
 	for( j = 0 ; j < f.N ; j++ ) {
-	  bp += f.df[p][i] * W[i][j]  * f.f[j] ;
+	  *t = f.df[p][i] * W[i][j]  * f.f[j] ; t++ ;
 	}
       }
       break ;
     }
+    register double bp = kahan_summation( y , Nsum ) ;
 
     // add the priors if they have been set
     if( f.Prior[p].Initialised == true ) {
@@ -64,45 +74,44 @@ get_alpha_beta( gsl_matrix *alpha ,
     // as the matrix "alpha" is symmetric
     for( q = p ; q < f.NPARAMS ; q++ ) {
 
-      // set alpha
-      register double apq = 0.0 ;
-
       // compute alpha
+      t = y ;
       switch( f.CORRFIT ) {
       case UNWEIGHTED : 
 	for( i = 0 ; i < f.N ; i++ ) {
-	  apq += 
+	  *t = 
 	    f.df[p][i] * f.df[q][i] 
 	    #ifdef WITH_D2_DERIVS
 	    + f.d2f[q+f.Nlogic*p][i] * f.f[i] 
 	    #endif
-	    ;
+	    ; t++ ;
 	}
 	break ;
       case UNCORRELATED :
 	for( i = 0 ; i < f.N ; i++ ) {
-	  apq += 
+	  *t = 
 	    W[0][i] * ( f.df[p][i] * f.df[q][i] 
                         #ifdef WITH_D2_DERIVS
 			+ f.d2f[q+f.Nlogic*p][i] * f.f[i]
 			#endif
-			) ;
+			) ; t++ ;
 	}
 	break ;
       case CORRELATED :
 	for( i = 0 ; i < f.N ; i++ ) {
 	  for( j = 0 ; j < f.N ; j++ ) {
-	    apq += 
+	    *t = 
 	      W[i][j] * ( f.df[p][i] * f.df[q][j] 
 			  #ifdef WITH_D2_DERIVS
 			  + f.d2f[q+f.Nlogic*p][i] * f.f[j] 
 			  #endif
-			  ) ;
+			  ) ; t++ ;
 	  }
 	}
 	break ;
       }
-
+      register double apq = kahan_summation( y , Nsum ) ;
+      
       // second derivatives acting on the prior
       if( p == q ) {
 	if( f.Prior[p].Initialised == true ) {
@@ -119,6 +128,12 @@ get_alpha_beta( gsl_matrix *alpha ,
     }
     // end of setup
   }
+
+  // clean up the temporary data
+  if( y != NULL ) {
+    free( y ) ;
+  }
+  
   return GSL_SUCCESS ;
 }
 

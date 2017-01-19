@@ -68,6 +68,7 @@ single_fit( struct resampled *fitparams ,
       fitparams[j].resampled[sample_idx] = fdesc.f.fparams[j] ;
     }
   }
+  //exit(1) ;
   free( yloc ) ;
   free( xloc ) ;
   return ;
@@ -125,15 +126,11 @@ perform_bootfit( const struct data_info Data ,
     // free the fitfunction
     free_ffunction( &fdesc_boot.f , fdesc.Nlogic ) ;
   }
-
+  
   // divide out the number of degrees of freedom
-  mult_constant( &chisq , 1.0 / ( Data.Ntot - fdesc.Nlogic ) ) ;
-
-  // compute and free the chisq
-  compute_err( &chisq ) ;
-
-  printf( "[CHISQ (d.o.f)] %f %f \n" , chisq.avg , chisq.err ) ;
-
+  divide_constant( &chisq , ( Data.Ntot - fdesc.Nlogic ) ) ;
+  printf( "[CHISQ (d.o.f)] %e %e \n" , chisq.avg , chisq.err ) ;
+  
   // tell us what we have computed
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
     compute_err( &fitparams[i] ) ;
@@ -144,7 +141,6 @@ perform_bootfit( const struct data_info Data ,
     }
     printf( "PARAM_%zu %f %f \n" , i , fitparams[i].avg , fitparams[i].err ) ;
   }
-
 
  memfree :
 
