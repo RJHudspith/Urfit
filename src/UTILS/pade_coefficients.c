@@ -3,149 +3,97 @@
    @brief given polynomial coefficients, compute the pade representation
 
 
-   p( x ) = \pi_0 + ( \pi_1 x + ... + \pi_n x^n ) / ( 1 + ... + \pi_{n+m}x^{m} )
+   p( x ) = ( \pi_0 + \pi_1 x + ... + \pi_n x^n ) / ( 1 + ... + \pi_{n+m}x^{m} )
  */
 #include "gens.h"
-#include "svd.h"
 
-// pade coefficient function
+// compute pade coefficients from a polynomial series
 int
-pades( double *pade_coeffs ,
-       const double *poly_coeffs ,
-       const size_t n ,
-       const size_t m )
+pades_from_poly( double *pade_coeffs ,
+		 const double *poly_coeffs ,
+		 const size_t n ,
+		 const size_t m )
 {
-  if( n < 2 || m < 1 ) return FAILURE ;
-  
-  // is guaranteed
-  pade_coeffs[ 0 ] = poly_coeffs[ 0 ] ;
-
-  // I do the simple cases here 
-  switch( n ) {
-  case 1 :
-    switch( m ) {
-    case 1 :     // ( 1 , 1 ) pade
-      pade_coeffs[ 1 ] =  poly_coeffs[ 1 ] ;
-      pade_coeffs[ 2 ] = -poly_coeffs[ 2 ] / poly_coeffs[ 1 ] ;
-      return SUCCESS ;
-    case 2 :     // ( 1 , 2 ) pade
-      pade_coeffs[ 1 ] =  poly_coeffs[ 1 ] ;
-      pade_coeffs[ 2 ] = -poly_coeffs[ 2 ] / poly_coeffs[ 1 ] ;
-      pade_coeffs[ 3 ] = ( poly_coeffs[ 2 ] * poly_coeffs[ 2 ] - 
-			   poly_coeffs[ 1 ] * poly_coeffs[ 3 ] ) / 
-	( poly_coeffs[1] * poly_coeffs[1] ) ;
-      return SUCCESS ;
-    }
-    break ;
-  case 2 :
-    switch( m ) {
-    case 1 :     // ( 2 , 1 ) pade
-      pade_coeffs[ 1 ] = poly_coeffs[ 1 ] ;
-      pade_coeffs[ 2 ] = poly_coeffs[ 2 ] - 
-	( poly_coeffs[ 3 ] * poly_coeffs[ 1 ] ) / poly_coeffs[ 2 ] ;
-      pade_coeffs[ 3 ] = -poly_coeffs[ 3 ] / poly_coeffs[ 2 ] ;
-      return SUCCESS ;
-    }
-    break ;
-  }
-
   // the matrix order equation we must solve
-  const size_t order = n + m + 1 ;
-
-  if( order <= 1 ) return FAILURE ;
-
-  // initialise solve matrix and its inverse
-  double **sub_solve = malloc( m * sizeof( double* ) ) ;
-  double **Ainv = malloc( m * sizeof( double* ) ) ;
-
-  // vectors we use
-  double *solves = malloc( m * sizeof( double ) ) ;
-  double *left_side = malloc( ( order - 1 ) * sizeof( double ) ) ;
-  double *right_side = malloc( ( order - 1 ) * sizeof( double ) ) ;
-
-  size_t i , j , FLAG = FAILURE ;
-
-  // initialise
-  for( i = 0 ; i < order - 1 ; i++ ) {
-    left_side[i] = right_side[i] = 0 ;
+  size_t i , j ;
+  for( i = 0 ; i < n + m ; i++ ) {
+    pade_coeffs[i] = 0.0 ;
   }
+
+  // gsl matrix allocations
+  gsl_matrix *alpha = gsl_matrix_alloc( m , m ) ;
+  gsl_vector *beta  = gsl_vector_alloc( m ) ;
+  gsl_vector *delta = gsl_vector_alloc( m ) ;
+  gsl_permutation *perm = gsl_permutation_alloc( m ) ;
+
+  // flag for whether it worked
+  int FLAG = FAILURE ;
 
   // set up the submatrix we need to solve for the
   // left hand side
   for( i = 0 ; i < m ; i++ ) {
-    sub_solve[ i ] = malloc( m * sizeof( double) ) ;
-    Ainv[ i ] = malloc( m * sizeof( double) ) ;
     for( j = 0 ; j < m ; j++ ) {
-      if( i - j + n > 0 ) {
-	sub_solve[i][j] = poly_coeffs[ i - j + n ] ;
+      if( ( i + n ) < j ) {
+	gsl_matrix_set( alpha , i , j , 0 ) ;
       } else {
-	sub_solve[i][j] = 0.0 ;
+	gsl_matrix_set( alpha , i , j , poly_coeffs[ i + n - j ] ) ;
       }
+      printf( " %f " , gsl_matrix_get( alpha , i , j ) ) ;
     }
-    solves[i] = -poly_coeffs[ i + n + 1 ] ;
-    #ifdef VERBOSE
-    printf( "sols [ %d ] = %d :: %f \n" , i , m + i + 1 , solves[i] ) ;
-    #endif
+    printf( "\n" ) ;
+    gsl_vector_set( beta , i , -poly_coeffs[ i + n + 1 ] ) ;
+    printf( "POLY :: %f \n" , -poly_coeffs[ i + n - j ] ) ;
   }
 
-  // printhimout
-#ifdef VERBOSE
-  printmatrix( (const double**)sub_solve , m , m ) ;
-#endif
-
-  // perform an inverse
-  if( svd_inverse( Ainv , (const double**)sub_solve ,
-		   m , m , 1E-8 , true ) == FAILURE ) {
-    FLAG = FAILURE ;
-    goto FREE ;
+  // solves alpha[p][q] * delta( a[q] ) = beta[p] for delta
+  int signum , Flag = SUCCESS ;
+  if( gsl_linalg_LU_decomp( alpha , perm , &signum ) != GSL_SUCCESS ) {
+    fprintf( stderr , "[POLY_COEFF] LU decomp failed, rolling back to SVD\n" ) ;
+    Flag = FAILURE ;
+  }
+  if( gsl_linalg_LU_solve( alpha , perm , beta , delta ) != GSL_SUCCESS ) {
+    fprintf( stderr , "[POLY_COEFF] LU solve failure \n" ) ;
+    Flag = FAILURE ;
   }
 
   // multiply ainverse by sols to get left hand side coefficients
-  left_side[ 0 ] = 1.0 ;
-  for( i = 1 ; i < order - 1 ; i++ ) {
-    left_side[ i ] = 0.0 ;
-    if( i <= m ) {
-      for( j = 0 ; j < m ; j++ ) {
-	left_side[ i ] += Ainv[i-1][j] * solves[j] ;
-      }
-    }
+  for( j = 0 ; j < m ; j++ ) {
+    pade_coeffs[ n + j ] = gsl_vector_get( delta , j ) ;
   }
 
   // multiply coefficient matrix by left hand side
-  for( i = 0 ; i < order-1 ; i++ ) {
+  for( i = 0 ; i < n ; i++ ) {
     register double sum = poly_coeffs[ i + 1 ] ;
     for( j = 1 ; j <= i ; j++ ) {
-      sum += poly_coeffs[ i - j + 1 ] * left_side[ j ] ;
+      sum += poly_coeffs[ i - j + 1 ] * pade_coeffs[ n + j ] ;
     }
-    right_side[ i ] = sum ;
+    pade_coeffs[ i ] = sum ;
     #ifdef VERBOSE
     printf( "\n" ) ;
-    printf( "right[ %d ] = %f \n" , i , right_side[ i ] ) ;
+    printf( "right[ %d ] = %f \n" , i , pade_coeffs[ i ] ) ;
     #endif
   }
 
+  //#ifdef VERBOSE
   // numerator is first in our scheme
-  for( i = 0 ; i < n-1 ; i++ ) {
-    pade_coeffs[ i + 1 ] = right_side[ i ] ;
+  printf( "( (%1.2f) q^{%d} " , pade_coeffs[ 0 ] , 2*(0) ) ;
+  for( i = 1 ; i < n ; i++ ) {
+    printf( " + (%1.2f) q^{%d} " , pade_coeffs[ i ] , 2*(i) ) ;
   }
-  pade_coeffs[ i + 1 ] = right_side[ i ] ;
+  printf( ") / ( 1 " ) ;
+
   // denominator is last
-  for( i = 0 ; i < m-1 ; i++ ) {
-    pade_coeffs[ i + n + 1 ] = left_side[ i + 1 ] ;
-  } 
-  pade_coeffs[ i + n + 1 ] = left_side[ i + 1 ] ;
-
-  // free workspaces
- FREE :
   for( i = 0 ; i < m ; i++ ) {
-    free( sub_solve[i] ) ;
-    free( Ainv[i] ) ;
+    printf( "+ (%1.2f) q^{%d} " , pade_coeffs[ i + n ] , 2*(i+1) ) ;
   }
-  free( sub_solve ) ;
-  free( Ainv ) ;
-  free( solves ) ;
-  free( left_side ) ;
-  free( right_side ) ;
+  printf( " ) \n" ) ;
+  //#endif
 
+  // free the gsl vectors
+  gsl_vector_free( beta ) ;
+  gsl_matrix_free( alpha ) ;
+  gsl_permutation_free( perm ) ;
+  gsl_vector_free( delta ) ;
+  
   return FLAG ;
 }

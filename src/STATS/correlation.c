@@ -204,6 +204,7 @@ write_corrmatrix( const double **correlation ,
 {
   if( Corrfit == UNWEIGHTED ) { return ; }
   size_t i , j ;
+  printf( "\n" ) ;
   for( i = 0 ; i < NCUT ; i++ ) {
     if( Corrfit == UNCORRELATED ) {
       printf( "%f " , correlation[0][i] ) ;
@@ -214,6 +215,7 @@ write_corrmatrix( const double **correlation ,
       printf( "\n" ) ;
     }
   }
+  printf( "\n" ) ;
   return ;
 }
 

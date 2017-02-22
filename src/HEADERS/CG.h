@@ -2,7 +2,7 @@
 #define CG_H
 
 int
-cg_iter( struct fit_descriptor *fdesc ,
+cg_iter( void *fdesc ,
 	 const void *data ,
 	 const double **W ,
 	 const double TOL ) ;

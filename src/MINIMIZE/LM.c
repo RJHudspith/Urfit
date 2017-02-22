@@ -12,7 +12,7 @@
 
 // use second derivs? NRC says that they can be harmful
 // not using them makes the code run faster sometimes
-//#define WITH_D2_DERIVS 
+#define WITH_D2_DERIVS 
 
 // get the matrices alpha and beta
 static int
@@ -82,7 +82,7 @@ get_alpha_beta( gsl_matrix *alpha ,
 	  *t = 
 	    f.df[p][i] * f.df[q][i] 
 	    #ifdef WITH_D2_DERIVS
-	    + f.d2f[q+f.Nlogic*p][i] * f.f[i] 
+	    + f.d2f[q+f.NPARAMS*p][i] * f.f[i] 
 	    #endif
 	    ; t++ ;
 	}
@@ -92,7 +92,7 @@ get_alpha_beta( gsl_matrix *alpha ,
 	  *t = 
 	    W[0][i] * ( f.df[p][i] * f.df[q][i] 
                         #ifdef WITH_D2_DERIVS
-			+ f.d2f[q+f.Nlogic*p][i] * f.f[i]
+			+ f.d2f[q+f.NPARAMS*p][i] * f.f[i]
 			#endif
 			) ; t++ ;
 	}
@@ -103,7 +103,7 @@ get_alpha_beta( gsl_matrix *alpha ,
 	    *t = 
 	      W[i][j] * ( f.df[p][i] * f.df[q][j] 
 			  #ifdef WITH_D2_DERIVS
-			  + f.d2f[q+f.Nlogic*p][i] * f.f[j] 
+			  + f.d2f[q+f.NPARAMS*p][i] * f.f[j] 
 			  #endif
 			  ) ; t++ ;
 	  }
@@ -187,12 +187,15 @@ lm_step( struct ffunction *f ,
 
 // perform marquardt - levenberg updates
 int
-lm_iter( struct fit_descriptor *fdesc ,
+lm_iter( void *fdesc ,
 	 const void *data ,
 	 const double **W ,
 	 const double TOL )
 {
-  // allocate the fitfunction
+  // point to the fit function
+  struct fit_descriptor *Fit = (struct fit_descriptor*)fdesc ;
+  
+  // set maximum iterations
   const size_t LMMAX = 10000 ; 
 
   // lambda multiplying factor
@@ -201,70 +204,67 @@ lm_iter( struct fit_descriptor *fdesc ,
   double chisq_diff = 10 , Lambda = 0.1 ;
   size_t iters = 0 , i ;
 
-  // some guesses
-  fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
-
   // get priors
-  fdesc -> f.Prior = fdesc -> Prior ;
+  Fit -> f.Prior = Fit -> Prior ;
 
   // allocate alpha, beta, delta and permutation matrices
-  gsl_matrix *alpha     = gsl_matrix_alloc( fdesc -> Nlogic , 
-					    fdesc -> Nlogic ) ;
-  gsl_matrix *alpha_new = gsl_matrix_alloc( fdesc -> Nlogic , 
-					    fdesc -> Nlogic ) ;
-  gsl_vector *beta  = gsl_vector_alloc( fdesc -> Nlogic ) ;
-  gsl_vector *delta = gsl_vector_alloc( fdesc -> Nlogic ) ;
-  gsl_permutation *perm = gsl_permutation_alloc( fdesc -> Nlogic ) ;
+  gsl_matrix *alpha     = gsl_matrix_alloc( Fit -> Nlogic , 
+					    Fit -> Nlogic ) ;
+  gsl_matrix *alpha_new = gsl_matrix_alloc( Fit -> Nlogic , 
+					    Fit -> Nlogic ) ;
+  gsl_vector *beta  = gsl_vector_alloc( Fit -> Nlogic ) ;
+  gsl_vector *delta = gsl_vector_alloc( Fit -> Nlogic ) ;
+  gsl_permutation *perm = gsl_permutation_alloc( Fit -> Nlogic ) ;
 
   // set the old parameters
-  double old_params[ fdesc -> Nlogic ] ;
-  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
-    old_params[ i ] = fdesc -> f.fparams[ i ] ;
+  double old_params[ Fit -> Nlogic ] ;
+  for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+    old_params[ i ] = Fit -> f.fparams[ i ] ;
   }
 
   // evaluate the function, its first and second derivatives
-  fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
-  fdesc -> dF( fdesc -> f.df , data , fdesc -> f.fparams ) ;
+  Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
+  Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
   #ifdef WITH_D2_DERIVS
-  fdesc -> d2F( fdesc -> f.d2f , data , fdesc -> f.fparams ) ;
+  Fit -> d2F( Fit -> f.d2f , data , Fit -> f.fparams ) ;
   #endif
-  fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
+  Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
 
   // get alpha and beta for the new set of f
-  get_alpha_beta( alpha , beta , fdesc -> f , W ) ;
+  get_alpha_beta( alpha , beta , Fit -> f , W ) ;
 
   // loop until chisq evens out
   while( chisq_diff > TOL ) {
 
-    double new_chisq = lm_step( &fdesc -> f , old_params , alpha_new , delta , 
-				perm , alpha , beta , *fdesc , 
+    double new_chisq = lm_step( &Fit -> f , old_params , alpha_new , delta , 
+				perm , alpha , beta , *Fit , 
 				data , W , Lambda ) ;    
 
     #ifdef VERBOSE
     printf( "[ML] chis :: %f %f %e \n" , new_chisq , 
-	    fdesc -> f.chisq , fabs( fdesc -> f.chisq - new_chisq ) ) ;
+	    Fit -> f.chisq , fabs( Fit -> f.chisq - new_chisq ) ) ;
     #endif
 
     // update lambda shrinking the size if we are close to a solution
-    if( new_chisq <= fdesc -> f.chisq && iters < LMMAX ) {
+    if( new_chisq <= Fit -> f.chisq && iters < LMMAX ) {
       // update lambda
       Lambda /= fac ;
-      chisq_diff = fabs( fdesc -> f.chisq - new_chisq ) ;
-      fdesc -> f.chisq = new_chisq ;
-      for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
-	old_params[ i ] = fdesc -> f.fparams[ i ] ;
+      chisq_diff = fabs( Fit -> f.chisq - new_chisq ) ;
+      Fit -> f.chisq = new_chisq ;
+      for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+	old_params[ i ] = Fit -> f.fparams[ i ] ;
       }
       // update derivatives and alpha and beta
-      fdesc -> dF( fdesc -> f.df , data , fdesc -> f.fparams ) ;
+      Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
       #ifdef WITH_D2_DERIVS
-      fdesc -> d2F( fdesc -> f.d2f , data , fdesc -> f.fparams ) ;
+      Fit -> d2F( Fit -> f.d2f , data , Fit -> f.fparams ) ;
       #endif
-      get_alpha_beta( alpha , beta , fdesc -> f , W ) ;
+      get_alpha_beta( alpha , beta , Fit -> f , W ) ;
     } else {
-      for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
-	fdesc -> f.fparams[ i ] = old_params[ i ] ;
+      for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+	Fit -> f.fparams[ i ] = old_params[ i ] ;
       }
-      fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ; // reset f
+      Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ; // reset f
       Lambda *= fac ;
     }
 
@@ -286,10 +286,10 @@ lm_iter( struct fit_descriptor *fdesc ,
     printf( "\n[LM] FINISHED in %zu iterations \n" , iters ) ;
   }
   
-  printf( "[LM] chisq :: %e \n\n" , fdesc -> f.chisq ) ;
+  printf( "[LM] chisq :: %e \n\n" , Fit -> f.chisq ) ;
   // tell us the fit parameters
-  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
-    printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
+  for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+    printf( "PARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
   }
 
   // free gsl stuff

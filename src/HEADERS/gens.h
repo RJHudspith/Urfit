@@ -33,29 +33,35 @@ typedef enum {
 
 // fit types
 typedef enum {
-  EXP , COSH , SINH , EXP_PLUSC , PADE , POLY
+  EXP , COSH , EXP_PLUSC , PADE , POLY , PP_AA , PP_AA_WW , SINH 
 } fittype ;
 
 // time folding types
 typedef enum {
-  PLUS_PLUS , PLUS_MINUS , MINUS_PLUS , MINUS_MINUS , NOFOLD 
-} foldtype ;
+  PLUS_PLUS , PLUS_MINUS , MINUS_PLUS , MINUS_MINUS , NOFOLD , NOFOLD_MINUS 
+} fold_type ;
 
-// error types
-enum { ERR , HI , LO , AVE } errtype ;
+// special channel types
+enum { Vi = 123 , Ai = 678 , Tij = 10203 , Tit = 31323 } ;
 
 // what type of data do we use
 typedef enum { Raw , JackKnife , BootStrap } resample_type ;
+
+// file type we expect to read
+typedef enum { Corr , Fake } file_type ;
 
 // x-data descriptor
 struct x_desc {
   double X ;
   size_t LT ;
+  size_t N ;
+  size_t M ;
 } ;
 
 // map structure
 struct pmap {
-  size_t *p ;
+  size_t *p ;  // is the parameter map
+  size_t bnd ; // is the simultaneous index
 } ;
 
 // priors struct
@@ -71,41 +77,12 @@ struct ffunction {
   double **df ; // first derivatives
   double **d2f ; // second derivatives
   double *fparams ; // fit parameters
+  double **U ; // linear fit matrix
   const struct prior *Prior ;  
   size_t N ; // length of the fit
   size_t NPARAMS ; // number of fit parameters
   corrtype CORRFIT ; // type of fit
   double chisq ; // chisq 
-} ;
-
-struct fit_descriptor {
-  struct ffunction f ;
-  double (*func)( const struct x_desc X , const double *fparams , const size_t Npars ) ;
-  void (*F) ( double *f , const void *data , const double *fparams ) ;
-  void (*dF) ( double **df , const void *data , const double *fparams ) ;
-  void (*d2F) ( double **d2f , const void *data , const double *fparams ) ;
-  void (*guesses) ( double *fparams , const size_t Nlogic ) ;
-  const struct prior *Prior ;
-  size_t Nparam ; // Number of parameters
-  size_t Nlogic ;  // logical Nparameters 
-} ;
-
-// struct for keeping the fit information
-struct fit_info {
-  corrtype Corrfit ;
-  fittype Fitdef ;
-  size_t M ;
-  struct pmap *map ;
-  int (*Minimize) ( struct fit_descriptor *fdesc ,
-		    const void *data ,
-		    const double **W ,
-		    const double TOL ) ;
-  size_t N ;
-  size_t Nlogic ;
-  size_t Nparam ;
-  struct prior *Prior ;
-  bool *Sims ;
-  double Tol ;
 } ;
 
 // struct containing our statistics
@@ -140,6 +117,38 @@ struct data_info {
   resample_type Restype ;
 } ;
 
+// struct for keeping the fit information
+struct fit_info {
+  corrtype Corrfit ;
+  fittype Fitdef ;
+  size_t M ;
+  struct pmap *map ;
+  int (*Minimize) ( void *fdesc ,
+		    const void *data ,
+		    const double **W ,
+		    const double TOL ) ;
+  size_t N ;
+  size_t Nlogic ;
+  size_t Nparam ;
+  struct prior *Prior ;
+  bool *Sims ;
+  double Tol ;
+} ;
+
+// fit descriptor struct
+struct fit_descriptor {
+  struct ffunction f ;
+  double (*func)( const struct x_desc X , const double *fparams , const size_t Npars ) ;
+  void (*F) ( double *f , const void *data , const double *fparams ) ;
+  void (*dF) ( double **df , const void *data , const double *fparams ) ;
+  void (*d2F) ( double **d2f , const void *data , const double *fparams ) ;
+  void (*guesses) ( double *fparams , const struct data_info Data , const struct fit_info Fit ) ;
+  void (*linmat) ( double **U , const void *data , const size_t Nparam , const size_t Nlogic ) ;
+  const struct prior *Prior ;
+  size_t Nparam ; // Number of parameters
+  size_t Nlogic ;  // logical Nparameters 
+} ;
+
 // data structure in the fits
 struct data {
   size_t n ;
@@ -148,6 +157,8 @@ struct data {
   size_t *LT ;
   size_t Npars ;
   struct pmap *map ;
+  size_t N ;
+  size_t M ;
 } ;
 
 // uninitialised flag
@@ -171,11 +182,14 @@ struct traj {
   size_t Filename_Length ;
   double Fit_High ;
   double Fit_Low ;
+  size_t Gs ;
+  size_t Gk ;
+  fold_type Fold ;
   size_t Increment ;
   size_t Nd ;
 } ;
 
-
+// simple graph stuff
 struct graph {
   char *Name ;
   char *Xaxis ;
@@ -185,8 +199,9 @@ struct graph {
 
 // input parameters
 struct input_params {
-  struct fit_info Fit ;
   struct data_info Data ;
+  file_type FileType ;
+  struct fit_info Fit ;
   struct graph Graph ;
   struct traj *Traj ;
 } ;

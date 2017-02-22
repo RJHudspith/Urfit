@@ -6,12 +6,15 @@
 
 #include "bootfit.h"
 #include "correlation.h"
+#include "decays.h"
 #include "init.h"         // free fit
 #include "make_xmgrace.h" // drawing graph
 #include "plot_fitfunc.h" 
 #include "pmap.h"
 #include "resampled_ops.h"
 #include "stats.h"
+
+#include "GLS.h"
 
 // filter the data to lie within the fit range
 static bool *
@@ -105,6 +108,9 @@ fit_and_plot( struct input_params Input )
   if( ( fitparams = perform_bootfit( Data , Input.Fit ) ) == NULL ) {
     goto memfree ;
   }
+
+  // compute a decay constant
+  decay( fitparams , Input ) ;
   
   // make the graph
   make_xmgrace_graph( Input.Graph.Name ,

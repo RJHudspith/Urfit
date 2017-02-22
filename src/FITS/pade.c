@@ -1,41 +1,23 @@
 /**
-   PADE Model f = a + ( b*x + ... + b_n*x^n) / ( 1 + c*x + ... + c_mx^m )
+   PADE Model f = ( b + b*x + ... + b_n*x^n) / ( 1 + c*x + ... + c_mx^m )
  */
 #include "gens.h"
 
-// set the n and m
-static size_t n = 1 , m = 1 ;
-
-void 
-pade_set_nm( const size_t new_n ,
-	     const size_t new_m )
-{
-  if( new_n > 0 && new_m > 0 ) {
-    n = new_n ; m = new_m ;
-  }
-}
-
-void
-pade_get_nm( size_t *new_n ,
-	     size_t *new_m )
-{
-  *new_n = n ; *new_m = m ;
-}
-
+#include "gls_bootfit.h"
+#include "pade_coefficients.h"
 
 double
 fpade( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  register double numerator = X.X * fparams[ n ] ;
   size_t i ;
-  for( i = n-1 ; i > 0 ; i-- ) {
-    numerator = X.X * ( fparams[i] + numerator ) ;
+  double num = 0.0 , den = 0.0 ;
+  for( i = 0 ; i < X.N ; i++ ) {
+    num += fparams[i] * pow( X.X , i ) ;
   }
-  register double denominator = X.X * fparams[ n + m ] ;
-  for( i = n + m - 1 ; i > n ; i-- ) {
-    denominator = X.X * ( fparams[i] + denominator ) ;
+  for( i = 0 ; i < X.M ; i++ ) {
+    den += fparams[X.N+i] * pow( X.X , i+1 ) ;
   }
-  return fparams[0] + ( numerator ) / ( 1 + denominator ) ;
+  return num / ( 1.0 + den ) ;
 }
 
 void
@@ -45,7 +27,8 @@ pade_f( double *f , const void *data , const double *fparams )
   double par[ DATA -> Npars ] ;
   size_t i , p ; 
   for( i = 0 ; i < DATA -> n ; i++ ) {
-    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] } ;
+    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
+			      DATA -> N , DATA -> M } ;
     for( p = 0 ; p < DATA -> Npars ; p++ ) {
       par[ p ] = fparams[ DATA -> map[i].p[p] ] ;
     }
@@ -62,29 +45,21 @@ pade_df( double **df , const void *data , const double *fparams )
   size_t i , j ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
     const double X = DATA -> x[i] ;
-    // precompute numerator
-    double numerator = X * fparams[ n ] ;
-    for( j = n - 1 ; j > 0 ; j-- ) {
-      numerator = X * ( fparams[ DATA -> map[i].p[j] ] + numerator ) ;
+    double num = 0.0 , den = 0.0 ;
+    for( j = 0 ; j < DATA -> N ; j++ ) {
+      num += fparams[ DATA -> map[i].p[j] ] * pow( X , j ) ;
     }
-    // precompute denominator
-    register double denominator = X * fparams[ n + m ] ;
-    for( j = n + m - 1 ; j > n ; j-- ) {
-      denominator = X * ( fparams[ DATA -> map[i].p[j] ] + denominator ) ;
+    for( j = 0 ; j < DATA -> M ; j++ ) {
+      den += fparams[ DATA -> map[i].p[ DATA -> N +j] ] * pow( X , j+1 ) ;
     }
-    denominator += 1.0 ;
-
-    // this factor is pretty common
-    const double factor = -( numerator ) / ( denominator * denominator ) ;
-
-    df[ DATA -> map[i].p[0] ][i] = 1.0 ;
+    den += 1.0 ;
+    const double fac = num / den ;
     // numerator derivatives
-    for( j = 1 ; j <= n ; j++ ) {
-      df[ DATA -> map[i].p[j] ][i] = pow( X , j ) / denominator ;
+    for( j = 0 ; j < DATA -> N ; j++ ) {
+      df[j][i] = pow( X , j ) / den ;
     }
-    // denominator  derivatives
-    for( j = 1 ; j <= m ; j++ ) {
-      df[ DATA -> map[i].p[j+n] ][i] = pow( X , j ) * factor ;
+    for( j = 0 ; j < DATA -> M ; j++ ) {
+      df[j+DATA -> N][i] = -pow( X , j+1 ) * fac / den ;
     }
   }
   return ;
@@ -98,22 +73,12 @@ pade_d2f( double **d2f , const void *data , const double *fparams )
 }
 
 void
-pade_guesses( double *fparams , const size_t Nlogic )
+pade_guesses( double *fparams ,
+	      const struct data_info Data ,
+	      const struct fit_info Fit ) 
 {
-  size_t i ;
-  bool flagged = true ;
-  for( i = 0 ; i < Nlogic ; i++ ) {
-    if( fparams[i] != UNINIT_FLAG ) {
-      flagged = false ;
-    }
-  }
-
-  // perform a guess, otherwise assume someone has set them
-  if( flagged == true ) {
-    for( i = 0 ; i < Nlogic ; i++ ) {
-      fparams[i] = i + 1 ;
-    }
-  }
-  
+  fparams[0] = 1 ;
+  fparams[1] = 0.6 ;
+  fparams[2] = 0.3 ;
   return ;
 }

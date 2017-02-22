@@ -2,7 +2,7 @@
 #define LM_H
 
 int
-lm_iter( struct fit_descriptor *fdesc ,
+lm_iter( void *fdesc ,
 	 const void *data ,
 	 const double **W ,
 	 const double TOL ) ;

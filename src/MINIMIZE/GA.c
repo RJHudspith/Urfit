@@ -52,7 +52,7 @@
 #define NMUTANTS (NGEN - NBREED - NCHILD) // number of mutants
 
 // It turns out this one is very important!! WHY???
-#define NOISE (0.1) // guesses * gaussian of width NOISE to start our run
+#define NOISE (0.01) // guesses * gaussian of width NOISE to start our run
 
 // defaults to selection sort but can use insertion sort here too
 //#define INSERTION_SORT
@@ -199,30 +199,30 @@ compute_sigma( struct sigma *Sig ,
 // at the top to be played around with. Does not use any derivative 
 // information!
 int
-ga_iter( struct fit_descriptor *fdesc ,
+ga_iter( void *fdesc ,
 	 const void *data ,
 	 const double **W ,
 	 const double TOL )
 {
-  if( fdesc -> Nlogic == 0 ) return SUCCESS ; // do nothing
+  // point to the fit descriptor struct
+  struct fit_descriptor *Fit = (struct fit_descriptor*)fdesc ;
+    
+  if( Fit -> Nlogic == 0 ) return SUCCESS ; // do nothing
   
   // counters and max iterations GAMAX
   size_t iters = 0 , i , j ;
   const size_t GAMAX = 5000 ;
 
   // allocate the fitfunction
-  struct ffunction f2 = allocate_ffunction( fdesc -> Nlogic , 
-					    fdesc -> f.N ) ;
-  
-  // set the guesses
-  fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
+  struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , 
+					    Fit -> f.N ) ;
 
   // get priors
-  fdesc -> f.Prior = fdesc -> Prior ;
+  Fit -> f.Prior = Fit -> Prior ;
 
   // evaluate the function, its first and second derivatives
-  fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
-  fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
+  Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
+  Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
 
 #ifdef VERBOSE
   printf( "[GA] Using a population of %d \n" , NGEN ) ;
@@ -239,10 +239,10 @@ ga_iter( struct fit_descriptor *fdesc ,
   G = malloc( NGEN * sizeof( struct genes ) ) ;
   for( i = 0 ; i < NGEN ; i++ ) {
     G[i].g = NULL ;
-    G[i].g = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
+    G[i].g = malloc( Fit -> Nlogic * sizeof( double ) ) ;
   }
 
-  Sig.s = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
+  Sig.s = malloc( Fit -> Nlogic * sizeof( double ) ) ;
   
   // get a seed from urandom
   size_t Seed ;
@@ -262,12 +262,12 @@ ga_iter( struct fit_descriptor *fdesc ,
   // guesses that are gaussian distibuted with sigma of NOISE
   // defined at the top of the file
   for( i = 0 ; i < NGEN ; i++ ) {
-    G[i].Nlogic = fdesc -> Nlogic ;
-    for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
-      G[i].g[j] = fdesc -> f.fparams[j] * 
-	( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
+    G[i].Nlogic = Fit -> Nlogic ;
+    for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
+      G[i].g[j] = Fit -> f.fparams[j] * 
+	( 1 + gsl_ran_gaussian( r , fabs( Fit -> f.fparams[j] ) * NOISE ) ) ;
     }
-    G[i].chisq = compute_chi( &f2 , fdesc -> f , fdesc ,
+    G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
 			      G[i].g , data , W ) ;
   }
 
@@ -290,25 +290,25 @@ ga_iter( struct fit_descriptor *fdesc ,
     for( i = NBREED ; i < NGEN - NMUTANTS ; i++ ) {
       const size_t father = gsl_rng_uniform_int( r , NBREED ) ;
       const size_t mother = gsl_rng_uniform_int( r , NBREED ) ;
-      for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
+      for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
 	// roll the dice to decide where the genes go!
 	G[i].g[j] = 0.5 * ( G[ father ].g[j] + G[ mother ].g[j] ) ;
       }
-      G[i].chisq = compute_chi( &f2 , fdesc -> f , fdesc ,
+      G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
 				G[i].g , data , W ) ;
     }
  
     // recompute sigma, estimating from the breeding population
-    compute_sigma( &Sig , G , fdesc -> Nlogic ) ;
+    compute_sigma( &Sig , G , Fit -> Nlogic ) ;
     
     // bottom mutants come from mutations to the breeding population
     for( i = NGEN - NMUTANTS ; i < NGEN ; i++ ) {
       const size_t mutate = gsl_rng_uniform_int( r , NBREED + NCHILD ) ;
-      for( j = 0 ; j < fdesc -> Nlogic ; j++ ) {
+      for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
 	G[i].g[j] = G[ mutate ].g[j] * 
 	  ( 1 + gsl_ran_gaussian( r , Sig.s[j] ) ) ;
       }
-      G[i].chisq = compute_chi( &f2 , fdesc -> f , fdesc ,
+      G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
 				G[i].g , data , W ) ;
     }
 
@@ -333,13 +333,13 @@ ga_iter( struct fit_descriptor *fdesc ,
   }
 
   // set the fit parameters as the best gene and set the chisq
-  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
-    fdesc -> f.fparams[i] = G[0].g[i] ;
+  for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+    Fit -> f.fparams[i] = G[0].g[i] ;
     #ifdef VERBOSE
-    printf( "FPARAMS_%zu :: %f \n" , i , fdesc -> f.fparams[i] ) ;
+    printf( "FPARAMS_%zu :: %f \n" , i , Fit -> f.fparams[i] ) ;
     #endif
   }
-  fdesc -> f.chisq = G[0].chisq ;
+  Fit -> f.chisq = G[0].chisq ;
   
   // best fit parameter will be in population 1
   if( iters == GAMAX ) {
@@ -349,7 +349,6 @@ ga_iter( struct fit_descriptor *fdesc ,
     printf( "\n[GA] chisq :: %e || %zu iterations \n" ,
 	    G[0].chisq , iters ) ;
   }
-
 
  memfree :
   
@@ -364,7 +363,7 @@ ga_iter( struct fit_descriptor *fdesc ,
   }
 
   // free the fitfunction
-  free_ffunction( &f2 , fdesc -> Nlogic ) ;
+  free_ffunction( &f2 , Fit -> Nlogic ) ;
 
   // free the rng
   if( r != NULL ) {

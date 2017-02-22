@@ -11,98 +11,98 @@
 
 // steepest-descent iterations
 int
-sd_iter( struct fit_descriptor *fdesc ,
+sd_iter( void *fdesc ,
 	 const void *data ,
 	 const double **W ,
 	 const double TOL )
 {
+  // point to the fit descriptor
+  struct fit_descriptor *Fit = (struct fit_descriptor*)fdesc ;
+  
   // counters and max iterations SDMAX
   const size_t SDMAX = 10000 ;
   size_t iters = 0 , i ;
 
   // allocate the temporary fitfunction for computing new steps 
   // down descent direction in the line search
-  struct ffunction f2 = allocate_ffunction( fdesc -> Nlogic , 
-					    fdesc -> f.N ) ;
+  struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , 
+					    Fit -> f.N ) ;
 
   // allocate the gradient
-  double *grad = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
+  double *grad = malloc( Fit -> Nlogic * sizeof( double ) ) ;
   double *y = NULL , *t ;
-  size_t Nsum = fdesc -> f.N ;
-  switch( fdesc -> f.CORRFIT ) {
+  size_t Nsum = Fit -> f.N ;
+  switch( Fit -> f.CORRFIT ) {
   case UNWEIGHTED : case UNCORRELATED : break ;
-  case CORRELATED : Nsum = fdesc -> f.N * fdesc -> f.N ; break ;
+  case CORRELATED : Nsum = Fit -> f.N * Fit -> f.N ; break ;
   }
   y = malloc( Nsum * sizeof( double ) ) ;
   
-  // set the guesses
-  fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
-
   // get priors
-  fdesc -> f.Prior = fdesc -> Prior ;
-  f2.Prior = fdesc -> Prior ;
+  Fit -> f.Prior = Fit -> Prior ;
+  f2.Prior = Fit -> Prior ;
 
   // evaluate the function, its first and second derivatives
-  fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
-  fdesc -> dF( fdesc -> f.df , data , fdesc -> f.fparams ) ;
-  fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
+  Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
+  Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
+  Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
   
   double chisq_diff = 10 ;
   while( chisq_diff > TOL && iters < SDMAX ) {
 
     // compute the descent direction ( - the gradient for SD! )
-    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
+    for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
       size_t j , k ;
       t = y ;
-      switch( fdesc -> f.CORRFIT ) {
+      switch( Fit -> f.CORRFIT ) {
       case UNWEIGHTED :
-	for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-	  *t = -fdesc -> f.df[i][j] * fdesc -> f.f[j] ; t++ ;
+	for( j = 0 ; j < Fit -> f.N ; j++ ) {
+	  *t = -Fit -> f.df[i][j] * Fit -> f.f[j] ; t++ ;
 	}
 	break ;
       case UNCORRELATED :
-	for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-	  *t = -fdesc -> f.df[i][j] * W[0][j] * fdesc -> f.f[j] ; t++ ;
+	for( j = 0 ; j < Fit -> f.N ; j++ ) {
+	  *t = -Fit -> f.df[i][j] * W[0][j] * Fit -> f.f[j] ; t++ ;
 	}
 	break ;
       case CORRELATED :
-	for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-	  for( k = 0 ; k < fdesc -> f.N ; k++ ) {
-	    *t = -fdesc -> f.df[i][j] * W[j][k] * fdesc -> f.f[k] ; t++ ;
+	for( j = 0 ; j < Fit -> f.N ; j++ ) {
+	  for( k = 0 ; k < Fit -> f.N ; k++ ) {
+	    *t = -Fit -> f.df[i][j] * W[j][k] * Fit -> f.f[k] ; t++ ;
 	  }
 	}
 	break ;
       }
       grad[i] = kahan_summation( y , Nsum ) ;
-      if( fdesc -> f.Prior[i].Initialised == true ) {
-	grad[i] -= ( fdesc -> f.fparams[i] - fdesc -> f.Prior[i].Val ) / 
-	  ( fdesc -> f.Prior[i].Err * fdesc -> f.Prior[i].Err ) ;
+      if( Fit -> f.Prior[i].Initialised == true ) {
+	grad[i] -= ( Fit -> f.fparams[i] - Fit -> f.Prior[i].Val ) / 
+	  ( Fit -> f.Prior[i].Err * Fit -> f.Prior[i].Err ) ;
       }
     }
 
     // do the line search, it is a good idea to make the search proportional
     // to the fparams[i] so that if there is a large difference between parameters
     // this gets taken into account
-    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
+    for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
 
       // line search best alpha
-      const double ap = line_search( &f2 , fdesc -> f , grad , grad ,
-				     *fdesc , data , W , i ,
-				     fdesc -> f.fparams[i] ) ;
+      const double ap = line_search( &f2 , Fit -> f , grad , grad ,
+				     *Fit , data , W , i ,
+				     Fit -> f.fparams[i] ) ;
       
-      fdesc -> f.fparams[i] += ap * grad[i] ;
+      Fit -> f.fparams[i] += ap * grad[i] ;
 
       #ifdef VERBOSE
       printf( "[SD] line ap :: %e \n" , ap ) ;
       #endif
     }
 
-    fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
-    fdesc -> dF( fdesc -> f.df , data , fdesc -> f.fparams ) ;
+    Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
+    Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
 
-    const double chi = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
-    chisq_diff = fabs( chi - fdesc -> f.chisq ) ;
-    fdesc -> f.chisq = chi ;
+    const double chi = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
+    chisq_diff = fabs( chi - Fit -> f.chisq ) ;
+    Fit -> f.chisq = chi ;
 
     #ifdef VERBOSE
     printf( "[SD] ITER %zu :: chidiff %e \n" , iters , chisq_diff ) ;
@@ -118,9 +118,9 @@ sd_iter( struct fit_descriptor *fdesc ,
     printf( "\n[SD] FINISHED in %zu iterations \n" , iters ) ;
   }
 
-  printf( "[SD] chisq :: %e -> DIFF %e \n\n" , fdesc -> f.chisq , chisq_diff ) ;
-  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
-    printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
+  printf( "[SD] chisq :: %e -> DIFF %e \n\n" , Fit -> f.chisq , chisq_diff ) ;
+  for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+    printf( "PARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
   }
 
   // free the temporary array

@@ -21,6 +21,8 @@
 // minimizers
 #include "CG.h"
 #include "GA.h"
+#include "GLS.h"
+#include "GLS_pade.h"
 #include "LM.h"
 #include "SD.h"
 
@@ -44,16 +46,20 @@ get_fitDef(  struct input_params *Input ,
     fprintf( stderr , "[INPUTS] FitDef not found in input file!\n" ) ;
     return FAILURE ;
   }
-  if( are_equal( Flat[tag].Value , "EXP" ) ) {
+  if( are_equal( Flat[tag].Value , "COSH" ) ) {
+    Input -> Fit.Fitdef = COSH ;
+  } else if( are_equal( Flat[tag].Value , "EXP" ) ) {
     Input -> Fit.Fitdef = EXP ;
   } else if( are_equal( Flat[tag].Value , "EXP_PLUSC" ) ) {
     Input -> Fit.Fitdef = EXP_PLUSC ;
-  } else if( are_equal( Flat[tag].Value , "POLY" ) ) {
-    Input -> Fit.Fitdef = POLY ;
   } else if( are_equal( Flat[tag].Value , "PADE" ) ) {
     Input -> Fit.Fitdef = PADE ;
-  } else if( are_equal( Flat[tag].Value , "COSH" ) ) {
-    Input -> Fit.Fitdef = COSH ;
+  } else if( are_equal( Flat[tag].Value , "POLY" ) ) {
+    Input -> Fit.Fitdef = POLY ;
+  } else if( are_equal( Flat[tag].Value , "PP_AA" ) ) {
+    Input -> Fit.Fitdef = PP_AA ;
+  } else if( are_equal( Flat[tag].Value , "PP_AA_WW" ) ) {
+    Input -> Fit.Fitdef = PP_AA_WW ;
   } else if( are_equal( Flat[tag].Value , "SINH" ) ) {
     Input -> Fit.Fitdef = SINH ;
   } else {
@@ -73,7 +79,6 @@ get_fitCorr( struct input_params *Input ,
     fprintf( stderr , "[INPUTS] FitCorr not found in input file!\n" ) ;
     return FAILURE ;
   }
-  printf( "THIS SHIT %s \n" , Flat[tag].Value ) ;
   if( are_equal( Flat[tag].Value , "CORRELATED" ) ) {
     Input -> Fit.Corrfit = CORRELATED ;
   } else if( are_equal( Flat[tag].Value , "UNCORRELATED" ) ) {
@@ -101,6 +106,20 @@ get_fitMin( struct input_params *Input ,
     Input -> Fit.Minimize = cg_iter ;
   } else if( are_equal( Flat[tag].Value , "GA" ) ) {
     Input -> Fit.Minimize = ga_iter ;
+  } else if( are_equal( Flat[tag].Value , "GLS" ) ) {
+    if( Input -> Fit.Fitdef == POLY ) {
+      Input -> Fit.Minimize = gls_iter ;
+    } else {
+      fprintf( stderr , "[INPUTS] GLS only supports POLY type fit\n" ) ;
+      return FAILURE ;
+    }
+  } else if( are_equal( Flat[tag].Value , "GLS_pade" ) ) {
+    if( Input -> Fit.Fitdef == PADE ) {
+      Input -> Fit.Minimize = gls_pade_iter ;
+    } else {
+      fprintf( stderr , "[INPUTS] GLS only supports PADE type fit\n" ) ;
+      return FAILURE ;
+    }
   } else if( are_equal( Flat[tag].Value , "LM" ) ) {
     Input -> Fit.Minimize = lm_iter ;
   } else if( are_equal( Flat[tag].Value , "SD" ) ) {
@@ -165,6 +184,13 @@ get_Priors( struct input_params *Input ,
     char *tok = strtok( Flat[block_idx].Value , "," ) , *endptr ;
     const size_t idx = strtol( tok , &endptr , 10 ) ;
 
+    if( idx >= Input -> Fit.Nlogic ) {
+      fprintf( stderr ,
+	       "[INPUTS] prior index %zu is greater than Nlogic %zu \n" ,
+	       idx , Input -> Fit.Nlogic ) ;
+      return FAILURE ;
+    }
+
     // poke into the prior struct
     Input -> Fit.Prior[idx].Initialised = true ;
     tok = strtok( NULL , "," ) ;
@@ -220,7 +246,7 @@ get_fit( struct input_params *Input ,
 
   // set Nparam
   Input -> Fit.Nparam = get_Nparam( Input -> Fit ) ;
-
+  
   // read and allocate the number of simparams
   if( ( tag = tag_search( Flat , "FitSims" , 0 , Ntags ) ) == Ntags ) {
     fprintf( stderr , "[INPUTS] FitSims not found in input file!\n" ) ;

@@ -44,7 +44,7 @@ line_search( struct ffunction *f2 ,
   // perform a "backtracking line search" should use brent's method
   // really and probably will do at some point
   const double fac = 0.5 ;
-  double abest = alpha * 1000 ;
+  double abest = alpha * 100 ;
   size_t iters = 0 , ITERMAX = 50 ;
 
   double *y = NULL , *t = NULL ;

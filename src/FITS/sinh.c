@@ -6,8 +6,8 @@
 double
 fsinh( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  return fparams[1] * ( exp( -fparams[0] * X.X ) - 
-			exp( -fparams[0] * ( X.LT - X.X ) ) ) ;
+  return fparams[0] * ( exp( -fparams[1] * X.X ) - 
+			exp( -fparams[1] * ( X.LT - X.X ) ) ) ;
 }
 
 void
@@ -17,9 +17,9 @@ sinh_f( double *f , const void *data , const double *fparams )
   size_t i ; 
   for (i = 0; i < DATA -> n ; i++) {
     const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] } ;
-    f[i] = fparams[ DATA -> map[i].p[1] ] *
-      ( exp( -fparams[ DATA -> map[i].p[0] ] * X.X ) - 
-	exp( -fparams[ DATA -> map[i].p[0] ] * ( X.LT - X.X ) ) )
+    f[i] = fparams[ DATA -> map[i].p[0] ] *
+      ( exp( -fparams[ DATA -> map[i].p[1] ] * X.X ) - 
+	exp( -fparams[ DATA -> map[i].p[1] ] * ( X.LT - X.X ) ) )
       - DATA -> y[i] ;
   }
   return ;
@@ -33,11 +33,11 @@ sinh_df( double **df , const void *data , const double *fparams )
   size_t i ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
     const double t = DATA -> x[i] ;
-    const double fwd = exp(-fparams[ DATA -> map[i].p[0] ] * t ) ;
-    const double bwd = exp(-fparams[ DATA -> map[i].p[0] ] * ( DATA -> LT[i] - t ) ) ;
-    df[  DATA -> map[i].p[0] ][i] = -fparams[ DATA -> map[i].p[1] ] *
+    const double fwd = exp(-fparams[ DATA -> map[i].p[1] ] * t ) ;
+    const double bwd = exp(-fparams[ DATA -> map[i].p[1] ] * ( DATA -> LT[i] - t ) ) ;
+    df[  DATA -> map[i].p[1] ][i] = -fparams[ DATA -> map[i].p[0] ] *
       ( t * fwd - ( DATA -> LT[i] - t ) * bwd ) ;
-    df[  DATA -> map[i].p[1] ][i] = fwd - bwd ;
+    df[  DATA -> map[i].p[0] ][i] = fwd - bwd ;
   }
   return ;
 }
@@ -49,22 +49,3 @@ sinh_d2f( double **d2f , const void *data , const double *fparams )
   return ;
 }
 
-void
-sinh_guesses( double *fparams , const size_t Nlogic )
-{
-  size_t i , all_flagged = 0 ;
-  for( i = 0 ; i < Nlogic ; i++ ) {
-    if( fparams[i] == UNINIT_FLAG ) {
-      all_flagged++ ;
-    }
-  }
-
-  // perform a guess, otherwise assume someone has set them
-  if( all_flagged == Nlogic ) {
-    for( i = 0 ; i < Nlogic ; i++ ) {
-      fparams[i] = 1 + i ;
-    }
-  }
-  
-  return ;
-}

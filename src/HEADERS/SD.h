@@ -2,7 +2,7 @@
 #define SD_H
 
 int
-sd_iter( struct fit_descriptor *fdesc ,
+sd_iter( void *fdesc ,
 	 const void *data ,
 	 const double **W ,
 	 const double TOL ) ;

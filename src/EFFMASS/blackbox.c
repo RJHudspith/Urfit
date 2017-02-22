@@ -89,7 +89,8 @@ blackbox( const double *data ,
       // otherwise use linear pred
     } else {
 
-      gsl_poly_complex_workspace *w = gsl_poly_complex_workspace_alloc( NSTATES + 1 ) ;
+      gsl_poly_complex_workspace *w =
+	gsl_poly_complex_workspace_alloc( NSTATES + 1 ) ;
       double *z = malloc( 2 * NSTATES * sizeof( double ) ) ;
       double coefs[ NSTATES + 1 ] ;
 

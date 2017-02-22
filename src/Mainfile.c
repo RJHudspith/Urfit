@@ -19,28 +19,31 @@
 int
 main( const int argc , const char *argv[] )
 {
+  if( argc != 3 ) {
+    printf( "USAGE :: ./URFIT -i infile" ) ;
+    return -1 ;
+  }
   size_t i ;
 
   struct input_params Input ;
-  if( read_inputs( &Input , "infile" ) == FAILURE ) {
+  if( read_inputs( &Input , argv[2] ) == FAILURE ) {
     goto free_failure ;
   }
 
-  /*
-  if( read_corr( &Input , NOFOLD , 5 , 5 ) == FAILURE ) {
-    goto free_failure ;
-  }
-  */
-
-  // data structure
-  if( generate_fake_data( &Input.Data , Input.Fit ,
-			  Input.Traj , 0 , 0.01 ) == FAILURE ) {
-    goto free_failure ;
-  }
-
-  // set Lt
-  if( init_LT( &Input.Data , Input.Traj ) == FAILURE ) {
-    goto free_failure ;
+  switch( Input.FileType ) {
+  case Corr :
+    if( read_corr( &Input , NOFOLD , 5 , 5 ) == FAILURE ) {
+      goto free_failure ;
+    } break ;
+    // set Lt
+    if( init_LT( &Input.Data , Input.Traj ) == FAILURE ) {
+      goto free_failure ;
+    }
+  case Fake :
+    if( generate_fake_data( &Input.Data , Input.Fit ,
+			    Input.Traj , 0.0 , 0.005 ) == FAILURE ) {
+      goto free_failure ;
+    } break ;
   }
   
   // bootstrap it
@@ -48,6 +51,7 @@ main( const int argc , const char *argv[] )
   case BootStrap :
     init_rng( 123456 ) ;
     bootstrap_full( &Input ) ;
+    free_rng() ;
     break ;
   case JackKnife :
     jackknife_full( &Input ) ;

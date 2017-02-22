@@ -9,8 +9,9 @@
 #include "init.h"      // free_fit && free_data
 #include "read_fit.h"
 #include "read_graph.h"
-#include "read_traj.h"
+#include "read_inputs.h"
 #include "read_stats.h"
+#include "read_traj.h"
 
 // set these to something reasonable
 #define STR1_LENGTH (64)
@@ -113,9 +114,11 @@ read_inputs( struct input_params *Input ,
   Input -> Data.Cov.W = NULL ;
   Input -> Data.Ntot = 0 ;
   Input -> Data.Nsim = 0 ;
+  Input -> Data.LT = NULL ;
+
+  Input -> Traj = NULL ;
   
   Input -> Fit.Sims = NULL ;
-  Input -> Traj = NULL ;
   Input -> Fit.Prior = NULL ;
   Input -> Fit.map = NULL ;
 
@@ -125,7 +128,7 @@ read_inputs( struct input_params *Input ,
   
   if( infile == NULL ) {
     printf( "[INPUT] Cannot find input file %s \n" , filename ) ;
-    return Flag ;
+    return FAILURE ;
   }
 
   // get the flat file length
@@ -136,6 +139,23 @@ read_inputs( struct input_params *Input ,
   // pack the input file
   struct flat_file *Flat = pack_inputs( infile , Ntags ) ;
 
+  // get the filetype tag
+  size_t io_tag = 0 ;
+  if( ( io_tag = tag_search( Flat , "FileType" , 0 , Ntags ) ) == Ntags ) {
+    fprintf( stderr , "[INPUT] FileType tag not found in input file \n" ) ;
+    Flag = FAILURE ;
+  } else {
+    if( are_equal( Flat[ io_tag ].Value , "Corr" ) ) {
+      Input -> FileType = Corr ;
+    } else if( are_equal( Flat[ io_tag ].Value , "Fake" ) ) {
+      Input -> FileType = Fake ;
+    } else {
+      fprintf( stderr , "[INPUT] FileType %s not recognised\n" ,
+	       Flat[ io_tag ].Value ) ;
+      Flag = FAILURE ;
+    }
+  }
+    
   if( get_traj( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
@@ -151,7 +171,6 @@ read_inputs( struct input_params *Input ,
   if( get_graph( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
-  printf( "\n" ) ;
   
   // close and unpack
   unpack_inputs( Flat , Ntags ) ;

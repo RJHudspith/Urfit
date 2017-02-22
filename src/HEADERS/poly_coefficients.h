@@ -10,6 +10,15 @@ compute_coefficients( double *coeffs ,
 		      const size_t M ,
 		      const size_t N ) ;
 
+int
+compute_coefficients2( double *coeffs ,
+		       double *chisq ,
+		       const double *y ,
+		       const double *sigma ,
+		       const double *x ,
+		       const size_t M ,
+		       const size_t N ) ;
+
 void
 write_polynomial( const double *__restrict coeffs ,
 		  const size_t POLY_ORDER ) ;

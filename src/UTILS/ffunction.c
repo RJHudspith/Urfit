@@ -25,10 +25,13 @@ allocate_ffunction( const size_t NPARAMS ,
   for( i = 0 ; i < NPARAMS ; i++ ) {
     f.fparams[i] = UNINIT_FLAG ;
   }
+  // allocate the linear matrix for the GLS
+  f.U = malloc( NDATA * sizeof( double ) ) ;
+  for( i = 0 ; i < NDATA ; i++ ) {
+    f.U[i] = malloc( NPARAMS * sizeof( double ) ) ;
+  }
   return f ;
 }
-
-#define mcpy
 
 // copy the ffunction
 void
@@ -72,6 +75,10 @@ free_ffunction( struct ffunction *f ,
   for( i = 0 ; i < NPARAMS*NPARAMS ; i++ ) {
     free( f -> d2f[i] ) ;
   }
+  for( i = 0 ; i < f -> N ; i++ ) {
+    free( f -> U[i] ) ;
+  }
+  free( f -> U ) ;
   free( f -> fparams ) ;
   free( f -> f ) ;
   free( f -> df ) ;

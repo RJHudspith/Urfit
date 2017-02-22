@@ -14,7 +14,7 @@
 #include "stats.h"
 
 // perform a single bootstrap fit to our data
-static void
+static int
 single_fit( struct resampled *fitparams ,
 	    struct resampled *chisq ,
 	    struct fit_descriptor fdesc ,
@@ -23,11 +23,12 @@ single_fit( struct resampled *fitparams ,
 	    const size_t sample_idx ,
 	    const bool is_average )
 {
-  if( Data.Ntot == 0 || fdesc.Nlogic == 0 ) return ;
+  if( Data.Ntot == 0 || fdesc.Nlogic == 0 ) return FAILURE ;
   
   // initialise the data we will fit
   double *yloc = malloc( Data.Ntot * sizeof( double ) ) ;
   double *xloc = malloc( Data.Ntot * sizeof( double ) ) ;
+  int Flag = SUCCESS ;
   
   // initialise the data we are fitting
   size_t j ;
@@ -41,17 +42,22 @@ single_fit( struct resampled *fitparams ,
     }
   }
   struct data d = { Data.Ntot , xloc , yloc , Data.LT ,
-		    fdesc.Nparam , Fit.map } ;
+		    fdesc.Nparam , Fit.map , Fit.N , Fit.M } ;
 
-  // set the data to the fit params average
-  for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
-    if( is_average != true ) {
+  // set the data to the fit params average for a guess
+  if( is_average == true ) {
+    fdesc.guesses( fdesc.f.fparams , Data , Fit ) ;
+  } else {
+    for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
       fdesc.f.fparams[j] = fitparams[j].avg ;
     }
   }
-
+  
   // do the fit, compute the chisq
-  Fit.Minimize( &fdesc , &d , (const double**)Data.Cov.W , Fit.Tol ) ;
+  if( Fit.Minimize( &fdesc , &d , (const double**)Data.Cov.W ,
+		    Fit.Tol ) == FAILURE ) {
+    Flag = FAILURE ;
+  }
 
   // set the chisq
   if( is_average == true ) {
@@ -68,10 +74,11 @@ single_fit( struct resampled *fitparams ,
       fitparams[j].resampled[sample_idx] = fdesc.f.fparams[j] ;
     }
   }
-  //exit(1) ;
+
   free( yloc ) ;
   free( xloc ) ;
-  return ;
+  
+  return Flag ;
 }	    
 
 // perform a fit over bootstraps
@@ -129,7 +136,7 @@ perform_bootfit( const struct data_info Data ,
   
   // divide out the number of degrees of freedom
   divide_constant( &chisq , ( Data.Ntot - fdesc.Nlogic ) ) ;
-  printf( "[CHISQ (d.o.f)] %e %e \n" , chisq.avg , chisq.err ) ;
+  printf( "[CHISQ / (d.o.f)] %e %e \n" , chisq.avg , chisq.err ) ;
   
   // tell us what we have computed
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
@@ -145,7 +152,7 @@ perform_bootfit( const struct data_info Data ,
  memfree :
 
   // free the chisq
-  if( chisq.resampled == NULL ) {
+  if( chisq.resampled != NULL ) {
     free( chisq.resampled ) ;
   }
   

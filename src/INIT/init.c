@@ -19,29 +19,26 @@ free_Data( struct data_info *Data ,
     if( Data -> y[i].resampled != NULL ) {
       free( Data -> y[i].resampled ) ;
     }
-    if( Fit.Corrfit == CORRELATED ) {
-      if( Data -> Cov.W != NULL ) {
+  }
+  if( Data -> Cov.W != NULL ) {
+    if( Fit.Corrfit == UNCORRELATED ) {
+      if( Data -> Cov.W[0] != NULL ) {
+	free( Data -> Cov.W[0] ) ;
+      }
+    } else if( Fit.Corrfit == UNCORRELATED ) {
+      for( i = 0 ; i < Data -> Ntot ; i++ ) {
 	if( Data -> Cov.W[i] != NULL ) {
 	  free( Data -> Cov.W[i] ) ;
 	}
       }
     }
-  }
-  if( Fit.Corrfit == UNCORRELATED ) {
-    if( Data -> Cov.W != NULL ) {
-      if( Data -> Cov.W[0] != NULL ) {
-	free( Data -> Cov.W[0] ) ;
-      }
-    }
+    free( Data -> Cov.W ) ;
   }
   if( Data -> x != NULL ) {
     free( Data -> x ) ;
   }
   if( Data -> y != NULL ) {
     free( Data -> y ) ;
-  }
-  if( Data -> Cov.W != NULL ) {
-    free( Data -> Cov.W ) ;
   }
   if( Data -> Ndata != NULL ) {
     free( Data -> Ndata ) ;
@@ -78,7 +75,7 @@ init_LT( struct data_info *Data ,
     for( j = shift ; j < shift + Data -> Ndata[i] ; j++ ) {
       Data -> LT[j] = Traj[i].Dimensions[ Traj[i].Nd - 1 ] ;
     }
-    shift += Data -> Ndata[i] ;
+    shift = j ;
   }
   return SUCCESS ;
 }

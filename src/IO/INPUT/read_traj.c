@@ -17,9 +17,11 @@
 #include "read_inputs.h"
 
 // block size for the traj information
-#define Nblock (5)
+#define Nblock (6)
 
-enum { TrajName , TrajStep , TrajStat , TrajFitr , TrajDims } TrajBlock ;
+// little enum for getting the map right
+enum { TrajName , TrajStep , TrajStat ,
+       TrajFitr , TrajDims , TrajGsGk } TrajBlock ;
 
 // linked list for the dimensions
 struct node {
@@ -37,6 +39,7 @@ set_record( void )
   Record[2] = "TrajStat" ;
   Record[3] = "TrajFitr" ;
   Record[4] = "TrajDims" ;
+  Record[5] = "TrajGsGk" ;
   return Record ;
 }
 
@@ -96,6 +99,7 @@ get_Ntraj( size_t *Ntraj ,
   return Block ;
 }
 
+// get the number of dimensions
 static struct node *
 get_Ndims( size_t *Nd , const char *Value )
 {
@@ -116,6 +120,53 @@ get_Ndims( size_t *Nd , const char *Value )
     *Nd = *Nd + 1 ;
   }
   return head ;
+}
+
+// 
+static size_t
+GsGk_map( const char *tok )
+{
+  char *endptr ;
+  if( are_equal( tok , "Vi" ) ) {
+    return Vi ;
+  } else if( are_equal( tok , "Tit" ) ) {
+    return Tit ;
+  } else if( are_equal( tok , "Ai" ) ) {
+    return Ai ;
+  } else if( are_equal( tok , "Tij" ) ) {
+    return Tij ;
+  } 
+  return strtol( tok , &endptr , 10 ) ;
+}
+
+// set the gammas and the time folding
+static int
+set_GsGk( struct traj *Traj ,
+	  char *Tok )
+{
+  // tokenize gamma source and gamma sink
+  char *tok = strtok( Tok , "," ) ;
+  Traj -> Gs = GsGk_map( tok ) ; tok = strtok( NULL , "," ) ;
+  Traj -> Gk = GsGk_map( tok ) ; tok = strtok( NULL , "," ) ;
+  // set the fold type
+  if( are_equal( tok , "PLUS_PLUS" ) ) {
+    Traj -> Fold = PLUS_PLUS ;
+  } else if( are_equal( tok , "PLUS_MINUS" ) ) {
+    Traj -> Fold = PLUS_MINUS ;
+  } else if( are_equal( tok , "MINUS_PLUS" ) ) {
+    Traj -> Fold = MINUS_PLUS ;
+  } else if( are_equal( tok , "MINUS_MINUS" ) ) {
+    Traj -> Fold = MINUS_MINUS ;
+  } else if( are_equal( tok , "NOFOLD" ) ) {
+    Traj -> Fold = NOFOLD ;
+  } else if( are_equal( tok , "NOFOLD_MINUS" ) ) {
+    Traj -> Fold = NOFOLD_MINUS ;
+  } else {
+    fprintf( stderr , "[INPUT] I don't understand the fold %s\n" ,
+	     tok ) ;
+    return FAILURE ;
+  }
+  return SUCCESS ;
 }
 
 // set the trajectory structs
@@ -161,6 +212,11 @@ set_trajs( const struct flat_file *Flat ,
       Traj[i].Dimensions[j-1] = Node -> dim ;
       free( Node ) ;        // free this node
       Node = Node -> next ; // point to the next node
+    }
+
+    // set the GSGK
+    if( set_GsGk( &Traj[i] , Flat[ Block[i] + TrajGsGk ].Value ) == FAILURE ) {
+      return NULL ;
     }
   }
   return Traj ;

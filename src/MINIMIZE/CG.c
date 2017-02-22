@@ -10,119 +10,119 @@
 
 // cg iteration
 int
-cg_iter( struct fit_descriptor *fdesc ,
+cg_iter( void *fdesc ,
 	 const void *data ,
 	 const double **W ,
 	 const double TOL )
 {
+  // point to the fit descriptor
+  struct fit_descriptor *Fit = (struct fit_descriptor*)fdesc ;
+  
   // iterations and CG maximum iterations
   size_t iters = 0 , i , j , k ;
   const size_t CGMAX = 5000 ;
 
   // allocate the fitfunction
-  struct ffunction f2 = allocate_ffunction( fdesc -> Nlogic , 
-					    fdesc -> f.N ) ;
-
-  // set the guesses
-  fdesc -> guesses( fdesc -> f.fparams , fdesc -> Nlogic ) ;
+  struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , 
+					    Fit -> f.N ) ;
 
   // get priors
-  fdesc -> f.Prior = fdesc -> Prior ;
-  f2.Prior = fdesc -> Prior ;
+  Fit -> f.Prior = Fit -> Prior ;
+  f2.Prior = Fit -> Prior ;
 
   // evaluate the function, its first and second derivatives
-  fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
-  fdesc -> dF( fdesc -> f.df , data , fdesc -> f.fparams ) ;
-  fdesc -> d2F( fdesc -> f.d2f , data , fdesc -> f.fparams ) ;
-  fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
+  Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
+  Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
+  //Fit -> d2F( Fit -> f.d2f , data , Fit -> f.fparams ) ;
+  Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
 
   // allocate conjugate directions
-  double *s      = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
-  double *old_df = malloc( fdesc -> Nlogic * sizeof( double ) ) ;
+  double *s      = malloc( Fit -> Nlogic * sizeof( double ) ) ;
+  double *old_df = malloc( Fit -> Nlogic * sizeof( double ) ) ;
 
   double *y = NULL , *t ;
-  size_t Nsum = fdesc -> f.N ;
-  switch( fdesc -> f.CORRFIT ) {
+  size_t Nsum = Fit -> f.N ;
+  switch( Fit -> f.CORRFIT ) {
   case UNWEIGHTED : case UNCORRELATED : break ;
-  case CORRELATED : Nsum = fdesc -> f.N * fdesc -> f.N ; break ;
+  case CORRELATED : Nsum = Fit -> f.N * Fit -> f.N ; break ;
   }
   y = malloc( Nsum * sizeof( double ) ) ;
 
   // step down the gradient initially
-  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
+  for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     t = y ;
     // set derivatives
-    switch( fdesc -> f.CORRFIT ) {
+    switch( Fit -> f.CORRFIT ) {
     case UNWEIGHTED :
-      for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-	*t = -fdesc -> f.df[i][j] * fdesc -> f.f[j] ; t++ ;
+      for( j = 0 ; j < Fit -> f.N ; j++ ) {
+	*t = -Fit -> f.df[i][j] * Fit -> f.f[j] ; t++ ;
       }
       break ;
     case UNCORRELATED :
-      for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-        *t = -fdesc -> f.df[i][j] * W[0][j] * fdesc -> f.f[j] ; t++ ;
+      for( j = 0 ; j < Fit -> f.N ; j++ ) {
+        *t = -Fit -> f.df[i][j] * W[0][j] * Fit -> f.f[j] ; t++ ;
       }
       break ;
     case CORRELATED :
-      for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-	for( k = 0 ; k < fdesc -> f.N ; k++ ) {
-	  *t = -fdesc -> f.df[i][j] * W[j][k] * fdesc -> f.f[k] ; t++ ;
+      for( j = 0 ; j < Fit -> f.N ; j++ ) {
+	for( k = 0 ; k < Fit -> f.N ; k++ ) {
+	  *t = -Fit -> f.df[i][j] * W[j][k] * Fit -> f.f[k] ; t++ ;
 	}
       }
       break ;
     }
     old_df[i] = kahan_summation( y , Nsum ) ;
     // subtract the prior if there is one
-    if( fdesc -> f.Prior[i].Initialised == true ) {
-      old_df[i] -= ( fdesc -> f.fparams[i] - fdesc -> f.Prior[i].Val ) / 
-	( fdesc -> f.Prior[i].Err * fdesc -> f.Prior[i].Err ) ;
+    if( Fit -> f.Prior[i].Initialised == true ) {
+      old_df[i] -= ( Fit -> f.fparams[i] - Fit -> f.Prior[i].Val ) / 
+	( Fit -> f.Prior[i].Err * Fit -> f.Prior[i].Err ) ;
     }
     s[i] = old_df[i] ;   // accumulate gradient sum
   }
 
   // line search the SD step
   double alpha = 0.0 ;
-  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
+  for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     // line search best alpha
-    alpha = line_search( &f2 , fdesc -> f , old_df , s ,
-			 *fdesc , data , W , i ,
-			 fdesc -> f.fparams[i] ) ;
-    fdesc -> f.fparams[i] += alpha * s[i] ;
+    alpha = line_search( &f2 , Fit -> f , old_df , s ,
+			 *Fit , data , W , i ,
+			 Fit -> f.fparams[i] ) ;
+    Fit -> f.fparams[i] += alpha * s[i] ;
   }
 
   double chisq_diff = 10 ;
   while( chisq_diff > TOL && iters < CGMAX ) {
 
     // initially compute the chisq
-    const double chi = compute_chisq( fdesc -> f , W , 
-				      fdesc -> f.CORRFIT ) ;
+    const double chi = compute_chisq( Fit -> f , W , 
+				      Fit -> f.CORRFIT ) ;
     
     // update f which has the gradient direction in
-    fdesc -> F( fdesc -> f.f , data , fdesc -> f.fparams ) ;
-    fdesc -> dF( fdesc -> f.df , data , fdesc -> f.fparams ) ;
-    fdesc -> f.chisq = compute_chisq( fdesc -> f , W , fdesc -> f.CORRFIT ) ;
-    chisq_diff = fabs( chi - fdesc -> f.chisq ) ;
+    Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
+    Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
+    Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
+    chisq_diff = fabs( chi - Fit -> f.chisq ) ;
 
     // compute beta using polyak - ribiere
     register double num = 0.0 , denom = 0.0 ;
-    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
+    for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
       t = y ;
       // switch the types of fit we are doing
-      switch( fdesc -> f.CORRFIT ) {
+      switch( Fit -> f.CORRFIT ) {
       case UNWEIGHTED :
-	for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-	  *t = -fdesc -> f.df[i][j] * fdesc -> f.f[j] ; t++ ;
+	for( j = 0 ; j < Fit -> f.N ; j++ ) {
+	  *t = -Fit -> f.df[i][j] * Fit -> f.f[j] ; t++ ;
 	}
 	break ;
       case UNCORRELATED :
-	for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-	  *t = -fdesc -> f.df[i][j] * W[0][j] * fdesc -> f.f[j] ; t++ ;
+	for( j = 0 ; j < Fit -> f.N ; j++ ) {
+	  *t = -Fit -> f.df[i][j] * W[0][j] * Fit -> f.f[j] ; t++ ;
 	}
 	break ;
       case CORRELATED :
-	for( j = 0 ; j < fdesc -> f.N ; j++ ) {
-	  for( k = 0 ; k < fdesc -> f.N ; k++ ) {
-	    *t = -fdesc -> f.df[i][j] * W[j][k] * fdesc -> f.f[k] ; t++ ;
+	for( j = 0 ; j < Fit -> f.N ; j++ ) {
+	  for( k = 0 ; k < Fit -> f.N ; k++ ) {
+	    *t = -Fit -> f.df[i][j] * W[j][k] * Fit -> f.f[k] ; t++ ;
 	  }
 	}
 	break ;
@@ -130,36 +130,37 @@ cg_iter( struct fit_descriptor *fdesc ,
       double newdf = kahan_summation( y , Nsum ) ;
       
       // subtract the prior if there is one
-      if( fdesc -> f.Prior[i].Initialised == true ) {
-        newdf -= ( fdesc -> f.fparams[i] - fdesc -> f.Prior[i].Val ) / 
-	  ( fdesc -> f.Prior[i].Err * fdesc -> f.Prior[i].Err ) ;
+      if( Fit -> f.Prior[i].Initialised == true ) {
+        newdf -= ( Fit -> f.fparams[i] - Fit -> f.Prior[i].Val ) / 
+	  ( Fit -> f.Prior[i].Err * Fit -> f.Prior[i].Err ) ;
       }
-      num   = newdf * ( newdf - old_df[i] ) ;
-      denom = old_df[i] * old_df[i] ;
+      num   += newdf * ( newdf - old_df[i] ) ;
+      denom += old_df[i] * old_df[i] ;
       old_df[i] = newdf ; // reset the old direction to be the new one
+    }
+    const double beta = fmax( 0 , num / denom ) ;
 
-      const double beta = fmax( 0 , num / denom ) ;
-
-      // update conjugate directions "s"
+    // update conjugate directions "s"
+    for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
       s[i] = old_df[i] + beta * s[i] ;
     }
 
     // perform a backtracking line search
-    for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
+    for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
 
-      alpha = line_search( &f2 , fdesc -> f , old_df , s ,
-			   *fdesc , data , W , i ,
-			   fdesc -> f.fparams[i] ) ;
+      alpha = line_search( &f2 , Fit -> f , old_df , s ,
+			   *Fit , data , W , i ,
+			   Fit -> f.fparams[i] ) ;
 
       #ifdef VERBOSE
       printf( "[CG] NEW ALPHA = %e \n" , alpha ) ;
       #endif
 
       // set x = x + \alpha * s
-      fdesc -> f.fparams[i] += alpha * s[i] ;
+      Fit -> f.fparams[i] += alpha * s[i] ;
 
       #ifdef VERBOSE
-      printf( "[CG] NEPARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
+      printf( "[CG] NEPARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
       #endif
     }
     iters++ ;
@@ -172,9 +173,9 @@ cg_iter( struct fit_descriptor *fdesc ,
     printf( "\n[CG] FINISHED in %zu iterations \n" , iters ) ;
   }
 
-  printf( "[CG] chisq :: %e | Diff -> %e \n\n" , fdesc -> f.chisq , chisq_diff ) ;
-  for( i = 0 ; i < fdesc -> Nlogic ; i++ ) {
-    printf( "PARAMS :: %f \n" , fdesc -> f.fparams[i] ) ;
+  printf( "[CG] chisq :: %e | Diff -> %e \n\n" , Fit -> f.chisq , chisq_diff ) ;
+  for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+    printf( "PARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
   }
 
   // free the directions

@@ -10,9 +10,6 @@
 #include "pmap.h"
 #include "stats.h"
 
-#define xnoise (gsl_ran_gaussian( r , xsigma ) )
-#define ynoise (gsl_ran_gaussian( r , ysigma ) )
-
 // assumes x and y have been set
 int
 generate_fake_data( struct data_info *Data ,
@@ -22,12 +19,13 @@ generate_fake_data( struct data_info *Data ,
 		    const double ysigma )
 {
   const size_t Nmeas = 200 ;
+  const size_t Ndata = 30 ;
   
   size_t i , j , k ;
   Data -> Ndata = malloc( Data -> Nsim * sizeof( size_t ) ) ;
   Data -> Ntot = 0 ;
   for( i = 0 ; i < Data -> Nsim ; i++ ) {
-    Data -> Ndata[i] = 25 ;
+    Data -> Ndata[i] = Ndata ;
     Data -> Ntot += Data -> Ndata[i] ;
   }
 
@@ -37,8 +35,6 @@ generate_fake_data( struct data_info *Data ,
   if( init_LT( Data , Traj ) == FAILURE ) {
     goto memfree ;
   }
-  
-  Fit.map = parammap( *Data , Fit ) ;
   
   // set up the gsl rng
   gsl_rng_env_setup( ) ;
@@ -54,8 +50,11 @@ generate_fake_data( struct data_info *Data ,
   // set the param map
   Fit.map = parammap( *Data , Fit ) ;
 
-  // set the guesses
-  fdesc.guesses( fdesc.f.fparams , fdesc.Nlogic ) ;
+  // set the fit parameters
+  for( i = 0 ; i < Fit.Nlogic ; i++ ) {
+    fdesc.f.fparams[i] = ( i+1 ) ;
+    printf( "FAKED_%zu %f \n" , i , fdesc.f.fparams[i] ) ;
+  }
   
   size_t shift = 0 , p ;
   for( i = 0 ; i < Data -> Nsim ; i++ ) {
@@ -70,21 +69,22 @@ generate_fake_data( struct data_info *Data ,
       Data -> y[j].NSAMPLES  = Nmeas ;
 
       // is a random "x" value
-      const double x_prime = gsl_rng_uniform( r ) * Data -> Ndata[i] ;
+      const double x_prime = j ; //gsl_rng_uniform( r ) * Ndata / 20 ;
 
       // fill the boots with noise
       for( k = 0 ; k < Nmeas ; k++ ) {
-	const double xx = x_prime + xnoise ;
+	const double xx = x_prime + gsl_ran_gaussian( r , xsigma ) ;
         Data -> x[j].resampled[k] = xx ;
 	// compute the fit func values
 	double fparams[ fdesc.Nparam ] ;
 	for( p = 0 ; p < fdesc.Nparam ; p++ ) {
 	  fparams[ p ] = fdesc.f.fparams[ Fit.map[shift].p[p] ] ;
 	}
-	struct x_desc xdesc = { xx , Data -> LT[j] } ;
+	struct x_desc xdesc = { xx , Data -> LT[j] , Fit.N , Fit.M } ;
 	// evaluate the fit function and add some y-noise to it as well
 	const double y_prime = fdesc.func( xdesc , fparams , fdesc.Nparam ) ;
-        Data -> y[j].resampled[k] = y_prime * ( 1 + ynoise ) ;
+        Data -> y[j].resampled[k] = y_prime *
+	  ( 1 + gsl_ran_gaussian( r , ysigma ) ) ;
       }
 
       compute_err( &(Data -> x[j]) ) ;
