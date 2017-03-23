@@ -42,8 +42,9 @@ filter( size_t *N ,
 }
 
 // performs a fit and plots the result
-int
-fit_and_plot( struct input_params Input )
+struct resampled *
+fit_and_plot( struct input_params Input ,
+	      double *Chi )
 {
   // create a copy of the data struct
   struct data_info Data ;
@@ -56,6 +57,18 @@ fit_and_plot( struct input_params Input )
 
   size_t i , j , idx = 0 ;
 
+  Data.Cov.W = NULL ;
+  Data.Restype = Input.Data.Restype ;
+  Data.Cov.Eigenvalue_Tol = Input.Data.Cov.Eigenvalue_Tol ;
+  Data.Cov.Column_Balanced = Input.Data.Cov.Column_Balanced ;
+  Data.Cov.Divided_Covariance = Input.Data.Cov.Divided_Covariance ;
+
+  Data.Ndata = NULL ;
+  Data.x = NULL ;
+  Data.y = NULL ;
+  Data.LT = NULL ;
+
+  // sanity check
   if( Data.Ntot == 0 ) goto memfree ;
   
   Data.Ndata = malloc( Data.Nsim * sizeof( size_t ) ) ;
@@ -63,12 +76,6 @@ fit_and_plot( struct input_params Input )
 
   Data.x = malloc( Data.Ntot * sizeof( struct resampled ) ) ;
   Data.y = malloc( Data.Ntot * sizeof( struct resampled ) ) ;
-  
-  Data.Cov.W = NULL ;
-  Data.Restype = Input.Data.Restype ;
-  Data.Cov.Eigenvalue_Tol = Input.Data.Cov.Eigenvalue_Tol ;
-  Data.Cov.Column_Balanced = Input.Data.Cov.Column_Balanced ;
-  Data.Cov.Divided_Covariance = Input.Data.Cov.Divided_Covariance ;
   
   size_t k = 0 ;
   for( i = 0 ; i < Data.Nsim ; i++ ) {
@@ -85,7 +92,7 @@ fit_and_plot( struct input_params Input )
     }
     Data.Ndata[i] = Ndata ;
   }
-
+  
   // set Lt
   if( init_LT( &Data , Input.Traj ) == FAILURE ) {
     goto memfree ;
@@ -101,16 +108,18 @@ fit_and_plot( struct input_params Input )
   if( inverse_correlation( &Data , Input.Fit ) == FAILURE ) {
     goto memfree ;
   }
-  
+
+#ifdef VERBOSE
   write_corrmatrix( (const double**)Data.Cov.W ,
 		    Data.Ntot , Input.Fit.Corrfit ) ;
+#endif
 
-  if( ( fitparams = perform_bootfit( Data , Input.Fit ) ) == NULL ) {
-    goto memfree ;
+  // If we don't specify a fit
+  if( Input.Fit.Fitdef != NOFIT ) {
+    if( ( fitparams = perform_bootfit( Data , Input.Fit , Chi ) ) == NULL ) {
+      goto memfree ;
+    }
   }
-
-  // compute a decay constant
-  decay( fitparams , Input ) ;
   
   // make the graph
   make_xmgrace_graph( Input.Graph.Name ,
@@ -137,24 +146,14 @@ fit_and_plot( struct input_params Input )
   if( in_fitrange != NULL ) {
     free( in_fitrange ) ;
   }
-
-  // free the fit
-  if( fitparams != NULL ) {
-    for( i = 0 ; i < Input.Fit.Nlogic ; i++ ) {
-      if( fitparams[i].resampled != NULL ) {
-	free( fitparams[i].resampled ) ;
-      }
-    }
-    free( fitparams ) ;
-  }
-
+  
   // free the data?
   free_Data( &Data , Input.Fit ) ;
-
+  
   // free the parameter map
   if( Input.Fit.map != NULL ) {
     free_pmap( Input.Fit.map , Data.Ntot ) ;
   }
   
-  return SUCCESS ;
+  return fitparams ;
 }

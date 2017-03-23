@@ -6,17 +6,23 @@ lib_LIBRARIES = libURFIT.a
 ## just include the header directory
 AM_CFLAGS=-I${TOPDIR}/src/HEADERS/
 
+ANALYSIS_FILES=./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
+	./ANALYSIS/correlator.c ./ANALYSIS/hvp_pade.c ./ANALYSIS/sun_flow.c
+
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
 INIT_FILES=./INIT/fake.c ./INIT/init.c
 
-FITS_FILES=./FITS/exp_plusc.c ./FITS/exp.c ./FITS/cosh.c ./FITS/sinh.c \
+FITS_FILES=./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
+	./FITS/cosh.c ./FITS/exp_plusc.c ./FITS/exp.c \
 	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c ./FITS/pp_aa.c \
-	./FITS/pp_aa_ww.c
+	./FITS/pp_aa_ww.c ./FITS/sinh.c
 
 GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 
-IO_FILES=./IO/GLU_bswap.c ./IO/read_corr.c ./IO/tfold.c
+IO_FILES=./IO/distribution.c ./IO/GLU_bswap.c ./IO/io_wrapper.c \
+	./IO/read_flat.c ./IO/read_corr.c ./IO/read_GLU.c \
+	./IO/read_GLU_tcorr.c ./IO/tfold.c 
 
 INPUT_FILES=./IO/INPUT/read_inputs.c ./IO/INPUT/read_traj.c \
 	./IO/INPUT/read_fit.c ./IO/INPUT/read_graph.c \
@@ -26,20 +32,21 @@ MINIMIZE_FILES=./MINIMIZE/CG.c ./MINIMIZE/GA.c ./MINIMIZE/GLS.c \
 	./MINIMIZE/GLS_pade.c ./MINIMIZE/line_search.c \
 	./MINIMIZE/LM.c ./MINIMIZE/SD.c
 
-PHYSICS_FILES=./PHYSICS/decays.c
+PHYSICS_FILES=./PHYSICS/decays.c ./PHYSICS/momenta.c ./PHYSICS/cruel_runnings.c
 
-RUN_FILES=./RUN/bootfit.c ./RUN/fit_chooser.c ./RUN/fit_and_plot.c \
-	./RUN/gls_bootfit.c
+RUN_FILES=./RUN/bootfit.c ./RUN/fit_and_plot.c ./RUN/gls_bootfit.c
 
 STATS_FILES=./STATS/bootstrap.c ./STATS/jacknife.c ./STATS/stats.c \
 	./STATS/resampled_ops.c ./STATS/correlation.c ./STATS/autocorr.c
 
-UTILS_FILES=./UTILS/chisq.c ./UTILS/ffunction.c ./UTILS/rng.c ./UTILS/svd.c \
-	./UTILS/poly_coefficients.c ./UTILS/pade_coefficients.c \
-	./UTILS/pade_laplace.c ./UTILS/summation.c
+UTILS_FILES=./UTILS/chisq.c ./UTILS/crc32c.c ./UTILS/ffunction.c \
+	./UTILS/gen_ders.c ./UTILS/poly_coefficients.c \
+	./UTILS/pade_coefficients.c ./UTILS/pade_laplace.c \
+	./UTILS/rng.c ./UTILS/svd.c ./UTILS/summation.c
 
 ## all the source files apart from ./Run/Mainfile.c
 libURFIT_a_SOURCES = \
+	${ANALYSIS_FILES} \
 	${EFFMASS_FILES} \
 	${FITS_FILES} \
 	${GRAPH_FILES} \
@@ -54,6 +61,7 @@ libURFIT_a_SOURCES = \
 
 ## and their respective headers
 include_HEADERS =
+	$(ANALYSIS_FILES:./ANALYSIS/%.c=./HEADERS/%.h) \
 	$(EFFMASS_FILES:./EFFMASS/%.c=./HEADERS/%.h) \
 	$(FITS_FILES:./FITS/%.c=./HEADERS/%.h) \
 	$(GRAPH_FILES:./GRAPH/%.c=./HEADERS/%.h) \

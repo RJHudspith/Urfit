@@ -33,7 +33,7 @@ typedef enum {
 
 // fit types
 typedef enum {
-  EXP , COSH , EXP_PLUSC , PADE , POLY , PP_AA , PP_AA_WW , SINH 
+  ALPHA_D0 , ALPHA_D0_MULTI , EXP , COSH , EXP_PLUSC , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , SINH 
 } fittype ;
 
 // time folding types
@@ -48,7 +48,9 @@ enum { Vi = 123 , Ai = 678 , Tij = 10203 , Tit = 31323 } ;
 typedef enum { Raw , JackKnife , BootStrap } resample_type ;
 
 // file type we expect to read
-typedef enum { Corr , Fake } file_type ;
+typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File } file_type ;
+
+typedef enum { Alphas , Correlator , HVP , Wflow , Fit } analysis_type ;
 
 // x-data descriptor
 struct x_desc {
@@ -178,8 +180,9 @@ struct traj {
   size_t Bin ;
   size_t *Dimensions ;
   size_t End ;
-  char *Filename ;
-  size_t Filename_Length ;
+  char *FileX ;
+  char *FileY ;
+  //size_t Filename_Length ;
   double Fit_High ;
   double Fit_Low ;
   size_t Gs ;
@@ -200,6 +203,7 @@ struct graph {
 // input parameters
 struct input_params {
   struct data_info Data ;
+  analysis_type Analysis ;
   file_type FileType ;
   struct fit_info Fit ;
   struct graph Graph ;

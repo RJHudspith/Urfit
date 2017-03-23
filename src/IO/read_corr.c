@@ -98,8 +98,8 @@ pre_allocate( struct input_params *Input ,
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
     // open a file
-    char str[ Input -> Traj[i].Filename_Length + 6 ] ;
-    sprintf( str , Input -> Traj[i].Filename , Input -> Traj[i].Begin ) ;
+    char str[ strlen( Input -> Traj[i].FileY ) + 6 ] ;
+    sprintf( str , Input -> Traj[i].FileY , Input -> Traj[i].Begin ) ;
     FILE *file = fopen( str , "rb" ) ;
     if( file == NULL ) {
       fprintf( stderr , "[IO] cannot open %s \n" , str ) ;
@@ -234,6 +234,19 @@ read_corr( struct input_params *Input ,
 	   const size_t src ,
 	   const size_t snk )
 {
+  // sanity check filenames
+  size_t i , k , shift = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    if( Input -> Traj[i].FileX != NULL ) {
+      fprintf( stderr , "[IO] read_corr only reads Y data \n" ) ;
+      return FAILURE ;
+    }
+    if( Input -> Traj[i].FileY == NULL ) {
+      fprintf( stderr , "[IO] traj_%zu entry has NULL Y value \n" , i ) ;
+      return FAILURE ;
+    }
+  }
+  
   // go through the files and allocate x and y
   uint32_t *mompoint = malloc( 3 * sizeof( uint32_t ) ) ;
   mompoint[0] = 0 ; mompoint[1] = 0 ; mompoint[2] = 0 ;
@@ -244,12 +257,11 @@ read_corr( struct input_params *Input ,
   }
   
   // reread files and poke in the data
-  size_t i , k , shift = 0 ;
   int Flag = SUCCESS ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
     // temporary string
-    char str[ Input -> Traj[i].Filename_Length + 6 ] ;
+    char str[ strlen( Input -> Traj[i].FileY ) + 6 ] ;
 
     // set the temporary correlator
     size_t Nlt = Input -> Data.Ndata[i] ;
@@ -265,7 +277,7 @@ read_corr( struct input_params *Input ,
 	 k += Input -> Traj[i].Increment ) {
       
       // open up a file
-      sprintf( str , Input -> Traj[i].Filename , k ) ;
+      sprintf( str , Input -> Traj[i].FileY , k ) ;
 
       double complex *C = NULL ;
       

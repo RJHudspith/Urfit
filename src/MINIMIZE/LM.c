@@ -278,7 +278,8 @@ lm_iter( void *fdesc ,
     // increment the number of iterations
     iters++ ;
   }
-
+  
+  //#ifdef VERBOSE
   // tell us how many iterations we hit
   if( iters == LMMAX ) {
     printf( "\n[LM] stopped by max iterations %zu -> Chidiff %e\n" , iters , chisq_diff ) ;
@@ -291,6 +292,7 @@ lm_iter( void *fdesc ,
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
   }
+  //#endif
 
   // free gsl stuff
   gsl_vector_free( beta ) ;

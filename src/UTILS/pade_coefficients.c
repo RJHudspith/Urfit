@@ -78,13 +78,13 @@ pades_from_poly( double *pade_coeffs ,
   // numerator is first in our scheme
   printf( "( (%1.2f) q^{%d} " , pade_coeffs[ 0 ] , 2*(0) ) ;
   for( i = 1 ; i < n ; i++ ) {
-    printf( " + (%1.2f) q^{%d} " , pade_coeffs[ i ] , 2*(i) ) ;
+    printf( " + (%1.2f) q^{%zu} " , pade_coeffs[ i ] , 2*(i) ) ;
   }
   printf( ") / ( 1 " ) ;
 
   // denominator is last
   for( i = 0 ; i < m ; i++ ) {
-    printf( "+ (%1.2f) q^{%d} " , pade_coeffs[ i + n ] , 2*(i+1) ) ;
+    printf( "+ (%1.2f) q^{%zu} " , pade_coeffs[ i + n ] , 2*(i+1) ) ;
   }
   printf( " ) \n" ) ;
   //#endif

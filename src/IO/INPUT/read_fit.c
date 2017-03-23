@@ -46,12 +46,18 @@ get_fitDef(  struct input_params *Input ,
     fprintf( stderr , "[INPUTS] FitDef not found in input file!\n" ) ;
     return FAILURE ;
   }
-  if( are_equal( Flat[tag].Value , "COSH" ) ) {
+  if( are_equal( Flat[tag].Value , "ALPHA_D0" ) ) {
+    Input -> Fit.Fitdef = ALPHA_D0 ;
+  } else if( are_equal( Flat[tag].Value , "ALPHA_D0_MULTI" ) ) {
+    Input -> Fit.Fitdef = ALPHA_D0_MULTI ;
+  } else if( are_equal( Flat[tag].Value , "COSH" ) ) {
     Input -> Fit.Fitdef = COSH ;
   } else if( are_equal( Flat[tag].Value , "EXP" ) ) {
     Input -> Fit.Fitdef = EXP ;
   } else if( are_equal( Flat[tag].Value , "EXP_PLUSC" ) ) {
     Input -> Fit.Fitdef = EXP_PLUSC ;
+  } else if( are_equal( Flat[tag].Value , "NOFIT" ) ) {
+    Input -> Fit.Fitdef = NOFIT ;
   } else if( are_equal( Flat[tag].Value , "PADE" ) ) {
     Input -> Fit.Fitdef = PADE ;
   } else if( are_equal( Flat[tag].Value , "POLY" ) ) {

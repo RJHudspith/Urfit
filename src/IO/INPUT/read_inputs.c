@@ -81,6 +81,7 @@ are_equal( const char *str_1 , const char *str_2 )
   return ( strcmp( str_1 , str_2 ) != 0 ) ? 0 : 1 ;
 }
 
+// free the input file data
 void
 free_inputs( struct input_params *Input )
 { 
@@ -88,7 +89,12 @@ free_inputs( struct input_params *Input )
   if( Input -> Traj != NULL ) {
     for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
       free( Input -> Traj[i].Dimensions ) ;
-      free( Input -> Traj[i].Filename ) ;
+      if( Input -> Traj[i].FileX != NULL ) {
+	free( Input -> Traj[i].FileX ) ;
+      }
+      if( Input -> Traj[i].FileY ) {
+	free( Input -> Traj[i].FileY ) ;
+      }
     }
     free( Input -> Traj ) ;
   }
@@ -145,17 +151,48 @@ read_inputs( struct input_params *Input ,
     fprintf( stderr , "[INPUT] FileType tag not found in input file \n" ) ;
     Flag = FAILURE ;
   } else {
-    if( are_equal( Flat[ io_tag ].Value , "Corr" ) ) {
-      Input -> FileType = Corr ;
-    } else if( are_equal( Flat[ io_tag ].Value , "Fake" ) ) {
-      Input -> FileType = Fake ;
+    if( are_equal( Flat[ io_tag ].Value , "Corr_File" ) ) {
+      Input -> FileType = Corr_File ;
+    } else if( are_equal( Flat[ io_tag ].Value , "Distribution_File" ) ) {
+      Input -> FileType = Distribution_File ;
+    } else if( are_equal( Flat[ io_tag ].Value , "Fake_File" ) ) {
+      Input -> FileType = Fake_File ;
+    } else if( are_equal( Flat[ io_tag ].Value , "Flat_File" ) ) {
+      Input -> FileType = Flat_File ;
+    } else if( are_equal( Flat[ io_tag ].Value , "GLU_Tcorr_File" ) ) {
+      Input -> FileType = GLU_Tcorr_File ;
+    } else if( are_equal( Flat[ io_tag ].Value , "GLU_File" ) ) {
+      Input -> FileType = GLU_File ;
     } else {
       fprintf( stderr , "[INPUT] FileType %s not recognised\n" ,
 	       Flat[ io_tag ].Value ) ;
       Flag = FAILURE ;
     }
   }
-    
+  // get the filetype tag
+  size_t an_tag = 0 ;
+  if( ( an_tag = tag_search( Flat , "Analysis" , 0 , Ntags ) ) == Ntags ) {
+    fprintf( stderr , "[INPUT] Analysis tag not found in input file \n" ) ;
+    Flag = FAILURE ;
+  } else {
+    if( are_equal( Flat[ an_tag ].Value , "Alphas" ) ) {
+      Input -> Analysis = Alphas ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Correlator" ) ) {
+      Input -> Analysis = Correlator ;
+    } else if( are_equal( Flat[ an_tag ].Value , "HVP" ) ) {
+      Input -> Analysis = HVP ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Wflow" ) ) {
+      Input -> Analysis = Wflow ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Fit" ) ) {
+      Input -> Analysis = Fit ;
+    } else {
+      fprintf( stderr , "[INPUT] Analysis %s not recognised\n" ,
+	       Flat[ an_tag ].Value ) ;
+      Flag = FAILURE ;
+    }
+  }
+
+  
   if( get_traj( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }

@@ -9,6 +9,8 @@
 #include "fitfunc.h"
 #include "make_xmgrace.h" // drawing lines
 #include "pmap.h"
+#include "resampled_ops.h"
+#include "stats.h"
 
 int
 plot_fitfunction( const struct resampled *f ,
@@ -45,24 +47,36 @@ plot_fitfunction( const struct resampled *f ,
     for( i = 0 ; i < granularity ; i++ ) {
       const double extrap_x = xmin + x_step*i ;
       X[ i ] = extrap_x ;
-      // evaluate the fitfunc
+
+      struct resampled data = init_dist( NULL ,
+					 f[0].NSAMPLES ,
+					 f[0].restype ) ;
+      
+      size_t j ;
       struct x_desc xdesc = { X[i] , Data.LT[shift] , Fit.N , Fit.M } ;
       double fparams[ fdesc.Nparam ] ;
-      // compute the hi values
-      for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-	fparams[ p ] = f[ Fit.map[shift].p[p] ].err_hi ;
+      
+      for( j = 0 ; j < f[0].NSAMPLES ; j++ ) {
+	// evaluate the fitfunc
+	for( p = 0 ; p < fdesc.Nparam ; p++ ) {
+	  fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
+	}
+        data.resampled[j] = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
       }
-      YMAX[i] = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
-      // compute the lo values
-      for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-	fparams[ p ] = f[ Fit.map[shift].p[p] ].err_lo ;
-      }
-      YMIN[i] = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
-      // compute the mid values
+      // and the average
       for( p = 0 ; p < fdesc.Nparam ; p++ ) {
 	fparams[ p ] = f[ Fit.map[shift].p[p] ].avg ;
       }
-      YAVG[i] = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+      data.avg = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+
+      compute_err( &data ) ;
+      
+      YMAX[i] = data.err_hi ;
+      YAVG[i] = data.avg ;
+      YMIN[i] = data.err_lo ;
+
+      // free the fit distribution
+      free( data.resampled ) ;
     }
 
     // draw lines between the evaluated fitfunctions

@@ -34,7 +34,7 @@ static char **
 set_record( void )
 {
   char **Record = malloc( Nblock * sizeof( char* ) ) ;
-  Record[0] = "TrajName" ;
+  Record[0] = "TrajXY" ;
   Record[1] = "TrajStep" ;
   Record[2] = "TrajStat" ;
   Record[3] = "TrajFitr" ;
@@ -122,7 +122,7 @@ get_Ndims( size_t *Nd , const char *Value )
   return head ;
 }
 
-// 
+// Gamma index map
 static size_t
 GsGk_map( const char *tok )
 {
@@ -179,11 +179,27 @@ set_trajs( const struct flat_file *Flat ,
   char *tok , *endptr = NULL ;
   size_t i ;
   for( i = 0 ; i < Ntraj ; i++ ) {
-    // set the filename
-    Traj[i].Filename = malloc( Flat[ Block[i] ].Value_Length * sizeof( char ) ) ;
-    sprintf( Traj[i].Filename , "%s" , Flat[ Block[i] ].Value ) ;
-    Traj[i].Filename_Length = Flat[ Block[i] ].Value_Length ;
     
+    // set the filename for the x data
+    tok = strtok( Flat[ Block[i] + TrajName ].Value , "," ) ;
+    if( are_equal( tok , "NULL" ) ) {
+      Traj[i].FileX = NULL ;
+    } else {
+      Traj[i].FileX = malloc( strlen( tok ) * sizeof( char ) ) ;
+      sprintf( Traj[i].FileX , "%s" , tok ) ;
+    }
+    printf( "%s \n" , tok ) ;
+    tok = strtok( NULL , "," ) ;
+
+    // set the filename for the y data
+    if( are_equal( tok , "NULL" ) ) {
+      Traj[i].FileY = NULL ;
+    } else {
+      Traj[i].FileY = malloc( strlen( tok ) * sizeof( char ) ) ;
+      sprintf( Traj[i].FileY , "%s" , tok ) ;
+    }
+    printf( "%s \n" , tok ) ;
+
     // set the file start, increment, and end. Sanity check them
     tok = strtok( Flat[ Block[i] + TrajStep ].Value , "," ) ;
     Traj[i].Begin     = strtol( tok , &endptr , 10 ) ; tok = strtok( NULL , "," ) ;
@@ -258,7 +274,8 @@ get_traj( struct input_params *Input ,
     printf( "(Fit Low, Fit High ) -> ( %f , %f ) \n" ,
 	    Input -> Traj[i].Fit_Low , Input -> Traj[i].Fit_High ) ;
     printf( "(Binning) -> %zu \n" , Input -> Traj[i].Bin ) ;
-    printf( "(Filename) -> %s \n" , Input -> Traj[i].Filename ) ;
+    printf( "(FileX) -> %s \n" , Input -> Traj[i].FileX ) ;
+    printf( "(FileY) -> %s \n" , Input -> Traj[i].FileY ) ;
     size_t j ;
     printf( "(Nd,Dims) ->  ( %zu , " , Input -> Traj[i].Nd ) ;
     for( j = 0 ; j < Input -> Traj[i].Nd ; j++ ) {

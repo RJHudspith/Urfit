@@ -23,7 +23,7 @@ zero_effmass( struct resampled *effmass ,
   return ;
 }
 
-// acosh breaks down if acosh( n < 1 )
+// asinh breaks down if acosh( n < 1 )
 static bool
 acosh_range( const struct resampled effmass )
 {
@@ -63,201 +63,161 @@ log_range( const struct resampled log )
   return false ;
 }
 
-// there are some edge cases
+// log effective mass
 static void
-edge_cases( struct resampled *effmass ,
-	    const struct resampled *bootavg ,
-	    const size_t j ,
-	    const size_t NDATA )
+log_effmass( struct resampled *effmass ,
+	     struct resampled y1 , struct resampled y2 ,
+	     struct resampled x1 , struct resampled x2 )
 {
-  if( j == 0 ) {
-    equate( &effmass[j] , bootavg[j+1] ) ;
-    divide( &effmass[j] , bootavg[j] ) ;
-    if( log_range( effmass[j] ) ) {
-      zero_effmass( &effmass[j] , bootavg[j] ) ;
-    } else {
-      res_log( &effmass[j] ) ;
-      mult_constant( &effmass[j] , -1.0 ) ;
-    }
-  } else if( j == NDATA - 1 ) {
-    equate( &effmass[j] , bootavg[j] ) ;
-    divide( &effmass[j] , bootavg[j-1] ) ;
-    // just in case there is a sign flip
-    if( log_range( effmass[j] ) ) {
-      return zero_effmass( &effmass[j] , bootavg[j] ) ;
-    } else {
-      res_log( &effmass[j] ) ;
-      mult_constant( &effmass[j] , -1.0 ) ;
-    }
+  equate( effmass , y1 ) ;
+  divide( effmass , y2 ) ;
+  
+  // if it is still negative we set to zero
+  if( log_range( *effmass ) == true ) {
+    zero_effmass( effmass , y1 ) ;
+  } else {
+    res_log( effmass ) ;
   }
+
+  struct resampled Delta = init_dist( &x1 , x1.NSAMPLES , x1.restype ) ;
+
+  subtract( &Delta , x2 ) ;
+  divide( effmass , Delta ) ;
+  
+  free( Delta.resampled ) ;
+}
+
+// atanh effmass
+static void
+atanh_effmass( struct resampled *effmass ,
+	       struct resampled y1 ,
+	       struct resampled y2 )
+{
+  // is E^{-m(t-1)} - E^{-m(t+1)}
+  equate( effmass , y1 ) ;
+  subtract( effmass , y2 ) ;
+  
+  // is E^{-m(t-1)} + E^{-m(t+1)}
+  struct resampled temp = init_dist( &y1 , y1.NSAMPLES , y1.restype ) ;
+  add( &temp , y2 ) ;
+  
+  // divide the two and take the tanh
+  divide( effmass , temp ) ;
+
+  // if it is still negative we set to zero
+  if( atanh_range( *effmass ) == true ) {
+    zero_effmass( effmass , y1 ) ;
+  } else {
+    res_atanh( effmass ) ;
+  }
+
+  //
+  free( temp.resampled ) ;
+  
   return ;
 }
 
-// only works for evenly spaced separations atmo
-struct resampled**
-effective_mass( const struct resampled **bootavg ,
-		const size_t *NDATA ,
-		const size_t NSLICES ,
-		const effmass_type type ,
-		const size_t t0 )
+// acosh effmass
+static void
+acosh_effmass( struct resampled *effmass ,
+	       struct resampled y1 ,
+	       struct resampled y2 ,
+	       struct resampled y3 )
 {
-  struct resampled **effmass = malloc( NSLICES * sizeof( struct resampled* ) ) ;
-  size_t i ;
-  #pragma omp parallel for private(i)
-  for( i = 0 ; i < NSLICES ; i++ ) {
-    effmass[ i ] = malloc( NDATA[i] * sizeof( struct resampled ) ) ;
-
-    struct resampled temp ;
-    size_t j ;
-
-    switch( type ) {
-    case LOG_EFFMASS :
-      for( j = 0 ; j < NDATA[i] ; j++ ) {
-	effmass[i][j].resampled = malloc( bootavg[i][j].NSAMPLES * sizeof( double ) ) ;
-	if( log_range( bootavg[i][j] ) == true ) {
-	  zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	} else {
-	  // log effective mass?
-	  if( j == 0 || j == NDATA[i] - 1 ) {
-	    edge_cases( effmass[i] , bootavg[i] , j , NDATA[i] ) ;
-	  } else {
-	    equate( &effmass[i][j] , bootavg[i][j+1] ) ;
-	    divide( &effmass[i][j] , bootavg[i][j] ) ;
-	    // if it is still negative we set to zero
-	    if( effmass[i][j].avg < EFFMASSTOL ) {
-	      zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	    } else {
-	      res_log( &effmass[i][j] ) ;
-	    }
-	    //
-	    mult_constant( &effmass[i][j] , -1.0 ) ;
-	  }
-	}
-	//
-      }
-      break ;
-    case LOG2_EFFMASS :
-      temp.resampled = malloc( bootavg[i][0].NSAMPLES * sizeof( double ) ) ;
-      for( j = 0 ; j < NDATA[i] ; j++ ) {
-	effmass[i][j].resampled = malloc( bootavg[i][j].NSAMPLES * sizeof( double ) ) ;
-	if( log_range( bootavg[i][j] ) == true ) {
-	  zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	} else {
-	  // log effective mass?
-	  if( j == 0 || j == NDATA[i] - 1 ) {
-	    edge_cases( effmass[i] , bootavg[i] , j , NDATA[i] ) ;
-	  } else {
-	    equate( &effmass[i][j] , bootavg[i][j] ) ;
-	    subtract( &effmass[i][j] , bootavg[i][j-1] ) ;
-	    equate( &temp , bootavg[i][j+1] ) ;
-	    subtract( &temp , bootavg[i][j] ) ;
-	    divide( &effmass[i][j] , temp ) ;
-	    // if it is still negative we set to zero
-	    if( effmass[i][j].avg < EFFMASSTOL ) {
-	      zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	    } else {
-	      res_log( &effmass[i][j] ) ;
-	    }
-	    //
-	  }
-	}
-      }
-      free( temp.resampled ) ;
-      break ;
-      // cosh effective mass?
-    case ACOSH_EFFMASS :
-      for( j = 0 ; j < NDATA[i] ; j++ ) {
-	effmass[i][j].resampled = malloc( bootavg[i][j].NSAMPLES * sizeof( double ) ) ;
-	// set to zero if it is messed up
-	if( acosh_range( bootavg[i][j] ) == true ) {
-	  zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	} else {
-	  if( j == 0 || j == NDATA[i] - 1 ) {
-	    edge_cases( effmass[i] , bootavg[i] , j , NDATA[i] ) ;
-	  } else {
-	    equate( &effmass[i][j] , bootavg[i][j-1] ) ;
-	    add( &effmass[i][j] , bootavg[i][j+1] ) ;
-	    divide( &effmass[i][j] , bootavg[i][j] ) ;
-	    mult_constant( &effmass[i][j] , 0.5 ) ;
-	    // if it is in the wrong domain set to zero
-	    if( acosh_range( effmass[i][j] ) ) {
-	      zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	    } else {
-	      res_acosh( &effmass[i][j] ) ;
-	    }
-	    //
-	  }
-	}
-      }
-      break ;
-      // sinh effective mass
-    case ASINH_EFFMASS :
-      for( j = 0 ; j < NDATA[i] ; j++ ) {
-	effmass[i][j].resampled = malloc( bootavg[i][j].NSAMPLES * sizeof( double ) ) ;
-	if( fabs( bootavg[i][j].avg ) < EFFMASSTOL ) {
-	  zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	} else {
-	  if( j == 0 || j == NDATA[i] - 1 ) {
-	    edge_cases( effmass[i] , bootavg[i] , j , NDATA[i] ) ;
-	  } else {
-	    equate( &effmass[i][j] , bootavg[i][j-1] ) ;
-	    subtract( &effmass[i][j] , bootavg[i][j+1] ) ;
-	    divide( &effmass[i][j] , bootavg[i][j] ) ;
-	    mult_constant( &effmass[i][j] , 0.5 ) ;
-	    // asinh works on all lengths
-	    res_asinh( &effmass[i][j] ) ;
-	  }
-	}
-      }
-      break ;
-    case ATANH_EFFMASS :
-      temp.resampled = malloc( bootavg[i][0].NSAMPLES * sizeof( double ) ) ;
-      // tanh effective mass?
-      for( j = 0 ; j < NDATA[i] ; j++ ) {
-	effmass[i][j].resampled = malloc( bootavg[i][j].NSAMPLES * sizeof( double ) ) ;
-	if( atanh_range( bootavg[i][j] ) == true ) {
-	  zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	} else {
-	  if( j == 0 || j == NDATA[i] - 1 ) {
-	    edge_cases( effmass[i] , bootavg[i] , j , NDATA[i] ) ;
-	  } else {
-	    // is E^{-m(t-1)} - E^{-m(t+1)}
-	    equate( &effmass[i][j] , bootavg[i][j-1] ) ;
-	    subtract( &effmass[i][j] , bootavg[i][j+1] ) ;
-	    // is E^{-m(t-1)} + E^{-m(t+1)}
-	    equate( &temp , bootavg[i][j-1] ) ;
-	    add( &temp , bootavg[i][j+1] ) ;
-	    // divide the two and take the tanh
-	    divide( &effmass[i][j] , temp ) ;
-	    // if it is still negative we set to zero
-	    if( atanh_range( effmass[i][j] ) ) {
-	      zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	    } else {
-	      res_atanh( &effmass[i][j] ) ;
-	    }
-	    //
-	  }
-	}
-      }
-      free( temp.resampled ) ;
-      break ;
-      // eigenvalue effective mass
-    case EVALUE_EFFMASS :
-      for( j = 0 ; j < NDATA[i] ; j++ ) {
-	effmass[i][j].resampled = malloc( bootavg[i][j].NSAMPLES * sizeof( double ) ) ;
-	if( log_range( bootavg[i][j] ) == true ) {
-	  zero_effmass( &effmass[i][j] , bootavg[i][j] ) ;
-	} else {
-	  equate( &effmass[i][j] , bootavg[i][j] ) ;
-	  res_log( &effmass[i][j] ) ;
-	  if( j > 0 ) {
-	    mult_constant( &effmass[i][j] , -1.0/((double)j-t0) ) ;
-	  }
-	}
-      }
-      break ;
-    }
+  equate( effmass , y1 ) ;
+  add( effmass , y3 ) ;
+  divide( effmass , y2 ) ;
+  mult_constant( effmass , 0.5 ) ;
+    
+  // if it is still negative we set to zero
+  if( acosh_range( *effmass ) == true ) {
+    zero_effmass( effmass , y2 ) ;
+  } else {
+    res_acosh( effmass ) ;
   }
+
+  return ;
+}
+
+// asinh effective mass
+static void
+asinh_effmass( struct resampled *effmass ,
+	       struct resampled y1 ,
+	       struct resampled y2 ,
+	       struct resampled y3 )
+{
+  // compute ( y[i+1] - y[i-1] / y[i] ) 
+  equate( effmass , y1 ) ;
+  subtract( effmass , y3 ) ;
+  divide( effmass , y2 ) ;
+  mult_constant( effmass , 0.5 ) ;
+    
+  // asinh is valid for all inputs
+  res_asinh( effmass ) ;
+
+  return ;
+}
+
+
+// computes the effective mass
+struct resampled *
+effective_mass( struct input_params *Input ,
+		const effmass_type type )
+{
+  struct resampled *effmass = malloc( Input -> Data.Ntot * sizeof( struct resampled ) ) ;
+
+  size_t i , j , shift = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
+
+      effmass[j].resampled = malloc( Input -> Data.y[j].NSAMPLES * sizeof( double ) ) ;
+
+      if( j == shift ) {
+	log_effmass( &effmass[j] ,
+		     Input -> Data.y[j] , Input -> Data.y[j+1] ,
+		     Input -> Data.x[j+1] , Input -> Data.x[j] ) ;
+      } else if( j == ( shift + Input -> Data.Ndata[i] - 1 ) ) {
+	log_effmass( &effmass[j] ,
+		     Input -> Data.y[j-1] , Input -> Data.y[j] ,
+		     Input -> Data.x[j] , Input -> Data.x[j-1] ) ;
+      } else {
+
+	// switch the various effective masses
+	switch( type ) {
+	case LOG_EFFMASS :
+	  log_effmass( &effmass[j] ,
+		       Input -> Data.y[j] , Input -> Data.y[j+1] ,
+		       Input -> Data.x[j+1] , Input -> Data.x[j] ) ;
+	  break ;
+	case ATANH_EFFMASS :
+	  atanh_effmass( &effmass[j] ,
+			 Input -> Data.y[j-1] , Input -> Data.y[j+1] ) ;
+	  break ;
+	case ACOSH_EFFMASS :
+	  acosh_effmass( &effmass[j] ,
+			 Input -> Data.y[j-1] ,
+			 Input -> Data.y[j] ,
+			 Input -> Data.y[j+1] ) ;
+	  break ;
+	case ASINH_EFFMASS :
+	  asinh_effmass( &effmass[j] ,
+			 Input -> Data.y[j-1] ,
+			 Input -> Data.y[j] ,
+			 Input -> Data.y[j+1] ) ;
+	  break ;
+	default :
+	  // do nothing
+	  break ;
+	}
+	// 
+      }
+
+      printf( "%f %f %f \n" , Input -> Data.x[j].avg ,
+	      effmass[j].avg , effmass[j].err ) ;
+    }
+    shift = j ;
+  }
+
   return effmass ;
 }
 

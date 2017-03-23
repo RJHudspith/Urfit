@@ -84,7 +84,8 @@ single_fit( struct resampled *fitparams ,
 // perform a fit over bootstraps
 struct resampled *
 perform_bootfit( const struct data_info Data ,
-		 const struct fit_info Fit )
+		 const struct fit_info Fit ,
+		 double *Chi )
 {
   // TODO :: sanity check all indices?
   if( Data.x[0].NSAMPLES != Data.y[0].NSAMPLES ) {
@@ -137,6 +138,9 @@ perform_bootfit( const struct data_info Data ,
   // divide out the number of degrees of freedom
   divide_constant( &chisq , ( Data.Ntot - fdesc.Nlogic ) ) ;
   printf( "[CHISQ / (d.o.f)] %e %e \n" , chisq.avg , chisq.err ) ;
+
+  // set the chi value
+  *Chi = chisq.avg ;
   
   // tell us what we have computed
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {

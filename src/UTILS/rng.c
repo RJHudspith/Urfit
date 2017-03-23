@@ -55,7 +55,7 @@ rng_gaussian( const double sigma )
 size_t
 rng_int( const size_t max_idx ) 
 { 
-  return gsl_rng_uniform_int( r , max_idx ) ;
+  return (size_t)gsl_rng_uniform_int( r , max_idx ) ;
 }
 
 // reseed the SEED to what it was before

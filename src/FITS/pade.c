@@ -77,8 +77,17 @@ pade_guesses( double *fparams ,
 	      const struct data_info Data ,
 	      const struct fit_info Fit ) 
 {
-  fparams[0] = 1 ;
-  fparams[1] = 0.6 ;
-  fparams[2] = 0.3 ;
+  fparams[0] = 1.0 ;
+  fparams[1] = 0.0 ;
+  fparams[2] = -0.5 ;
+  /*
+  fparams[0] = -0.18 ;
+  fparams[1] = -0.08 ;
+  fparams[2] = 0.0007 ;
+  fparams[3] = 0.80 ;
+  fparams[4] = 0.019 ;
+  fparams[5] = -0.00014 ;
+  */
+
   return ;
 }

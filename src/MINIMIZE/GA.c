@@ -96,7 +96,7 @@ static void
 insertion_sort_GA( struct genes *G )
 {
   size_t i , j , Nlogic = G -> Nlogic ;
-  double gtemp [ Nlogic ] , x ;
+  double gtemp[ Nlogic ] , x ;
   int hole ;
   for( i = 1 ; i < NGEN ; i++ ) {
     // set up the temporaries
@@ -335,9 +335,9 @@ ga_iter( void *fdesc ,
   // set the fit parameters as the best gene and set the chisq
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     Fit -> f.fparams[i] = G[0].g[i] ;
-    #ifdef VERBOSE
+    //#ifdef VERBOSE
     printf( "FPARAMS_%zu :: %f \n" , i , Fit -> f.fparams[i] ) ;
-    #endif
+    //#endif
   }
   Fit -> f.chisq = G[0].chisq ;
   

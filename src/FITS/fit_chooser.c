@@ -4,6 +4,8 @@
  */
 #include "gens.h"
 
+#include "alpha_D0.h"
+#include "alpha_D0_multi.h"
 #include "cosh.h"
 #include "exp.h"
 #include "exp_plusc.h"
@@ -21,6 +23,10 @@ size_t
 get_Nparam( const struct fit_info Fit )
 {
  switch( Fit.Fitdef ) {
+ case ALPHA_D0 :
+   return 4 ;
+ case ALPHA_D0_MULTI :
+   return 4 ;
    // fall through as they are all the same, multi-exp,cosh or sinh
  case COSH :
  case SINH :
@@ -32,6 +38,7 @@ get_Nparam( const struct fit_info Fit )
  case POLY : return Fit.N + 1 ;
  case PP_AA : return 5 ;
  case PP_AA_WW : return 5 ;
+ case NOFIT : return 0 ;
  }
  return 0 ;
 }
@@ -45,6 +52,20 @@ init_fit( const struct data_info Data ,
   fdesc.linmat = NULL ;
   
   switch( Fit.Fitdef ) {
+  case ALPHA_D0 :
+    fdesc.func       = falpha_D0 ;
+    fdesc.F          = alpha_D0_f ;
+    fdesc.dF         = alpha_D0_df ;
+    fdesc.d2F        = alpha_D0_d2f ;
+    fdesc.guesses    = alpha_D0_guesses ;
+    break ;
+  case ALPHA_D0_MULTI :
+    fdesc.func       = falpha_D0_multi ;
+    fdesc.F          = alpha_D0_multi_f ;
+    fdesc.dF         = alpha_D0_multi_df ;
+    fdesc.d2F        = alpha_D0_multi_d2f ;
+    fdesc.guesses    = alpha_D0_multi_guesses ;
+    break ;
   case COSH : 
     fdesc.func       = fcosh ;
     fdesc.F          = cosh_f ;
@@ -101,6 +122,8 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = sinh_df ;
     fdesc.d2F        = sinh_d2f ;
     fdesc.guesses    = exp_guesses ;
+    break ;
+  case NOFIT :
     break ;
   }
 

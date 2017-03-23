@@ -62,32 +62,54 @@ void
 bootstrap_full( struct input_params *Input )
 {
   size_t i , j = 0 , k , l , shift = 0 ;
-  
+
   // perform a bootstrap
   double *xstrap = malloc( Input -> Data.Nboots * sizeof( double ) ) ;
   double *ystrap = malloc( Input -> Data.Nboots * sizeof( double ) ) ;
 
+  // get the maximum
+  size_t bootmax = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
+      if( Input -> Data.x[j].NSAMPLES > bootmax ) {
+	bootmax = Input -> Data.x[j].NSAMPLES ;
+      }
+    }
+    shift = j ;
+  }
+
+  // precompute rng sequence
+  double *rng = malloc( Input -> Data.Nboots * bootmax * sizeof( double* ) ) ;
+  rng_reseed() ;
+  for( i = 0 ; i < Input -> Data.Nboots * bootmax ; i++ ) {
+    rng[i] = rng_double() ;
+  }
+  printf( "[BOOT] rng setup bootmax :: %zu \n" , bootmax ) ;
+
+  // loop data doing the bootstrapping
+  shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-
-      rng_reseed( ) ;
 
       const size_t N = Input -> Data.x[j].NSAMPLES ;	
       double *x = malloc( N * sizeof( double ) ) ;
       double *y = malloc( N * sizeof( double ) ) ;
 
       // loop boots
+      double *p = rng ;
+      
       for( k = 0 ; k < Input -> Data.Nboots ; k++ ) {
 
-	// reseed the rng ...
+	// set the rng idx
 	register size_t rng_idx = 0 ;
 
 	// loop raw data
 	for( l = 0 ; l < N ; l++ ) {
-	  rng_idx = rng_int( N ) ; 
+	  rng_idx = (size_t)( ( *p ) * N ) ;
 	  x[l] = Input -> Data.x[j].resampled[ rng_idx ] ;
 	  y[l] = Input -> Data.y[j].resampled[ rng_idx ] ;
+	  p++ ;
 	}
 	
 	xstrap[k] = kahan_summation( x , N ) / N ;
@@ -136,7 +158,10 @@ bootstrap_full( struct input_params *Input )
     }
     shift += Input -> Data.Ndata[i] ;
   }
-
+  
+  // free the RNG sequence
+  free( rng ) ;
+  
   free( xstrap ) ;
   free( ystrap ) ;
 

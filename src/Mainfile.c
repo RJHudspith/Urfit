@@ -4,12 +4,14 @@
  */
 #include "gens.h"
 
-#include "fake.h"
+#include "an_wrapper.h"
+#include "io_wrapper.h"
+
 #include "fit_and_plot.h"
 #include "init.h"
-#include "pmap.h"
-#include "read_corr.h"
+
 #include "read_inputs.h"
+
 
 #include "bootstrap.h"
 #include "jacknife.h"
@@ -19,56 +21,52 @@
 int
 main( const int argc , const char *argv[] )
 {
+  // tell us if we did something stupid
   if( argc != 3 ) {
-    printf( "USAGE :: ./URFIT -i infile" ) ;
+    fprintf( stderr , "USAGE :: ./URFIT -i infile" ) ;
     return -1 ;
   }
   size_t i ;
 
+  // initially read the inputs
   struct input_params Input ;
   if( read_inputs( &Input , argv[2] ) == FAILURE ) {
     goto free_failure ;
   }
 
-  switch( Input.FileType ) {
-  case Corr :
-    if( read_corr( &Input , NOFOLD , 5 , 5 ) == FAILURE ) {
-      goto free_failure ;
-    } break ;
-    // set Lt
-    if( init_LT( &Input.Data , Input.Traj ) == FAILURE ) {
-      goto free_failure ;
-    }
-  case Fake :
-    if( generate_fake_data( &Input.Data , Input.Fit ,
-			    Input.Traj , 0.0 , 0.005 ) == FAILURE ) {
-      goto free_failure ;
-    } break ;
+  // choose the correct IO
+  if( io_wrap( &Input ) == FAILURE ) {
+    goto free_failure ;
   }
   
   // bootstrap it
   switch( Input.Data.Restype ) {
   case BootStrap :
+    printf( "Bootstrapping \n" ) ;
     init_rng( 123456 ) ;
     bootstrap_full( &Input ) ;
     free_rng() ;
     break ;
   case JackKnife :
+    printf( "JackKnifing \n" ) ;
     jackknife_full( &Input ) ;
     break ;
   case Raw :
+    printf( "Raw data\n" ) ;
     for( i = 0 ; i < Input.Data.Ntot ; i++ ) {
       compute_err( &Input.Data.x[i] ) ;
       compute_err( &Input.Data.y[i] ) ;
     }
     break ;
   }
+
+  printf( "Bootstrapping finished\n" ) ;
   
   // need to set this after data has been read ...
-  if( fit_and_plot( Input ) == FAILURE ) {
+  if( an_wrapper( &Input ) == FAILURE ) {
     goto free_failure ;
   }
-
+  
  free_failure :
 
   // free the structs

@@ -3,7 +3,7 @@
 
 struct resampled *
 perform_bootfit( const struct data_info Data ,
-		 const struct fit_info Fit ) ;
-
+		 const struct fit_info Fit ,
+		 double *Chi ) ;
 
 #endif
