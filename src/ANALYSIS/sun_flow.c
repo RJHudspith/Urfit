@@ -5,6 +5,7 @@
 #include "gens.h"
 
 #include "fit_and_plot.h"
+#include "init.h"
 #include "resampled_ops.h"
 
 int
@@ -35,16 +36,8 @@ sun_wflow_analysis( struct input_params *Input )
   double chi = 0.0 ;
   struct resampled *fit = fit_and_plot( *Input , &chi ) ;
 
-  
   // free the fit
-  if( fit != NULL ) {
-    for( i = 0 ; i < Input -> Fit.Nparam ; i++ ) {
-      if( fit[i].resampled != NULL ) {
-	free( fit[i].resampled ) ;
-      }
-    }
-    free( fit ) ;
-  }
+  free_fitparams( fit , Input -> Fit.Nlogic ) ;
   
   return SUCCESS ;
 }

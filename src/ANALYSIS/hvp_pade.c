@@ -7,6 +7,7 @@
 #include "fit_and_plot.h"
 #include "fit_chooser.h"
 #include "ffunction.h"
+#include "init.h"
 #include "make_xmgrace.h"
 #include "resampled_ops.h"
 #include "stats.h"
@@ -164,106 +165,7 @@ fit_hvp( struct input_params *Input )
 
   free( adler.resampled ) ;
   
-  size_t k ;
-  for( k = 0 ; k < Input -> Fit.Nlogic ; k++ ) {
-    free( fit[k].resampled ) ;
-  }
-  free( fit ) ;
-  
-  return SUCCESS ;
-}
-
-
-
-#if 0
-
-#include "gen_ders.h"
-
-int
-fit_hvp( struct input_params *Input )
-{
-  // compute the generic derivatives of the data
-  size_t i , j , k , l , shift = 0 ;
-  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-
-    // set the derivatives
-    struct resampled *der = malloc( Input -> Data.Ndata[i] *
-				    sizeof( struct resampled ) ) ;
-    for( j = 0 ; j < Input -> Data.Ndata[i] ; j++ ) {
-      der[j] = init_dist( NULL ,
-			  Input -> Data.x[j+shift].NSAMPLES ,
-			  Input -> Data.x[j+shift].restype ) ;
-    }
-
-    // loop bootstraps
-    for( k = 0 ; k < Input -> Data.x[shift].NSAMPLES ; k++ ) {
-      
-      double X[ Input -> Data.Ndata[i] ] , Y[ Input -> Data.Ndata[i] ] ;
-
-      size_t idx = 0 ;
-      X[0] = Input -> Data.x[shift].resampled[k] ;
-      Y[0] = Input -> Data.y[shift].resampled[k] ;
-     
-      for( j = 1 ; j < Input -> Data.Ndata[i] ; j++ ) {
-	if( fabs( Input -> Data.x[j+shift].resampled[k] - Input -> Data.x[j+shift-1].resampled[k] ) < 1E-12 ) continue ;
-	X[idx] = Input -> Data.x[j+shift].resampled[k] ;
-	Y[idx] = Input -> Data.y[j+shift].resampled[k] ;
-	idx++ ;
-      }
-      double **ders = get_ders( Y , X , idx , 12 ) ;
-
-      // set the derivatives
-      for( l = 0 ; l < idx ; l++ ) {
-	der[l].resampled[k] = ders[l][1] ;
-	//printf( "HERE :: %f \n" , ders[l][0] ) ;
-      }
-	
-      // 
-      for( l = 0 ; l < idx ; l++ ) {
-	free( ders[l] ) ;
-      }
-      free( ders ) ;
-      //
-    }
-
-    // do the average
-    double X[ Input -> Data.Ndata[i] ] , Y[ Input -> Data.Ndata[i] ] ;
-
-    size_t idx = 0 ;
-    X[0] = Input -> Data.x[shift].avg ;
-    Y[0] = Input -> Data.y[shift].avg;
-     
-    for( j = 1 ; j < Input -> Data.Ndata[i] ; j++ ) {
-      if( fabs( Input -> Data.x[j+shift].avg - Input -> Data.x[j+shift-1].avg ) < 1E-12 ) continue ;
-      X[idx] = Input -> Data.x[j+shift].avg ;
-      Y[idx] = Input -> Data.y[j+shift].avg ;
-      idx++ ;
-    }
-    double **ders = get_ders( Y , X , idx , 4 ) ;
-
-    // set the derivatives
-    for( l = 0 ; l < idx ; l++ ) {
-      der[l].avg = ders[l][1] ;
-      //printf( "HERE :: %f \n" , ders[l][0] ) ;
-    }
-	
-    // 
-    for( l = 0 ; l < idx ; l++ ) {
-      free( ders[l] ) ;
-    }
-    free( ders ) ;
-
-    // print out the derivatives
-    for( j = 0 ; j < idx ; j++ ) {
-      compute_err( &der[j] ) ;
-      mult_constant( &der[j] , 12*M_PI*M_PI*X[j]*5./9. ) ;
-      printf( "%f %f %f \n" , X[j] , der[j].avg , der[j].err ) ;
-    }
+  free_fitparams( fit , Input -> Fit.Nlogic ) ;
     
-    shift += Input -> Data.Ndata[i] ;
-  }
-  
   return SUCCESS ;
 }
-
-#endif

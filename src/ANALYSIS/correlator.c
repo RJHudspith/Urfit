@@ -7,6 +7,7 @@
 #include "decays.h"
 #include "effmass.h"
 #include "fit_and_plot.h"
+#include "init.h"
 
 int
 correlator_analysis( struct input_params *Input )
@@ -25,7 +26,12 @@ correlator_analysis( struct input_params *Input )
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
   
   // compute a decay constant
-  decay( Fit , *Input ) ;
+  if( Input -> Fit.Fitdef == PP_AA_WW ||
+      Input -> Fit.Fitdef == PP_AA ) {
+    decay( Fit , *Input ) ;
+  }
+
+  free_fitparams( Fit , Input -> Fit.Nlogic ) ;
   
   return SUCCESS ;
 }

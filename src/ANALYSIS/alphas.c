@@ -8,6 +8,7 @@
 #include "alpha_D0_multi.h"
 #include "cruel_runnings.h"
 #include "fit_and_plot.h"
+#include "init.h"
 #include "resampled_ops.h"
 
 //#define FITRANGES
@@ -136,11 +137,8 @@ fit_alphas( struct input_params *Input )
 	sumweights += 1.0/chisq ;
 	
 	add( &aveweight , amz ) ;
-	
-	for( k = 0 ; k < 4 ; k++ ) {
-	  free( fit[k].resampled ) ;
-	}
-	free( fit ) ;
+
+	free_fitparams( fit , Input -> Fit.Nlogic ) ;
 	
 	free( amz.resampled ) ;
       }
@@ -167,10 +165,7 @@ fit_alphas( struct input_params *Input )
   printf( "%f alpha(%f) -> amz :: %f %f \n" ,
 	  chisq , mu , amz.avg , amz.err ) ;
 
-  for( i = 0 ; i < 4 ; i++ ) {
-    free( fit[i].resampled ) ;
-  }
-  free( fit ) ;
+  free_fitparams( fit , Input -> Fit.Nlogic ) ;
 	
   free( amz.resampled ) ;
 #endif

@@ -49,6 +49,7 @@ free_Data( struct data_info *Data ,
   return ;
 }
 
+// free the fit information struct
 void
 free_Fit( struct fit_info *Fit ,
 	  const struct data_info Data )
@@ -65,6 +66,24 @@ free_Fit( struct fit_info *Fit ,
   return ;
 }
 
+// free the fit parameter array
+void
+free_fitparams( struct resampled *Fit ,
+		const size_t Nlogic )
+{
+  size_t i ;
+  if( Fit != NULL ) {
+    for( i = 0 ; i < Nlogic ; i++ ) {
+      if( Fit[i].resampled != NULL ) {
+	free( Fit[i].resampled ) ;
+      }
+    }
+    free( Fit ) ;
+  }
+  return ;
+}
+
+// initialise the "LT" array
 int
 init_LT( struct data_info *Data ,
 	const struct traj *Traj )
