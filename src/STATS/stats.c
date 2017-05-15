@@ -9,6 +9,7 @@
 #include "bootstrap.h"
 #include "jacknife.h"
 #include "resampled_ops.h"
+#include "rng.h"
 #include "summation.h"
 
 // compute the average and returns the unnormalised variance
@@ -28,7 +29,7 @@ raw_err( struct resampled *replicas )
 	   &(replicas -> err) ,
 	   replicas -> resampled ,
 	   replicas -> NSAMPLES ) ;
-  replicas -> err = sqrt( replicas -> err ) / replicas -> NSAMPLES ;
+  replicas -> err = sqrt( replicas -> err / ( replicas -> NSAMPLES - 1 ) ) ;
   replicas -> err_hi = replicas -> avg + replicas -> err ;
   replicas -> err_lo = replicas -> avg - replicas -> err ;
   return ;
@@ -78,11 +79,51 @@ compute_err( struct resampled *replicas )
 }
 
 // bootstrap or jackknife or whatever
-struct resampled *
-resample_data( const struct resampled *RAW ,
-	       const size_t N ,
-	       const resample_type restype ,
-	       const int NBOOTS )
+int
+resample_data( struct input_params *Input )
 {
-  return NULL ;
+  size_t i ;
+  bool must_resample = false ;
+  
+  // compute the error
+  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
+    compute_err( &Input -> Data.x[i] ) ;
+    compute_err( &Input -> Data.y[i] ) ;
+    if( Input -> Data.x[i].restype != Input -> Data.Restype ||
+	Input -> Data.x[i].restype != Input -> Data.Restype )
+      {
+	must_resample = true ;
+      }
+  }
+
+  // bootstrap it
+  if( must_resample == true ) {
+    switch( Input -> Data.Restype ) {
+    case BootStrap :
+      #ifdef VERBOSE
+      fprintf( stdout , "[STATS] Bootstrapping \n" ) ;
+      #endif
+      init_rng( 123456 ) ;
+      bootstrap_full( Input ) ;
+      free_rng() ;
+      break ;
+    case JackKnife :
+      #ifdef VERBOSE
+      fprintf( stdout , "[STATS] JackKnifing \n" ) ;
+      #endif
+      jackknife_full( Input ) ;
+      break ;
+    case Raw :
+      #ifdef VERBOSE
+      fprintf( stdout , "[STATS] Raw data\n" ) ;
+      #endif
+      break ;
+    }
+  }
+
+  #ifdef VERBOSE
+  fprintf( stdout , "[STATS] Resampling finished\n" ) ;
+  #endif
+
+  return SUCCESS ;
 }

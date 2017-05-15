@@ -59,8 +59,6 @@ read_flat_double( struct input_params *Input ,
   size_t Restype , Ndata , Nsamples ;
   read_initial( file , &Restype , &Ndata ) ;
 
-  printf( "In here \n" ) ;
-
   // do some loops, allocate x and y
   Input -> Data.Ndata[ Traj_idx ] = Ndata ;
   
@@ -73,9 +71,11 @@ read_flat_double( struct input_params *Input ,
       fscanf( file , "%lf %lf\n" ,
 	      &Input -> Data.x[ shift + i ].resampled[j] ,
 	      &Input -> Data.y[ shift + i ].resampled[j] ) ;
+      #ifdef VERBOSE
       printf( "THIS :: %f %f \n" ,
 	      Input -> Data.x[ shift + i ].resampled[j] ,
 	      Input -> Data.y[ shift + i ].resampled[j] ) ;
+      #endif
     }
   }
 
@@ -185,6 +185,7 @@ read_flat( struct input_params *Input )
   }
   Input -> Data.Ntot = shift ;
 
+#ifdef VERBOSE
   printf( "WHAT :: %zu %zu %zu \n" , Input -> Data.Nsim , Input -> Data.Ndata[0] , Input -> Data.Ntot ) ;
 
   // test
@@ -200,5 +201,7 @@ read_flat( struct input_params *Input )
     }
     shift += Input -> Data.Ndata[i] ;
   }
+#endif
+  
   return SUCCESS ;  
 }

@@ -1,5 +1,6 @@
 /**
-   exponential Model f = ( p(x_i) - y_i )
+   @file poly.c
+   @brief polynomial fit
  */
 #include "gens.h"
 

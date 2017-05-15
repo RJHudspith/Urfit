@@ -9,7 +9,7 @@
 #include "summation.h"
 
 // either we boot average or use the ensemble average ...
-//#define BOOT_AVERAGE
+#define BOOT_AVERAGE
 
 // qsort comparison function for the bootstrap
 int 

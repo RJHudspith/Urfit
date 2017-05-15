@@ -52,7 +52,7 @@ single_gls( double *coeffs ,
     }
   }
 
-#ifdef VERBOSE
+  #ifdef VERBOSE
   // tell us what it looks like
   for( i = 0 ; i < M ; i++ ) {
     for( j = 0 ; j < N ; j++ ) {
@@ -60,7 +60,7 @@ single_gls( double *coeffs ,
     }
     printf( "\n" ) ;
   }
-#endif
+  #endif
   
   // initialise alpha as (U^T W^-1 U)
   for( i = 0 ; i < N ; i++ ) {

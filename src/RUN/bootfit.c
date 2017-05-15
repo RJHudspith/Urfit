@@ -89,7 +89,7 @@ perform_bootfit( const struct data_info Data ,
 {
   // TODO :: sanity check all indices?
   if( Data.x[0].NSAMPLES != Data.y[0].NSAMPLES ) {
-    printf( "[BOOTFIT] number of x  and y samples different" ) ;
+    fprintf( stderr , "[BOOTFIT] number of x  and y samples different" ) ;
     return NULL ;
   }
 
@@ -136,8 +136,8 @@ perform_bootfit( const struct data_info Data ,
   }
   
   // divide out the number of degrees of freedom
-  divide_constant( &chisq , ( Data.Ntot - fdesc.Nlogic ) ) ;
-  printf( "[CHISQ / (d.o.f)] %e %e \n" , chisq.avg , chisq.err ) ;
+  divide_constant( &chisq , ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ) ;
+  fprintf( stdout , "[CHISQ / (d.o.f)] %e %e \n" , chisq.avg , chisq.err ) ;
 
   // set the chi value
   *Chi = chisq.avg ;
@@ -147,10 +147,11 @@ perform_bootfit( const struct data_info Data ,
     compute_err( &fitparams[i] ) ;
     if( i < fdesc.Nparam ) {
       if( Fit.Sims[i] == true ) {
-	printf( "-> SIMUL " ) ;
+	fprintf( stdout , "-> SIMUL " ) ;
       }
     }
-    printf( "PARAM_%zu %f %f \n" , i , fitparams[i].avg , fitparams[i].err ) ;
+    fprintf( stdout , "[FIT] PARAM_%zu %e %e \n" ,
+	     i , fitparams[i].avg , fitparams[i].err ) ;
   }
 
  memfree :

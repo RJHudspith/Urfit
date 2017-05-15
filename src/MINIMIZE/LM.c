@@ -12,7 +12,7 @@
 
 // use second derivs? NRC says that they can be harmful
 // not using them makes the code run faster sometimes
-#define WITH_D2_DERIVS 
+//#define WITH_D2_DERIVS 
 
 // get the matrices alpha and beta
 static int
@@ -279,7 +279,7 @@ lm_iter( void *fdesc ,
     iters++ ;
   }
   
-  //#ifdef VERBOSE
+  #ifdef VERBOSE
   // tell us how many iterations we hit
   if( iters == LMMAX ) {
     printf( "\n[LM] stopped by max iterations %zu -> Chidiff %e\n" , iters , chisq_diff ) ;
@@ -292,7 +292,7 @@ lm_iter( void *fdesc ,
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
   }
-  //#endif
+  #endif
 
   // free gsl stuff
   gsl_vector_free( beta ) ;

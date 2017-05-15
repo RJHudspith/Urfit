@@ -5,6 +5,7 @@
 
 #include "gls_bootfit.h"
 #include "pade_coefficients.h"
+#include "pmap.h"
 
 double
 fpade( const struct x_desc X , const double *fparams , const size_t Npars )
@@ -77,17 +78,34 @@ pade_guesses( double *fparams ,
 	      const struct data_info Data ,
 	      const struct fit_info Fit ) 
 {
-  fparams[0] = 1.0 ;
-  fparams[1] = 0.0 ;
-  fparams[2] = -0.5 ;
-  /*
-  fparams[0] = -0.18 ;
-  fparams[1] = -0.08 ;
-  fparams[2] = 0.0007 ;
-  fparams[3] = 0.80 ;
-  fparams[4] = 0.019 ;
-  fparams[5] = -0.00014 ;
-  */
+  double chisq = 0.0 ;
+  size_t i ;
+  
+  // compute a N+M+1 polynomial representation
+  struct fit_info Fit_cpy ;
+  Fit_cpy.N = Fit.N + 2 ;
+  Fit_cpy.M = Fit.M ;
+  Fit_cpy.Corrfit = Fit.Corrfit ;
+  Fit_cpy.Nparam = Fit.N + Fit.M + 2 ;
+  Fit_cpy.Nlogic = Fit.N + Fit.M + 2 ;
+  Fit_cpy.map = parammap( Data , Fit_cpy ) ;
 
+  double polys[ Fit_cpy.Nlogic ] ;
+  single_gls( polys , &chisq , Data , Fit_cpy , 1 , true ) ;
+
+  for( i = 0 ; i < Fit_cpy.Nlogic ; i++ ) {
+    printf( "POLY_%zu %f \n" , i , polys[i] ) ;
+  }
+
+  // free the poly map
+  free_pmap( Fit_cpy.map , Data.Ntot ) ;
+
+  // convert to a pade
+  pades_from_poly( fparams , polys , Fit.N , Fit.M ) ;
+
+  for( i = 0 ; i < Fit.Nlogic ; i++ ) {
+    printf( "GUESS_%zu %f \n" , i , fparams[i] ) ;
+  }
+  
   return ;
 }

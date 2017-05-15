@@ -20,7 +20,8 @@ run_MZ_2nf3( const double alpha ,
 
 struct resampled
 run_distribution_nf3_2MZ( struct resampled alpha ,
-			  const double mu ) ;
+			  const double mu ,
+			  const size_t loops ) ;
   
 void
 test_running( void ) ;

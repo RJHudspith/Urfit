@@ -177,14 +177,22 @@ read_inputs( struct input_params *Input ,
   } else {
     if( are_equal( Flat[ an_tag ].Value , "Alphas" ) ) {
       Input -> Analysis = Alphas ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Beta_crit" ) ) {
+      Input -> Analysis = Beta_crit ;
     } else if( are_equal( Flat[ an_tag ].Value , "Correlator" ) ) {
       Input -> Analysis = Correlator ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Exceptional" ) ) {
+      Input -> Analysis = Exceptional ;
     } else if( are_equal( Flat[ an_tag ].Value , "HVP" ) ) {
       Input -> Analysis = HVP ;
     } else if( are_equal( Flat[ an_tag ].Value , "Wflow" ) ) {
       Input -> Analysis = Wflow ;
     } else if( are_equal( Flat[ an_tag ].Value , "Fit" ) ) {
       Input -> Analysis = Fit ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Qcorr" ) ) {
+      Input -> Analysis = Qcorr ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Qsusc" ) ) {
+      Input -> Analysis = Qsusc ;
     } else {
       fprintf( stderr , "[INPUT] Analysis %s not recognised\n" ,
 	       Flat[ an_tag ].Value ) ;

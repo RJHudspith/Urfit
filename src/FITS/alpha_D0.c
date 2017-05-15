@@ -21,11 +21,19 @@
   #define D5 (400)
 #endif
 
-const static double mu = 2.0 ;
+static double mu = 2.0 ;
 static double Q1[ 3 ] ;
 const static double a2[3] = { 0.10090915108763919 ,
 			      0.17605265301057807 ,
 			      0.31392137319354574 } ;
+
+void
+set_mu( const double munew )
+{
+  mu = munew ;
+  printf( "Mu set %f \n" , mu ) ;
+  return ;
+}
 
 void
 set_Q1( const double val , const size_t idx )

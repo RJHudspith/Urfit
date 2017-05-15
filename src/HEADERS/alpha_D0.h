@@ -2,6 +2,9 @@
 #define ALPHA_D0_H
 
 void
+set_mu( const double munew ) ;
+
+void
 set_Q1( const double val , const size_t idx ) ;
 
 double

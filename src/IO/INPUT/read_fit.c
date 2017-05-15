@@ -68,6 +68,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = PP_AA_WW ;
   } else if( are_equal( Flat[tag].Value , "SINH" ) ) {
     Input -> Fit.Fitdef = SINH ;
+  } else if( are_equal( Flat[tag].Value , "QCORR_BESSEL" ) ) {
+    Input -> Fit.Fitdef = QCORR_BESSEL ;
   } else {
     return FAILURE ;
   }
@@ -211,6 +213,8 @@ get_Priors( struct input_params *Input ,
     Nprior++ ;
     block_idx ++ ;
   }
+  Input -> Fit.Nprior = Nprior ;
+  
   return SUCCESS ;
 }
 

@@ -13,6 +13,7 @@
 #include "poly.h"
 #include "pp_aa.h"
 #include "pp_aa_ww.h"
+#include "Qcorr_bessel.h"
 #include "sinh.h"
 
 #include "ffunction.h"
@@ -38,6 +39,7 @@ get_Nparam( const struct fit_info Fit )
  case POLY : return Fit.N + 1 ;
  case PP_AA : return 5 ;
  case PP_AA_WW : return 5 ;
+ case QCORR_BESSEL : return 2 ;
  case NOFIT : return 0 ;
  }
  return 0 ;
@@ -122,6 +124,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = sinh_df ;
     fdesc.d2F        = sinh_d2f ;
     fdesc.guesses    = exp_guesses ;
+    break ;
+  case QCORR_BESSEL :
+    fdesc.func       = fQcorr_bessel ;
+    fdesc.F          = Qcorr_bessel_f ;
+    fdesc.dF         = Qcorr_bessel_df ;
+    fdesc.d2F        = Qcorr_bessel_d2f ;
+    fdesc.guesses    = Qcorr_bessel_guesses ;
     break ;
   case NOFIT :
     break ;

@@ -15,18 +15,20 @@
  */
 #include "gens.h"
 
-#define LOOPS (5)
+#include "Nder.h"
+
+#define LOOPS (4)
 
 // alpha_s correction term == \alpha/pi * ( 1 + c_alpha a^2 )
 #define ALPHA_CORR
 
 // aQ^4 correction
-#define FIT_A4
+#define FIT_AQ4
 
 // aQ^6 correction
-//#define FIT_A6
+//#define FIT_AQ6
 
-#define FIT_ACORR_A4
+//#define FIT_ACORR_A4
 
 //#define FIT_D5
 
@@ -41,6 +43,7 @@ const static double m[ 3*12 ] = { 2.0 , 2.0 , 2.0 , 2.25 , 2.25 , 2.25 , 2.5 , 2
 static double mu = 2.0 ;
 
 static double Q1[ 3*12 ] = { 0 } ;
+
 const static double a2[ 3*12 ] = { 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
 				   0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
 				   0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
@@ -142,19 +145,21 @@ falpha_D0_multi( const struct x_desc X , const double *fparams , const size_t Np
   const double t2 = log( X.X / ( m[ Npars ] * m[ Npars ] ) ) ;
 
   // Idea is to run alpha at mu to the other scale "m" and use that in the fit
-#ifdef ALPHA_CORR
+#if (defined ALPHA_CORR)
   const double a_pi = rescale_alpha( fparams[0] / M_PI , mu , m[ Npars ] ) * ( 1 + a2[ Npars ] * fparams[2] ) ;
+#elif (defined ALPHA_CORR2)
+  const double a_pi = rescale_alpha( fparams[0] * ( 1 + a2[ Npars ] * fparams[2] ) / M_PI , mu , m[ Npars ] ) ;
 #else
   const double a_pi = rescale_alpha( fparams[0] / M_PI , mu , m[ Npars ] ) ;
 #endif
 
   // momentum corrections
   double corrections = fparams[1] * a2[ Npars ] * ( Q1[ Npars] - X.X ) / ( t1 - t2 ) ;
-#ifdef FIT_A4
+#ifdef FIT_AQ4
   corrections += fparams[3] * a2[ Npars ] * a2[ Npars ] * ( Q1[ Npars] * Q1[ Npars] - X.X * X.X ) / ( t1 - t2 ) ;
 #endif
 
-#ifdef FIT_A6
+#ifdef FIT_AQ6
   corrections += fparams[4] * a2[ Npars ] * a2[ Npars ] * ( Q1[ Npars] * Q1[ Npars] * Q1[ Npars ] - X.X * X.X * X.X ) / ( t1 - t2 ) ;
 #endif
   
@@ -249,11 +254,11 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
     
     // rotation-preserving corrections
     df[ DATA -> map[i].p[1] ][i] = asq *  ( Qref - DATA -> x[i] ) / ( t1 - t2 ) ;
-#ifdef FIT_A4
+#ifdef FIT_AQ4
     df[ DATA -> map[i].p[3] ][i] = asq * asq * ( Qref * Qref - DATA -> x[i] * DATA -> x[i] ) / ( t1 - t2 ) ;
 #endif
 
-#ifdef FIT_A6
+#ifdef FIT_AQ6
     df[ DATA -> map[i].p[4] ][i] = asq * asq * asq * ( Qref * Qref * Qref - DATA -> x[i] * DATA -> x[i] * DATA -> x[i] ) / ( t1 - t2 ) ;
 #endif
     
@@ -281,23 +286,43 @@ alpha_D0_multi_d2f( double **d2f , const void *data , const double *fparams )
 
 void
 alpha_D0_multi_guesses( double *fparams ,
-		  const struct data_info Data ,
-		  const struct fit_info Fit )
+			const struct data_info Data ,
+			const struct fit_info Fit )
 {
   fparams[0] = 0.3 ;
-  fparams[1] = 0.17 ;
+  fparams[1] = 0.20 ;
   
-#ifdef ALPHA_CORR
-  fparams[2] = -3.0 ;
+#if (defined ALPHA_CORR)
+  fparams[2] = -4.0 ;
+#elif (defined ALPHA_CORR2)
+  fparams[2] = -4.0 ;
 #endif
   
-#ifdef FIT_A4
-  fparams[3] = -0.025 ;
+#ifdef FIT_AQ4
+  fparams[3] = -0.02 ;
+#endif
+
+#ifdef FIT_AQ6
+  fparams[4] = 0.00 ;
 #endif
   
 #ifdef FIT_D5
   fparams[4] = 10000 ;
 #endif
+
+  // if we have some priors we set them
+  size_t i ;
+  for( i = 0 ; i < Fit.Nlogic ; i++ ) {
+    if( Fit.Prior[i].Initialised == true ) {
+      fparams[i] = Fit.Prior[i].Val ;
+    }
+  }
+
+  // print guesses
+  for( i = 0 ; i < Fit.Nlogic ; i++ ) {
+    fprintf( stdout , "[ALPHA_D0_MULTI] Guesses :: %zu %f \n" ,
+	     i , fparams[i] ) ;
+  }
 
   return ;
 }

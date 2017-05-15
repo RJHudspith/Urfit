@@ -147,6 +147,6 @@ exp_guesses( double *fparams ,
     printf( "[GUESS] Fit param guess %zu -> %f \n" , i , fparams[i] ) ; 
   }
   printf( "\n" ) ;
-  
+
   return ;
 }

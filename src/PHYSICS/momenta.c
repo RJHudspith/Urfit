@@ -6,6 +6,7 @@
 
 #include "resampled_ops.h"
 #include "stats.h"
+#include "sort.h"
 
 // compute a lattice momentum from fourier modes n
 double
@@ -41,64 +42,6 @@ lattmom( const size_t *Dimensions ,
   }
 }
 
-// sort the data by x.avg
-int
-sort_data( struct input_params *Input )
-{
-  size_t i , j , shift = 0 ;
-    
-  // sort in ascending order the data by x-avg using an insertion sort
-  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    struct resampled tempx = init_dist( &Input -> Data.x[ shift ] ,
-					Input -> Data.x[ shift ].NSAMPLES ,
-					Input -> Data.x[ shift ].restype ) ;
-    struct resampled tempy = init_dist( &Input -> Data.y[ shift ] ,
-					Input -> Data.y[ shift ].NSAMPLES ,
-					Input -> Data.y[ shift ].restype ) ;
-    
-    // insertion sort
-    for( j = shift + 1 ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      double x = Input -> Data.x[ j ].avg ;
-      equate( &tempx , Input -> Data.x[j] ) ;
-      equate( &tempy , Input -> Data.y[j] ) ;
-      
-      int hole = (int)j - 1 ;
-      while( hole >= shift && Input -> Data.x[hole].avg > x ) {
-	// copy data
-	equate( &Input -> Data.x[hole+1] , Input -> Data.x[hole] ) ;
-	equate( &Input -> Data.y[hole+1] , Input -> Data.y[hole] ) ;
-	hole-- ;
-      }
-      equate( &Input -> Data.x[hole+1] , tempx ) ;
-      equate( &Input -> Data.y[hole+1] , tempy ) ;
-      #ifdef VERBOSE
-      fprintf( stdout , "Sorting :: %zu %zu \n" , j , Input -> Data.Ndata[i] ) ;
-      #endif
-    }
-    shift = j ;
-    
-    free( tempx.resampled ) ;
-    free( tempy.resampled ) ;
-  }
-
-#ifdef VERBOSE
-  // test
-  shift = 0 ;
-  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      fprintf( stdout , "TEST -> %f %f %f %f \n" ,
-	       Input -> Data.x[j].avg ,
-	       Input -> Data.x[j].err_lo ,
-	       Input -> Data.x[j].err_hi ,
-	       Input -> Data.y[j].avg ) ;
-    }
-    shift = j ;
-  }
-#endif
-  
-  return SUCCESS ;
-}
-
 // function for averaging equivalent x-values
 int
 average_equivalent( struct input_params *Input )
@@ -117,7 +60,7 @@ average_equivalent( struct input_params *Input )
   }
 
   // sort the data
-  if( sort_data( Input ) == FAILURE ) {
+  if( quick_sort_data( Input ) == FAILURE ) {
     return FAILURE ;
   }
 
@@ -139,7 +82,7 @@ average_equivalent( struct input_params *Input )
 	k++ ;
       }
       NewNdata[i]++ ;
-      j = k ;
+      j = k-1 ;
     }
     #ifdef VERBOSE
     printf( "New Ndata %zu \n" , NewNdata[i] ) ;
@@ -147,7 +90,7 @@ average_equivalent( struct input_params *Input )
     shift = j ;
     Ntot += NewNdata[i] ;
   }
-
+  
   // momentum average into temporary distributions
   struct resampled *tmpx = malloc( Ntot * sizeof( struct resampled ) ) ;
   struct resampled *tmpy = malloc( Ntot * sizeof( struct resampled ) ) ;
@@ -179,7 +122,7 @@ average_equivalent( struct input_params *Input )
       
       idx++ ;
       
-      j += k ;
+      j += (k-1) ;
     }
     shift = j ;
   }

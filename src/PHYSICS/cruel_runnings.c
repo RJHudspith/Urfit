@@ -279,16 +279,17 @@ run_MZ_2nf3( const double alpha ,
 // run an nf=3 distribution to MZ
 struct resampled
 run_distribution_nf3_2MZ( struct resampled alpha ,
-			  const double mu )
+			  const double mu ,
+			  const size_t loops )
 {
   struct resampled alpha_amz = init_dist( NULL , alpha.NSAMPLES ,
 					  alpha.restype ) ;
   
   size_t i ;
   for( i = 0 ; i < alpha.NSAMPLES ; i++ ) {
-    alpha_amz.resampled[i] = run_nf3_2MZ( alpha.resampled[i] , mu , 4 ) ;
+    alpha_amz.resampled[i] = run_nf3_2MZ( alpha.resampled[i] , mu , loops ) ;
   }
-  alpha_amz.avg = run_nf3_2MZ( alpha.avg , mu , 4 ) ;
+  alpha_amz.avg = run_nf3_2MZ( alpha.avg , mu , loops ) ;
   compute_err( &alpha_amz ) ;
   
   return alpha_amz ;

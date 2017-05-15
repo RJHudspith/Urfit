@@ -33,7 +33,7 @@ typedef enum {
 
 // fit types
 typedef enum {
-  ALPHA_D0 , ALPHA_D0_MULTI , EXP , COSH , EXP_PLUSC , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , SINH 
+  ALPHA_D0 , ALPHA_D0_MULTI , EXP , COSH , EXP_PLUSC , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , QCORR_BESSEL , SINH 
 } fittype ;
 
 // time folding types
@@ -50,7 +50,7 @@ typedef enum { Raw , JackKnife , BootStrap } resample_type ;
 // file type we expect to read
 typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File } file_type ;
 
-typedef enum { Alphas , Correlator , HVP , Wflow , Fit } analysis_type ;
+typedef enum { Alphas , Beta_crit , Correlator , Exceptional , Fit , HVP , Qcorr , Qsusc , Wflow } analysis_type ;
 
 // x-data descriptor
 struct x_desc {
@@ -58,6 +58,13 @@ struct x_desc {
   size_t LT ;
   size_t N ;
   size_t M ;
+} ;
+
+// little histogram struct
+struct histogram {
+  double binmid ;
+  double width ;
+  size_t count ;
 } ;
 
 // map structure
@@ -132,6 +139,7 @@ struct fit_info {
   size_t N ;
   size_t Nlogic ;
   size_t Nparam ;
+  size_t Nprior ;
   struct prior *Prior ;
   bool *Sims ;
   double Tol ;

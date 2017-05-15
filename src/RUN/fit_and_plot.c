@@ -86,6 +86,9 @@ fit_and_plot( struct input_params Input ,
 	Data.y[idx].resampled = malloc( Input.Data.x[k].NSAMPLES * sizeof( double ) ) ;
 	equate( &Data.x[idx] , Input.Data.x[k] ) ;
 	equate( &Data.y[idx] , Input.Data.y[k] ) ;
+
+	//printf( "%f %f \n" , Data.x[idx].avg , Data.y[idx].avg ) ;
+	
 	Ndata++ ; idx++ ;
       }
       k ++ ;

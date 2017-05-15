@@ -19,13 +19,20 @@ init_GLU( struct input_params *Input )
     sprintf( str , Input -> Traj[i].FileY , Input -> Traj[i].Begin ) ;
 
     FILE *Infile = fopen( str , "rb" ) ;
+    if( Infile == NULL ) {
+      fprintf( stderr , "[IO] file %s does not exist!\n" , str ) ;
+      return FAILURE ;
+    }
 
     uint32_t rlist[1] ;
-    fread( rlist , sizeof( uint32_t ) , 1 , Infile ) ;
+    if( fread( rlist , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
+      fprintf( stderr , "[IO] cannot read file's first entry\n" ) ;
+      return FAILURE ;
+    }
     #ifndef WORDS_BIGENDIAN
     bswap_32( 1 , rlist ) ;
     #endif
-    printf( "This -> %u \n" , rlist[0] ) ;
+    printf( "[IO] file length -> %u \n" , rlist[0] ) ;
     
     Input -> Data.Ndata[i] = rlist[0] ;
     Input -> Data.Ntot += Input -> Data.Ndata[i] ;
@@ -61,8 +68,9 @@ init_GLU( struct input_params *Input )
 // read the GLU file
 int
 read_GLU( struct input_params *Input )
-{
+{  
   if( init_GLU( Input ) == FAILURE ) {
+    fprintf( stderr , "[IO] failed to init GLU_File\n" ) ;
     return FAILURE ;
   }
 
@@ -80,11 +88,10 @@ read_GLU( struct input_params *Input )
       // print in the trajectory index
       sprintf( str , Input -> Traj[i].FileY , j ) ;
 
-      printf( "%s \n" , str ) ;
-
       // open the file
       FILE *Infile = fopen( str , "rb" ) ;
       if( Infile == NULL ) {
+	fprintf( Infile , "[IO] File %s does not exist\n" , str ) ;
 	return FAILURE ;
       }
 
@@ -99,12 +106,18 @@ read_GLU( struct input_params *Input )
       for( k = 0 ; k < rlist[0] ; k++ ) {
 	size_t l ;
 	uint32_t Nd[1] ;
-	fread( Nd , sizeof( uint32_t ) , 1 , Infile ) ;
+	if( fread( Nd , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
+	  printf( "[IO] Failed to read Nd @ %zu \n" , idx ) ;
+	  return FAILURE ;
+	}
         #ifndef WORDS_BIGENDIAN
 	bswap_32( 1 , Nd ) ;
         #endif
         int32_t r[ Nd[0] ] ;
-	fread( r , sizeof( int32_t ) , Nd[0] , Infile ) ;
+	if( fread( r , sizeof( int32_t ) , Nd[0] , Infile ) != Nd[0] ) {
+	  printf( "[IO] Failed to read momentum list @ %zu \n" , idx ) ;
+	  return FAILURE ;
+	}
         #ifndef WORDS_BIGENDIAN
 	bswap_32( Nd[0] , r ) ;
         #endif
@@ -126,24 +139,29 @@ read_GLU( struct input_params *Input )
       }
 
       double Cr[ rlist[0] ] ;
-      fread( Cr , sizeof( double ) , rlist[0] , Infile ) ;
+      if( fread( Cr , sizeof( double ) , rlist[0] , Infile ) != rlist[0] ) {
+	fprintf( stderr , "[IO] cannot read GLU correlator\n" ) ;
+	return FAILURE ;
+      }
       #ifndef WORDS_BIGENDIAN
       bswap_64( rlist[0] , Cr ) ;
       #endif
       
       for( k = 0 ; k < rlist[0] ; k++ ) {
 	Input -> Data.y[ shift + k ].resampled[ idx ] = Cr[k] ;
-	/*
-	printf( "%f %f \n" ,
-		Input -> Data.x[ shift + k ].resampled[ idx ] ,
+
+	#ifdef VERBOSE
+	printf( "[IO] data -> %f %f \n" ,
+		Input -> Data.x[ shift + k ].resampled[ idx ]
 		Input -> Data.y[ shift + k ].resampled[ idx ] ) ;
-	*/
+	#endif
       }
 
       idx++ ;
       
       fclose( Infile ) ;
     }
+    
     shift += Input -> Data.Ndata[i] ;
   }
 

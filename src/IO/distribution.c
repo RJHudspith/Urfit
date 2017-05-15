@@ -203,7 +203,7 @@ read_distribution_old( struct input_params *Input )
   }
 
   //const double ainv[ 3 ] = { 3.148 , 2.3833 , 1.7848 } ;
-  //const double ainv[ 3 ] = { 1.7848 , 2.3833 , 1.7848 } ;
+  //const double ainv[ 3 ] = { 3.148 , 2.3833 , 1.7848 } ;
   //const double ainv[ 3 ] = { 2.3833 , 2.3833 , 2.3833 } ;
   //const double ainv[ 3 ] = { 1.7848 , 1.7848 , 1.7848 } ;
 
@@ -216,7 +216,7 @@ read_distribution_old( struct input_params *Input )
 				1.7848 , 1.7848 , 1.7848 , 1.7848 ,
 				1.7848 , 1.7848 , 1.7848 , 1.7848 ,
 				1.7848 , 1.7848 , 1.7848 , 1.7848 } ;
-  
+
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
     // open the file
@@ -318,7 +318,7 @@ read_distribution_old( struct input_params *Input )
   }
 
   // sort and average the rest
-  average_equivalent( Input ) ;
+  //average_equivalent( Input ) ;
     
   return SUCCESS ;
 }

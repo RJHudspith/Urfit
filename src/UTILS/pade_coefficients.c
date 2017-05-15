@@ -33,22 +33,19 @@ pades_from_poly( double *pade_coeffs ,
   // left hand side
   for( i = 0 ; i < m ; i++ ) {
     for( j = 0 ; j < m ; j++ ) {
-      if( ( i + n ) < j ) {
+      if( ( i + n ) < ( j + 1 ) ) {
 	gsl_matrix_set( alpha , i , j , 0 ) ;
       } else {
-	gsl_matrix_set( alpha , i , j , poly_coeffs[ i + n - j ] ) ;
+	gsl_matrix_set( alpha , i , j , poly_coeffs[ i + n - j - 1 ] ) ;
       }
-      printf( " %f " , gsl_matrix_get( alpha , i , j ) ) ;
     }
-    printf( "\n" ) ;
-    gsl_vector_set( beta , i , -poly_coeffs[ i + n + 1 ] ) ;
-    printf( "POLY :: %f \n" , -poly_coeffs[ i + n - j ] ) ;
+    gsl_vector_set( beta , i , -poly_coeffs[ i + n ] ) ;
   }
 
   // solves alpha[p][q] * delta( a[q] ) = beta[p] for delta
   int signum , Flag = SUCCESS ;
   if( gsl_linalg_LU_decomp( alpha , perm , &signum ) != GSL_SUCCESS ) {
-    fprintf( stderr , "[POLY_COEFF] LU decomp failed, rolling back to SVD\n" ) ;
+    fprintf( stderr , "[POLY_COEFF] LU decomp failed \n" ) ;
     Flag = FAILURE ;
   }
   if( gsl_linalg_LU_solve( alpha , perm , beta , delta ) != GSL_SUCCESS ) {
@@ -63,31 +60,35 @@ pades_from_poly( double *pade_coeffs ,
 
   // multiply coefficient matrix by left hand side
   for( i = 0 ; i < n ; i++ ) {
-    register double sum = poly_coeffs[ i + 1 ] ;
+    register double sum = poly_coeffs[ i ] ;
     for( j = 1 ; j <= i ; j++ ) {
-      sum += poly_coeffs[ i - j + 1 ] * pade_coeffs[ n + j ] ;
+      #ifdef VERBOSE
+      fprintf( stdout , "Coeffs :: (%zu,%zu) %zu -> %zu \n" ,
+	       i , j , i-j , n+j-1 ) ;
+      #endif
+      sum += poly_coeffs[ i - j  ] * pade_coeffs[ n + j - 1 ] ;
     }
     pade_coeffs[ i ] = sum ;
     #ifdef VERBOSE
-    printf( "\n" ) ;
-    printf( "right[ %d ] = %f \n" , i , pade_coeffs[ i ] ) ;
+    fprintf( stdout , "\n" ) ;
+    fprintf( stdout , "right[ %zu ] = %f \n" , i , pade_coeffs[ i ] ) ;
     #endif
   }
 
-  //#ifdef VERBOSE
+  #ifdef VERBOSE
   // numerator is first in our scheme
-  printf( "( (%1.2f) q^{%d} " , pade_coeffs[ 0 ] , 2*(0) ) ;
+  fprintf( stdout , "( (%1.2f) q^{%d} " , pade_coeffs[ 0 ] , 2*(0) ) ;
   for( i = 1 ; i < n ; i++ ) {
-    printf( " + (%1.2f) q^{%zu} " , pade_coeffs[ i ] , 2*(i) ) ;
+    fprintf( stdout , " + (%1.2f) q^{%zu} " , pade_coeffs[ i ] , 2*(i) ) ;
   }
-  printf( ") / ( 1 " ) ;
+  fprintf( stdout , ") / ( 1 " ) ;
 
   // denominator is last
   for( i = 0 ; i < m ; i++ ) {
-    printf( "+ (%1.2f) q^{%zu} " , pade_coeffs[ i + n ] , 2*(i+1) ) ;
+    fprintf( stdout , "+ (%1.2f) q^{%zu} " , pade_coeffs[ i + n ] , 2*(i+1) ) ;
   }
-  printf( " ) \n" ) ;
-  //#endif
+  fprintf( stdout , " ) \n" ) ;
+  #endif
 
   // free the gsl vectors
   gsl_vector_free( beta ) ;

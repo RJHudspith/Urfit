@@ -41,7 +41,7 @@
 
 //#define VERBOSE
 
-#define NGEN (500) // number of generations in gene pool
+#define NGEN (1024) // number of generations in gene pool
 
 // percentage that persist from the previous generation
 #define NBREED ((int)(0.25*NGEN))  
@@ -52,7 +52,7 @@
 #define NMUTANTS (NGEN - NBREED - NCHILD) // number of mutants
 
 // It turns out this one is very important!! WHY???
-#define NOISE (0.01) // guesses * gaussian of width NOISE to start our run
+#define NOISE (0.1) // guesses * gaussian of width NOISE to start our run
 
 // defaults to selection sort but can use insertion sort here too
 //#define INSERTION_SORT
@@ -264,8 +264,15 @@ ga_iter( void *fdesc ,
   for( i = 0 ; i < NGEN ; i++ ) {
     G[i].Nlogic = Fit -> Nlogic ;
     for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
-      G[i].g[j] = Fit -> f.fparams[j] * 
-	( 1 + gsl_ran_gaussian( r , fabs( Fit -> f.fparams[j] ) * NOISE ) ) ;
+      // if we have priors we use their errors like noise vectors
+      if( Fit -> Prior[j].Initialised == true ) {
+	G[i].g[j] = Fit -> f.fparams[j] * 
+	  ( 1 + gsl_ran_gaussian( r , fabs( Fit -> f.fparams[j] ) *
+				  Fit -> Prior[j].Err ) ) ;
+      } else {
+	G[i].g[j] = Fit -> f.fparams[j] * 
+	  ( 1 + gsl_ran_gaussian( r , fabs( Fit -> f.fparams[j] ) * NOISE ) ) ;
+      }
     }
     G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
 			      G[i].g , data , W ) ;
@@ -300,13 +307,25 @@ ga_iter( void *fdesc ,
  
     // recompute sigma, estimating from the breeding population
     compute_sigma( &Sig , G , Fit -> Nlogic ) ;
+
+    #ifdef VERBOSE
+    for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
+      printf( "Sigma :: %e \n" , Sig.s[j] ) ;
+    }
+    #endif
     
     // bottom mutants come from mutations to the breeding population
     for( i = NGEN - NMUTANTS ; i < NGEN ; i++ ) {
       const size_t mutate = gsl_rng_uniform_int( r , NBREED + NCHILD ) ;
       for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
-	G[i].g[j] = G[ mutate ].g[j] * 
-	  ( 1 + gsl_ran_gaussian( r , Sig.s[j] ) ) ;
+	// if we have prior information we use it
+	if( Fit -> Prior[j].Initialised == true ) {
+	  G[i].g[j] = G[ mutate ].g[j] * 
+	    ( 1 + gsl_ran_gaussian( r , Fit -> Prior[j].Err ) ) ;
+	} else {
+	  G[i].g[j] = G[ mutate ].g[j] * 
+	    ( 1 + gsl_ran_gaussian( r , Sig.s[j] ) ) ;
+	}
       }
       G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
 				G[i].g , data , W ) ;
@@ -326,7 +345,7 @@ ga_iter( void *fdesc ,
     iters++ ;
 	
     #ifdef VERBOSE
-    print_population( G ) ;
+    //print_population( G ) ;
     printf( "\nCHISQ_DIFF :: %e || %e %e \n\n" , chisq_diff , 
 	    G[0].chisq , G[NBREED-1].chisq ) ;
     #endif
@@ -335,9 +354,9 @@ ga_iter( void *fdesc ,
   // set the fit parameters as the best gene and set the chisq
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     Fit -> f.fparams[i] = G[0].g[i] ;
-    //#ifdef VERBOSE
+    #ifdef VERBOSE
     printf( "FPARAMS_%zu :: %f \n" , i , Fit -> f.fparams[i] ) ;
-    //#endif
+    #endif
   }
   Fit -> f.chisq = G[0].chisq ;
   
