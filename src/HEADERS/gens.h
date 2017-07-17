@@ -1,6 +1,8 @@
 #ifndef GENS_H
 #define GENS_H
 
+#include "config.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +35,7 @@ typedef enum {
 
 // fit types
 typedef enum {
-  ALPHA_D0 , ALPHA_D0_MULTI , EXP , COSH , EXP_PLUSC , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , QCORR_BESSEL , SINH 
+  ALPHA_D0 , ALPHA_D0_MULTI , EXP , COSH , EXP_PLUSC , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , PPAA , QCORR_BESSEL , SINH , POLES , QSLAB
 } fittype ;
 
 // time folding types
@@ -50,7 +52,7 @@ typedef enum { Raw , JackKnife , BootStrap } resample_type ;
 // file type we expect to read
 typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File } file_type ;
 
-typedef enum { Alphas , Beta_crit , Correlator , Exceptional , Fit , HVP , Qcorr , Qsusc , Wflow } analysis_type ;
+typedef enum { Alphas , Beta_crit , Correlator , Exceptional , Fit , HVP , Qcorr , Qsusc , Qslab , Wflow } analysis_type ;
 
 // x-data descriptor
 struct x_desc {

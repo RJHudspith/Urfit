@@ -24,6 +24,8 @@ correlator_analysis( struct input_params *Input )
     equate( &Input -> Data.y[i+Input -> Data.Ndata[0]] , Input -> Data.y[i] ) ;
   }
 #endif
+
+  printf( "Effmass\n" ) ;
   
   // compute an effective mass ? TODO
   struct resampled *effmass = effective_mass( Input , LOG_EFFMASS ) ;
@@ -45,14 +47,25 @@ correlator_analysis( struct input_params *Input )
   
   // compute a decay constant
   if( Input -> Fit.Fitdef == PP_AA_WW ||
-      Input -> Fit.Fitdef == PP_AA ) {
-    decay( Fit , *Input ) ;
+      Input -> Fit.Fitdef == PP_AA ||
+      Input -> Fit.Fitdef == PPAA ) {
+    struct resampled dec = decay( Fit , *Input ) ;
+
+    divide( &Fit[0] , dec ) ;
+
+    raise( &Fit[0] , 2 ) ;
+    
+    printf( "(M/F)^2 %e %e \n" , Fit[0].avg , Fit[0].err ) ; 
+    
+    free( dec.resampled ) ;
   }  
 
+  /*
   raise( &Fit[3] , 2 ) ;
 
   printf( "M^2 :: %f %f \n" , Fit[3].avg , Fit[3].err ) ;
-
+  */
+  
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;
   
   return SUCCESS ;

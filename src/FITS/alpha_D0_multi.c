@@ -16,6 +16,7 @@
 #include "gens.h"
 
 #include "Nder.h"
+#include "cruel_runnings.h"
 
 #define LOOPS (4)
 
@@ -203,6 +204,17 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
   size_t i ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
 
+    struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
+			DATA -> N , DATA -> M } ;
+
+    size_t j ;
+    for( j = 0 ; j < DATA -> Npars ; j++ ) {
+      df[ DATA -> map[i].p[j] ][i] = Nder( falpha_D0_multi , X ,
+					   DATA -> map[i].bnd ,
+					   fparams , j , DATA -> Npars ) ;
+    }
+    
+#if 0
     // this is the data index
     const size_t mref = DATA -> map[i].bnd ;
 
@@ -212,16 +224,16 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
     // cache of results for the fit
     const double asq = a2[ mref ] ;
 
-#ifdef ALPHA_CORR
+    #ifdef ALPHA_CORR
     const double acr = fparams[ DATA -> map[i].p[2] ] ;
     const double a_pi = rescale_alpha( fparams[ DATA -> map[i].p[0] ] / M_PI , mu , m[ mref ] ) * ( 1 + acr * asq ) ;
-#else
+    #else
     const double a_pi = rescale_alpha( fparams[ DATA -> map[i].p[0] ] / M_PI , mu , m[ mref ] ) ;
-#endif
+    #endif
 
-#ifdef FIT_D5
+    #ifdef FIT_D5
     const double fd5 = fparams[ DATA -> map[i].p[4] ] ;
-#endif
+    #endif
     const double Qref = Q1[ mref ] ;
 
     // these two depend on the loop order of PT
@@ -236,35 +248,36 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
     }
     dalpha += 1.0 ;
     
-#ifdef ALPHA_CORR
+    #ifdef ALPHA_CORR
     dacorr = rescale_alpha( fparams[ DATA -> map[i].p[0] ] / M_PI , mu , m[ mref ] ) * asq * dalpha ;
-#endif
+    #endif
     dalpha = rescale_alpha_der( fparams[ DATA -> map[i].p[0] ] / M_PI , mu , m[ mref ] ) * dalpha ;
 
-#ifdef ALPHA_CORR
+    #ifdef ALPHA_CORR
     dalpha *= ( 1 + acr * asq ) ;
-#endif
+    #endif
 
     // alpha_s and it's correction terms
     df[ DATA -> map[i].p[0] ][i] = dalpha ;
 
-#ifdef ALPHA_CORR
+    #ifdef ALPHA_CORR
     df[ DATA -> map[i].p[2] ][i] = dacorr ;
-#endif
+    #endif
     
     // rotation-preserving corrections
     df[ DATA -> map[i].p[1] ][i] = asq *  ( Qref - DATA -> x[i] ) / ( t1 - t2 ) ;
-#ifdef FIT_AQ4
+    #ifdef FIT_AQ4
     df[ DATA -> map[i].p[3] ][i] = asq * asq * ( Qref * Qref - DATA -> x[i] * DATA -> x[i] ) / ( t1 - t2 ) ;
-#endif
+    #endif
 
-#ifdef FIT_AQ6
+    #ifdef FIT_AQ6
     df[ DATA -> map[i].p[4] ][i] = asq * asq * asq * ( Qref * Qref * Qref - DATA -> x[i] * DATA -> x[i] * DATA -> x[i] ) / ( t1 - t2 ) ;
-#endif
+    #endif
     
     // derivative of perturbative free parameter d_5
-#ifdef FIT_D5
+    #ifdef FIT_D5
     df[ DATA -> map[i].p[4] ][i] = pow( a_pi , 5 ) ;
+    #endif
 #endif
   }
   

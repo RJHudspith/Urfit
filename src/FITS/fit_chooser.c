@@ -13,7 +13,10 @@
 #include "poly.h"
 #include "pp_aa.h"
 #include "pp_aa_ww.h"
+#include "ppaa.h"
+#include "poles.h"
 #include "Qcorr_bessel.h"
+#include "qslab.h"
 #include "sinh.h"
 
 #include "ffunction.h"
@@ -36,10 +39,13 @@ get_Nparam( const struct fit_info Fit )
    // these have independent amounts
  case EXP_PLUSC : return 3 ;
  case PADE : return Fit.N + Fit.M ;
+ case POLES : return 7 ;
  case POLY : return Fit.N + 1 ;
+ case PPAA : return 3 ;
  case PP_AA : return 5 ;
  case PP_AA_WW : return 5 ;
  case QCORR_BESSEL : return 2 ;
+ case QSLAB : return 3 ;
  case NOFIT : return 0 ;
  }
  return 0 ;
@@ -104,6 +110,13 @@ init_fit( const struct data_info Data ,
     fdesc.guesses    = poly_guesses ;
     fdesc.linmat     = poly_linmat ;
     break ;
+  case PPAA :
+    fdesc.func       = fppaa ;
+    fdesc.F          = ppaa_f ;
+    fdesc.dF         = ppaa_df ;
+    fdesc.d2F        = ppaa_d2f ;
+    fdesc.guesses    = ppaa_guesses ;
+    break ;
   case PP_AA :
     fdesc.func       = fpp_aa ;
     fdesc.F          = pp_aa_f ;
@@ -117,7 +130,14 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = pp_aa_ww_df ;
     fdesc.d2F        = pp_aa_ww_d2f ;
     fdesc.guesses    = pp_aa_ww_guesses ;
-    break ; 
+    break ;
+  case POLES :
+    fdesc.func       = fpoles ;
+    fdesc.F          = poles_f ;
+    fdesc.dF         = poles_df ;
+    fdesc.d2F        = poles_d2f ;
+    fdesc.guesses    = poles_guesses ;
+    break ;
   case SINH : 
     fdesc.func       = fsinh ;
     fdesc.F          = sinh_f ;
@@ -131,6 +151,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = Qcorr_bessel_df ;
     fdesc.d2F        = Qcorr_bessel_d2f ;
     fdesc.guesses    = Qcorr_bessel_guesses ;
+    break ;
+  case QSLAB :
+    fdesc.func       = fqslab ;
+    fdesc.F          = qslab_f ;
+    fdesc.dF         = qslab_df ;
+    fdesc.d2F        = qslab_d2f ;
+    fdesc.guesses    = qslab_guesses ;
     break ;
   case NOFIT :
     break ;

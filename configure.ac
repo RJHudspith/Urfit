@@ -63,6 +63,77 @@ AM_CONDITIONAL([DEFGSL],[$gsl])
 ## Include where it is just in case people want to do something in Makefile.am
 AC_SUBST(GSL)
 
+## Look for fftw in the useer specified place
+fftw=false 
+AC_ARG_WITH([fftw],
+	AC_HELP_STRING([--with-fftw=<name>],
+		       [Specify FFTW location for the GF]),
+            [
+	    ## see if we already have it	
+	    AC_CHECK_HEADERS([fftw3.h],[local_fftw=true],[local_fftw=false])
+	    
+	    FFTW=${with_fftw}
+
+	    ## are we compiling for single precision or not?
+	    if test x$single = xtrue ; then
+	       float_version=f
+	    else	
+	       float_version=""
+	    fi
+
+	    AC_CHECK_HEADERS([${FFTW}include/fftw3.h],[
+	    AC_MSG_NOTICE([User defined fftw library @ $FFTW])
+	    AC_MSG_NOTICE([Attempting linking to the user's FFTW lib ${FFTW}lib/libfftw3${float_version}])
+	
+	    ## if we use the user one, only link to the static lib
+	    if [ test -a ${FFTW}lib/libfftw3${float_version}.a ]; then
+		AC_MSG_NOTICE([Statically linking to the user's FFTW lib])
+	    	CFLAGS="$CFLAGS -I${FFTW}include"
+	    	LDFLAGS="$LDFLAGS ${FFTW}lib/libfftw3${float_version}.a"
+		if test x$OMP_FFTW = xtrue ; then
+		   if test -a ${FFTW}lib/libfftw3${float_version}_omp.a ; then
+		      LDFLAGS="$LDFLAGS ${FFTW}lib/libfftw3${float_version}_omp.a"
+		      AC_DEFINE([OMP_FFTW],[],[OpenMP-parallel FFT routines.])
+		   fi
+		fi
+	        AC_DEFINE([HAVE_FFTW3_H],[],[FFTW library.])
+	    ## Have a look for the shared object library ...
+            elif [ test -a ${FFTW}lib/libfftw3${float_version}.so ]; then
+		AC_MSG_NOTICE([Static link not found !! Shared object (.so) linking to the user's FFTW lib])
+	    	CFLAGS="$CFLAGS -I${FFTW}include -L${FFTW}lib/"
+	    	LDFLAGS="$LDFLAGS -lfftw3${float_version}"
+		if test x$OMP_FFTW = xtrue ; then
+		   ## check to see if it is there otherwise don't include it
+		   if test -a ${FFTW}lib/libfftw3${float_version}_omp.so ; then
+		      LDFLAGS="$LDFLAGS -lfftw3${float_version}_omp"
+		      AC_DEFINE([OMP_FFTW],[],[OpenMP-parallel FFT routines.])
+		   fi
+		fi
+	        AC_DEFINE([HAVE_FFTW3_H],[],[FFTW library.])
+            else
+	    	AC_MSG_ERROR([fftw3.h found, but cannot find the shared or static libraries!])
+	    fi
+	    ]	    
+	    , [
+	    ## see if we already have it	
+	    AC_CHECK_HEADERS([fftw3.h],[local_fftw=true],[local_fftw=false])
+
+	    ## get desperate here and check for the header in the usual places
+	    ## as omp routines are special I doubt they will be installed, maybe should do a special check
+	    if test x$local_fftw = "xtrue" ; then
+	       LDFLAGS="$LDFLAGS -lfftw3${float_version}"
+	       AC_MSG_NOTICE([Using the system's fftw])	       
+	       AC_DEFINE([HAVE_FFTW3_H],[],[FFTW library.])
+	    else
+	       AC_MSG_NOTICE([No local fftw3.h found either!])
+	    fi
+     ]) ## closes the check headers ...
+]
+## closes with-FFTW
+)
+AM_CONDITIONAL([DEFFFTW],[$fftw])
+AC_SUBST(FFTW)
+
 ## Some compiler checks
 ## My code is littered with consts
 AC_C_CONST([])

@@ -5,7 +5,6 @@
 #include "gens.h"
 
 #include "rng.h"        // for the bootstraps
-#include "stats.h"
 #include "summation.h"
 
 // either we boot average or use the ensemble average ...
@@ -111,7 +110,6 @@ bootstrap_full( struct input_params *Input )
 	  y[l] = Input -> Data.y[j].resampled[ rng_idx ] ;
 	  p++ ;
 	}
-	
 	xstrap[k] = kahan_summation( x , N ) / N ;
 	ystrap[k] = kahan_summation( y , N ) / N ;	
       }

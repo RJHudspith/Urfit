@@ -8,6 +8,9 @@
 #include "line_search.h"
 #include "summation.h"
 
+// local definition of beta
+#define LOC_BETA
+
 // cg iteration
 int
 cg_iter( void *fdesc ,
@@ -49,6 +52,7 @@ cg_iter( void *fdesc ,
   y = malloc( Nsum * sizeof( double ) ) ;
 
   // step down the gradient initially
+  double alpha = 0.0 ;
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     t = y ;
     // set derivatives
@@ -77,16 +81,15 @@ cg_iter( void *fdesc ,
       old_df[i] -= ( Fit -> f.fparams[i] - Fit -> f.Prior[i].Val ) / 
 	( Fit -> f.Prior[i].Err * Fit -> f.Prior[i].Err ) ;
     }
-    s[i] = old_df[i] ;   // accumulate gradient sum
+    s[i] = old_df[i] ; // accumulate gradient sum
   }
 
   // line search the SD step
-  double alpha = 0.0 ;
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     // line search best alpha
     alpha = line_search( &f2 , Fit -> f , old_df , s ,
 			 *Fit , data , W , i ,
-			 Fit -> f.fparams[i] ) ;
+			 fabs( Fit -> f.fparams[i] ) ) ;
     Fit -> f.fparams[i] += alpha * s[i] ;
   }
 
@@ -134,24 +137,35 @@ cg_iter( void *fdesc ,
         newdf -= ( Fit -> f.fparams[i] - Fit -> f.Prior[i].Val ) / 
 	  ( Fit -> f.Prior[i].Err * Fit -> f.Prior[i].Err ) ;
       }
+
+      #ifdef LOC_BETA
+      num   = newdf * ( newdf - old_df[i] ) ;
+      denom = old_df[i] * old_df[i] ;
+      old_df[i] = newdf ; // reset the old direction to be the new one
+      const double beta = fmax( 0 , num / denom ) ;
+      s[i] = old_df[i] + beta * s[i] ;
+      #else
       num   += newdf * ( newdf - old_df[i] ) ;
       denom += old_df[i] * old_df[i] ;
       old_df[i] = newdf ; // reset the old direction to be the new one
+      #endif
     }
+
+    #ifndef LOC_BETA
     const double beta = fmax( 0 , num / denom ) ;
 
     // update conjugate directions "s"
     for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
       s[i] = old_df[i] + beta * s[i] ;
     }
+    #endif
 
     // perform a backtracking line search
     for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
-
       alpha = line_search( &f2 , Fit -> f , old_df , s ,
 			   *Fit , data , W , i ,
-			   Fit -> f.fparams[i] ) ;
-
+			   fabs( Fit -> f.fparams[i] ) ) ;
+      
       #ifdef VERBOSE
       printf( "[CG] NEW ALPHA = %e \n" , alpha ) ;
       #endif
@@ -193,6 +207,10 @@ cg_iter( void *fdesc ,
 
   return iters ;
 }
+
+#ifdef LOC_BETA
+  #undef LOC_BETA
+#endif
 
 // clean up the defines
 #ifdef VERBOSE

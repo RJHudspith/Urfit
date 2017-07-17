@@ -62,14 +62,20 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = PADE ;
   } else if( are_equal( Flat[tag].Value , "POLY" ) ) {
     Input -> Fit.Fitdef = POLY ;
+  } else if( are_equal( Flat[tag].Value , "POLES" ) ) {
+    Input -> Fit.Fitdef = POLES ; 
   } else if( are_equal( Flat[tag].Value , "PP_AA" ) ) {
     Input -> Fit.Fitdef = PP_AA ;
   } else if( are_equal( Flat[tag].Value , "PP_AA_WW" ) ) {
     Input -> Fit.Fitdef = PP_AA_WW ;
+  } else if( are_equal( Flat[tag].Value , "PPAA" ) ) {
+    Input -> Fit.Fitdef = PPAA ;
   } else if( are_equal( Flat[tag].Value , "SINH" ) ) {
     Input -> Fit.Fitdef = SINH ;
   } else if( are_equal( Flat[tag].Value , "QCORR_BESSEL" ) ) {
     Input -> Fit.Fitdef = QCORR_BESSEL ;
+  } else if( are_equal( Flat[tag].Value , "QSLAB" ) ) {
+    Input -> Fit.Fitdef = QSLAB ;
   } else {
     return FAILURE ;
   }

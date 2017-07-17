@@ -185,6 +185,10 @@ inverse_correlation( struct data_info *Data ,
       flag = FAILURE ;
     }
 
+    #ifdef VERBOSE
+    write_corrmatrix( Data -> Cov.W , Data -> Ntot , Fit.Corrfit ) ;
+    #endif
+    
     // free the correlation matrix
     for( i = 0 ; i < Data -> Ntot ; i++ ) {
       free( C[i] ) ;

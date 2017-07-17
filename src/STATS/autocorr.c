@@ -31,6 +31,8 @@
 
 #include <complex.h>
 
+#define HAVE_FFTW3_H
+
 #ifdef HAVE_FFTW3_H
 
 #include <fftw3.h>
@@ -76,7 +78,7 @@ autocorrelation( const struct resampled RAW ,
   // openmp'd fftws
   parallel_ffts( ) ;
 
-  if( RAW.restype != RAWDATA ) {
+  if( RAW.restype != Raw ) {
     printf( "Resampled data is not RAW ... Cannot compute autocorrelation\n" ) ;
     return FAILURE ;
   }
@@ -143,14 +145,14 @@ autocorrelation( const struct resampled RAW ,
   printf( "Writing tau(n) to file %s \n" , output ) ;
 
   size_t n , j ;
-  for( n = 0 ; n < 30 ; n++ ) {
+  for( n = 0 ; n < N/10 ; n++ ) {
     register double sum = 0.5 ;
     for( j = 0 ; j < n ; j++ ) {
       sum += NSEP * in[j] ;
     }
     // simple error estimate
     const double err = n * sqrt( ( sum ) / N ) ;
-    fprintf( output_file , "%d %e %e \n" , n * NSEP , sum , err ) ;
+    fprintf( output_file , "%zu %e %e \n" , n * NSEP , sum , err ) ;
   }
 
   fclose( output_file ) ;
@@ -176,7 +178,28 @@ autocorrelation( const struct resampled RAW ,
 		 const size_t NSEP ,
 		 const char *output )
 {
-  return 0 ;
+  return SUCCESS ;
 }
 
 #endif
+
+// wrapper for the autocorr measurement
+int
+ACmeasure( const struct input_params Input )
+{
+  size_t i , j , k , shift = 0 ;
+  for( i = 0 ; i < Input.Data.Nsim ; i++ ) {
+    for( j = shift ; j < shift + Input.Data.Ndata[i] ; j++ ) {
+      char str[ 256 ] = {} ;
+      sprintf( str , "TAUINT_%zu" , j ) ;
+      compute_err( &Input.Data.y[j] ) ;
+      if( autocorrelation( Input.Data.y[j] ,
+			   Input.Traj[i].Increment ,
+			   str ) == FAILURE ) {
+	return FAILURE ;
+      }
+    }
+    shift = j ;
+  }
+  return SUCCESS ;
+}

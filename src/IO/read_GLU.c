@@ -6,6 +6,9 @@
 
 #include "GLU_bswap.h"
 #include "momenta.h"
+#include "resampled_ops.h"
+#include "sort.h"
+#include "stats.h"
 
 static int
 init_GLU( struct input_params *Input )
@@ -165,6 +168,35 @@ read_GLU( struct input_params *Input )
     shift += Input -> Data.Ndata[i] ;
   }
 
+  // compute error if it hasn't been done already
+  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
+    compute_err( &Input -> Data.x[i] ) ;
+    compute_err( &Input -> Data.y[i] ) ;
+    #ifdef VERBOSE
+    fprintf( stdout , "IN %f %f \n" ,
+	     Input -> Data.x[i].avg ,
+	     Input -> Data.y[i].avg ) ;
+    #endif
+  }
+  
+  // sort the data
+  printf( "Sorting in IO\n" ) ;
+  if( quick_sort_data( Input ) == FAILURE ) {
+    return FAILURE ;
+  }
+
+  // sum the data
+  printf( "Summing in IO\n" ) ;
+  shift = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    size_t j ;
+    for( j = shift + 1 ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
+      add( &Input -> Data.y[j] , Input -> Data.y[j-1] ) ;
+    }
+    j = shift ;
+  }
+
+  printf( "Averaging equivalent\n" ) ;
   average_equivalent( Input ) ;
   
   return SUCCESS ;

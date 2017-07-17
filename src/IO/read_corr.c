@@ -43,17 +43,17 @@ read_magic_gammas( FILE *file ,
 		   const uint32_t *mompoint )
 {
   uint32_t magic[ 1 ] = { } , NMOM[ 1 ] , n[ 4 ] ;
-  size_t p ;
+  size_t p , flag ;
   
-  if( fread( magic , sizeof( uint32_t ) , 1 , file ) != 1 ) {
-    printf( "[IO] magic read failure \n" ) ;
+  if( ( flag = fread( magic , sizeof( uint32_t ) , 1 , file ) ) != 1 ) {
+    fprintf( stderr , "[IO] magic read failure %u %zu \n" , magic[0] , flag ) ;
     return FAILURE ;
   }
   // check the magic number, tells us the edianness
   if( magic[0] != 67798233 ) {
     bswap_32( 1 , magic ) ;
     if( magic[0] != 67798233 ) {
-      printf( "Magic number read failure\n" ) ;
+      fprintf( stderr , "Magic number read failure %u \n" , magic[0] ) ;
       return FAILURE ;
     }
     must_swap = true ;
@@ -66,7 +66,7 @@ read_magic_gammas( FILE *file ,
   for( p = 0 ; p < NMOM[0] ; p++ ) {
     FREAD32( n , sizeof( uint32_t ) , 4 , file ) ;
     if( n[ 0 ] != 4-1 ) {
-      printf( "[IO] momlist :: %d should be %d \n" , n[ 0 ] , 3 ) ;
+      fprintf( stderr , "[IO] momlist :: %d should be %d \n" , n[ 0 ] , 3 ) ;
       return FAILURE ;
     };
     size_t mu , matches = 0 ;
@@ -105,11 +105,13 @@ pre_allocate( struct input_params *Input ,
       fprintf( stderr , "[IO] cannot open %s \n" , str ) ;
       return FAILURE ;
     }
+    printf( "file :: %s \n" , str ) ;
 
     // read a file to figure out how long it is
     uint32_t Ngsrc , Ngsnk , LT ;
     if( read_magic_gammas( file , &Ngsrc , &Ngsnk , &LT ,
 			   &mommatch , mompoint ) == FAILURE ) {
+      fprintf( stderr , "[IO] magic gammas failure\n" ) ;
       return FAILURE ;
     }
 
@@ -255,6 +257,7 @@ read_corr( struct input_params *Input ,
     free( mompoint ) ;
     return FAILURE ;
   }
+  printf( "In here \n" ) ;
   
   // reread files and poke in the data
   int Flag = SUCCESS ;
@@ -300,7 +303,7 @@ read_corr( struct input_params *Input ,
     }    
     shift += Input -> Data.Ndata[i] ;
   }
-
+  
   free( mompoint ) ;
   				     
   return Flag ;

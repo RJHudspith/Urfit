@@ -95,7 +95,7 @@ stable_pade( double *sims ,
 	      j , i , z[2*i] + p0 , z[2*i+1] + p0) ;
       //#endif
       if( fabs( z[2*i+1] ) < 1E-6 && // is purely real
-	  fabs( z[2*i] + p0 ) < 3 && // is small
+	  fabs( z[2*i] + p0 ) < 5 && // is small
 	  ( z[2*i] + p0 ) < 0        // is less than zero
 	  ) {
 	if( idx < Nexp ) {

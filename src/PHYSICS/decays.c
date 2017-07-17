@@ -21,13 +21,14 @@ decay( const struct resampled *fitparams ,
 				 Input.Traj[0].Dimensions[2] ) ;
 
   // f = 
-  equate( &result , fitparams[ PL ] ) ;
-  mult( &result , fitparams[ PL ] ) ;
+  equate( &result , fitparams[ AL ] ) ;
+  mult( &result , fitparams[ AL ] ) ;
   mult_constant( &result , vol_fac ) ;
   divide( &result , fitparams[ MASS ] ) ;
   root( &result ) ;
 
-  printf( "Decay :: %e +/- %e \n" , result.avg , result.err ) ;
+  fprintf( stdout , "Decay :: %e +/- %e \n" , result.avg , result.err ) ;
+  //printf( "Decay :: %f +/- %f \n" , result.avg , result.err ) ;
   
   return result ;
 }

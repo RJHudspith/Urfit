@@ -10,8 +10,7 @@
 #include "init.h"
 #include "read_inputs.h"
 
-#include "histogram.h"
-
+#include "bin.h"
 #include "stats.h"
 
 int
@@ -34,8 +33,24 @@ main( const int argc , const char *argv[] )
     goto free_failure ;
   }
 
+  // bin the data we have read in
+  if( bin_data( &Input ) == FAILURE ) {
+    goto free_failure ;
+  }
+
+  /*
+  // have a look at the time series if we have FFTW3
+#ifdef HAVE_FFTW3_H
+  if( ACmeasure( Input ) == FAILURE ) {
+    goto free_failure ;
+  }
+#endif
+  */
+
   // resample the data we have read in
-  resample_data( &Input ) ;
+  if( resample_data( &Input ) == FAILURE ) {
+    goto free_failure ;
+  }
   
   // need to set this after data has been read ...
   if( an_wrapper( &Input ) == FAILURE ) {

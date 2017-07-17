@@ -119,13 +119,19 @@ exp_guesses( double *fparams ,
     }
     #endif
 
-    pade_laplace( f , x , y , N , Fit.N ) ;
+    if( pade_laplace( f , x , y , N , Fit.N ) == FAILURE ) {
 
-    for( j = 0 ; j < 2*Fit.N ; j+=2 ) {
-      fparams[ Fit.map[shift].p[ j + 0 ] ] +=  f[ j + 0 ] ;
-      fparams[ Fit.map[shift].p[ j + 1 ] ] += -f[ j + 1 ] ;
-      if( Fit.map[shift].p[ j + 0 ] == j + 0 ) p[j + 0]++ ;
-      if( Fit.map[shift].p[ j + 1 ] == j + 1 ) p[j + 1]++ ;
+      fprintf( stderr , "Jamie : do something about this!\n" ) ;
+      break ;
+    } else {
+
+      for( j = 0 ; j < 2*Fit.N ; j+=2 ) {
+	fparams[ Fit.map[shift].p[ j + 0 ] ] +=  f[ j + 0 ] ;
+	fparams[ Fit.map[shift].p[ j + 1 ] ] += -f[ j + 1 ] ;
+	if( Fit.map[shift].p[ j + 0 ] == j + 0 ) p[j + 0]++ ;
+	if( Fit.map[shift].p[ j + 1 ] == j + 1 ) p[j + 1]++ ;
+      }
+
     }
 
     shift += Data.Ndata[i] ;

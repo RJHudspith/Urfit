@@ -214,7 +214,7 @@ match_down_OS( const double Alpha_Ms ,
   return Alpha_Ms * ( 1.0 + Alpha_Ms * Alpha_Ms * ( h3_term + Alpha_Ms * h4_term ) ) ; 
 }
 
-// run from mu to mu-prime
+// run from scale mu to mu-prime
 double
 RUN( double mu ,
      const double alpha_mu ,

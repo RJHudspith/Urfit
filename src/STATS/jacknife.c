@@ -4,7 +4,7 @@
  */
 #include "gens.h"
 
-#include "stats.h"
+#include "raw.h"
 #include "summation.h"
 
 // the jackknife error definition incorporates the code for the average and variance

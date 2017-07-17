@@ -13,7 +13,7 @@
 
 #include <stdlib.h>
 
-#define FITRANGES
+//#define FITRANGES
 
 // qsort comparison function for the bootstrap
 int 
@@ -56,7 +56,8 @@ fit_alphas( struct input_params *Input )
   //const double q1ref[3] = { 1.7*1.7 , 1.8*1.8 , 1.9*1.9 } ;
 
   //const double q1ref[3] = { 1.6*1.6 , 1.6*1.6 , 1.6*1.6 } ;
-  
+
+
   size_t i , j , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     double x = 10000 ;
@@ -251,7 +252,8 @@ fit_alphas( struct input_params *Input )
   free_fitparams( fit , Input -> Fit.Nlogic ) ;
 	
   free( amz.resampled ) ;
-#endif
   
+#endif
+
   return SUCCESS ;
 }

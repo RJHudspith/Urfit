@@ -193,6 +193,8 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = Qcorr ;
     } else if( are_equal( Flat[ an_tag ].Value , "Qsusc" ) ) {
       Input -> Analysis = Qsusc ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Qslab" ) ) {
+      Input -> Analysis = Qslab ;
     } else {
       fprintf( stderr , "[INPUT] Analysis %s not recognised\n" ,
 	       Flat[ an_tag ].Value ) ;

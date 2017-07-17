@@ -12,7 +12,7 @@
 #include "stats.h"
 #include "rng.h"
 
-#define Q (5)
+#define Q (3)
 
 // quicksort comparator
 static int

@@ -8,7 +8,8 @@ AM_CFLAGS=-I${TOPDIR}/src/HEADERS/
 
 ANALYSIS_FILES=./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/beta_crit.c ./ANALYSIS/correlator.c ./ANALYSIS/hvp_pade.c \
-	./ANALYSIS/exceptional.c ./ANALYSIS/Qcorr.c ./ANALYSIS/sun_flow.c 
+	./ANALYSIS/exceptional.c ./ANALYSIS/Qcorr.c ./ANALYSIS/sun_flow.c \
+	./ANALYSIS/inverse.c
 
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
@@ -17,7 +18,8 @@ INIT_FILES=./INIT/fake.c ./INIT/init.c
 FITS_FILES=./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/cosh.c ./FITS/exp_plusc.c ./FITS/exp.c ./FITS/Nder.c \
 	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c ./FITS/pp_aa.c \
-	./FITS/pp_aa_ww.c ./FITS/Qcorr_bessel.c ./FITS/sinh.c
+	./FITS/pp_aa_ww.c ./FITS/ppaa.c \
+	./FITS/Qcorr_bessel.c ./FITS/sinh.c ./FITS/poles.c ./FITS/qslab.c
 
 GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 
@@ -39,7 +41,8 @@ PHYSICS_FILES=./PHYSICS/cruel_runnings.c ./PHYSICS/decays.c ./PHYSICS/momenta.c\
 RUN_FILES=./RUN/bootfit.c ./RUN/fit_and_plot.c ./RUN/gls_bootfit.c
 
 STATS_FILES=./STATS/bootstrap.c ./STATS/jacknife.c ./STATS/stats.c \
-	./STATS/resampled_ops.c ./STATS/correlation.c ./STATS/autocorr.c
+	./STATS/resampled_ops.c ./STATS/correlation.c ./STATS/autocorr.c \
+	./STATS/raw.c ./STATS/bin.c
 
 UTILS_FILES=./UTILS/chisq.c ./UTILS/crc32c.c ./UTILS/ffunction.c \
 	./UTILS/gen_ders.c ./UTILS/histogram.c ./UTILS/NR.c \

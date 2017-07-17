@@ -10,6 +10,7 @@
 #include "fit_and_plot.h"
 #include "exceptional.h"
 #include "hvp_pade.h"
+#include "inverse.h"
 #include "Qcorr.h"
 #include "sun_flow.h"
 
@@ -26,12 +27,15 @@ an_wrapper( struct input_params *Input )
     return correlator_analysis( Input ) ;
   case Exceptional :
     return fit_exceptional( Input ) ;
+    //return fit_inverse( Input ) ;
   case HVP :
     return fit_hvp( Input ) ;
   case Qcorr :
     return fit_Qcorr( Input ) ;
   case Qsusc :
     return fit_Qsusc( Input ) ;
+  case Qslab :
+    return fit_Qslab( Input ) ;
   case Wflow :
     return sun_wflow_analysis( Input ) ;
   case Fit :

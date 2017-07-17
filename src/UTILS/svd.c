@@ -50,15 +50,25 @@ svd_inverse( double **Ainv ,
   }
 
   // loop these set 1.0 / Diag[i] to 0.0 if Diag[i] is crazy small
+  size_t nsmall = 0 ;
   for( i = 0 ; i < NCOLS ; i++ ) {
-    Diag[ i ] = gsl_vector_get( S , i ) ; 
+    Diag[ i ] = gsl_vector_get( S , i ) ;
+    printf( "[SVD] diag %zu -> %e \n" , i , Diag[i] ) ; 
     if( Diag[i] < tolerance ) {
       tmp = 0.0 ;
+      nsmall++ ;
     } else {
       tmp = 1.0 / Diag[i] ;
     }
     // make sure it doesn't get ridiculously big either
-    InvDiag[ i ] = fabs( Diag[i] ) < 1.E-32 ? 0.0 : tmp ;
+    InvDiag[ i ] = fabs( Diag[i] ) < 1E-40 ? 0.0 : tmp ;
+  }
+  fprintf( stdout , "[SVD] svd cut %1.2f percent omitted\n" ,
+	   100*(nsmall)/(double)NCOLS ) ;
+  if( nsmall == NCOLS ) {
+    fprintf( stderr ,
+	     "[SVD] cut too aggressive, covariance matrix singular\n" ) ;
+    return FAILURE ;
   }
 
   // test the solution to make sure it isn't too bad
@@ -83,9 +93,9 @@ svd_inverse( double **Ainv ,
   printf( "[SVD] Decomposition accuracy :: %le \n" , diff ) ;
 #endif
   diff /= (double)( NCOLS * NROWS ) ;
-  if( diff > tolerance ) {
+  if( diff > 1E-12 ) {
     printf( "[SVD] accuracy below tolerance %e < %e \n" , diff ,
-	    tolerance ) ;
+	    1E-12 ) ;
     FLAG = FAILURE ;
     goto FREE ;
   } 

@@ -28,7 +28,7 @@ init_GLU_tcorr( struct input_params *Input )
     const size_t Nsamples = ( Input -> Traj[i].End -
 			      Input -> Traj[i].Begin ) / Input -> Traj[i].Increment ;
 
-    printf( "%zu %zu \n" , Nsamples , Input -> Data.Ntot ) ;
+    printf( "Nsamples %zu %zu %zu\n" , Nsamples , Input -> Data.Ntot , Input -> Traj[i].Dimensions[ 3 ]  ) ;
     
     for( j = 0 ; j < Input -> Traj[i].Dimensions[ 3 ] ; j++ ) {
       Input -> Data.x[ shift ].resampled = malloc( Nsamples * sizeof( double ) ) ;
@@ -72,6 +72,7 @@ read_GLU_tcorr( struct input_params *Input )
       // open the file
       FILE *Infile = fopen( str , "rb" ) ;
       if( Infile == NULL ) {
+	fprintf( stderr , "[IO] cannot open file %s \n" , str ) ;
 	return FAILURE ;
       }
 
@@ -122,11 +123,11 @@ read_GLU_tcorr( struct input_params *Input )
 
       // set x and y data
       for( k = 0 ; k < Lt[0] ; k++ ) {
-      Input -> Data.x[ shift + k ].resampled[idx] = k ;
-      Input -> Data.y[ shift + k ].resampled[idx] = Ct[k] ;
-      printf( "Check :: %f %f \n" ,
-	Input -> Data.x[ shift + k ].resampled[idx] ,
-	Input -> Data.y[ shift + k ].resampled[idx] ) ;
+	Input -> Data.x[ shift + k ].resampled[idx] = k ;
+	Input -> Data.y[ shift + k ].resampled[idx] = Ct[k] ;
+	printf( "Check :: %f %f \n" ,
+		Input -> Data.x[ shift + k ].resampled[idx] ,
+		Input -> Data.y[ shift + k ].resampled[idx] ) ;
       }
 
       idx++ ;
@@ -136,6 +137,11 @@ read_GLU_tcorr( struct input_params *Input )
       fclose( Infile ) ;
     }
     shift += Input -> Data.Ndata[i] ;
+  }
+
+  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
+    compute_err( &Input -> Data.x[i] ) ;
+    compute_err( &Input -> Data.y[i] ) ;
   }
 
   return SUCCESS ;
