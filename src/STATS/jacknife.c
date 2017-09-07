@@ -7,6 +7,12 @@
 #include "raw.h"
 #include "summation.h"
 
+// do we want to do a second-level bias correction? I think we do
+// it seems like it does little to the final result when I tested
+// against a correlator
+// Taken from "Double jackknife bias-corrected estimators" by berg - 1991
+#define DJBCORRECT
+
 // the jackknife error definition incorporates the code for the average and variance
 void
 jackknife_error( struct resampled *replicas )
@@ -47,10 +53,32 @@ jackknife_full( struct input_params *Input )
       const double sumx = kahan_summation( x , N ) ;
       const double sumy = kahan_summation( y , N ) ;
 
-      // do the jackknife
+      // do the jackknife, perhaps with a bias correction step
+      double Bb[ N ] , Bc[ N ] ;
       for( k = 0 ; k < N ; k++ ) {
-	Input -> Data.x[j].resampled[k] = ( sumx - Input -> Data.x[j].resampled[k] ) * NORM ;
-	Input -> Data.y[j].resampled[k] = ( sumy - Input -> Data.y[j].resampled[k] ) * NORM ;
+	Bb[k] = ( sumx - Input -> Data.x[j].resampled[k] ) * NORM ;
+	Bc[k] = ( sumy - Input -> Data.y[j].resampled[k] ) * NORM ;
+        #ifdef DJBCORRECT
+	size_t l ;
+	register double sumb = 0.0 , sumc = 0.0 ;
+	for( l = 0 ; l < N-1 ; l++ ) {
+	  size_t ll = l ;
+	  if( l >= k ) ll = l + 1 ;
+	  sumb -= ( sumx -
+		    Input -> Data.x[j].resampled[k] -
+		    Input -> Data.x[j].resampled[ll] )  ;
+	  sumc -= ( sumy -
+		    Input -> Data.y[j].resampled[k] -
+		    Input -> Data.y[j].resampled[ll] ) ;
+	}
+        Bb[k] = Bb[k]*(N-1.0) + sumb * NORM ;
+        Bc[k] = Bc[k]*(N-1.0) + sumc * NORM ;
+	#endif
+      }
+      
+      for( k = 0 ; k < N ; k++ ) {
+	Input -> Data.x[j].resampled[k] = Bb[k] ;
+	Input -> Data.y[j].resampled[k] = Bc[k] ;
       }
 
       Input -> Data.x[j].restype = Input -> Data.y[j].restype = JackKnife ;     
