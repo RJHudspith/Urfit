@@ -8,7 +8,7 @@
 double
 fqslab( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  return fparams[0] * X.X +
+  return fparams[0] * X.X -
     fparams[1] * ( 1.0 - exp( -fparams[2] * X.X ) - exp( -fparams[2] * ( X.LT - X.X ) ) + exp( -fparams[2] * X.LT ) ) ;
 }
 
@@ -38,15 +38,15 @@ qslab_df( double **df , const void *data , const double *fparams )
   for( i = 0 ; i < DATA -> n ; i++ ) {
 
     const double x = DATA -> x[i] ;
-    const double m = fparams[ DATA -> map[i].p[2] ] ;
     const double C = fparams[ DATA -> map[i].p[1] ] ;
+    const double m = fparams[ DATA -> map[i].p[2] ] ;
     const double LT = DATA -> LT[i] ;
     
     df[ DATA -> map[i].p[0] ][ i ] = x ;
     df[ DATA -> map[i].p[1] ][ i ] = \
-      ( 1.0 - exp( -m * x ) - exp( -m * ( LT - x ) ) + exp( -m * LT ) ) ;
+      - ( 1.0 - exp( -m * x ) - exp( -m * ( LT - x ) ) + exp( -m * LT ) ) ;
     df[ DATA -> map[i].p[2] ][ i ] = \
-      C * ( x * exp( -m * x ) + ( LT - x ) * exp( -m * ( LT - x ) ) - LT * exp( -m * LT ) ) ;
+      - C * ( x * exp( -m * x ) + ( LT - x ) * exp( -m * ( LT - x ) ) - LT * exp( -m * LT ) ) ;
   }
   return ;
 }
@@ -65,6 +65,6 @@ qslab_guesses( double *fparams ,
 	       const struct fit_info Fit )
 { 
   fparams[0] = Data.y[ Data.Ndata[0] - 1 ].avg / Data.LT[ Data.Ndata[0] - 1 ] ;
-  fparams[1] = -1.385E-04 ;
-  fparams[2] = -0.167 ;
+  fparams[1] = 1.385E-04 ;
+  fparams[2] = 0.167 ;
 }

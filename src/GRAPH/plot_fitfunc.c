@@ -12,28 +12,63 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
+struct resampled
+extrap_fitfunc( const struct resampled *f ,
+		const struct data_info Data ,
+		const struct fit_info Fit ,
+		const double xpos ,
+		const size_t shift )
+{
+  // set up the fit again
+  struct fit_descriptor fdesc = init_fit( Data , Fit ) ;
+
+  struct resampled data = init_dist( NULL , f[0].NSAMPLES , f[0].restype ) ;
+
+  struct x_desc xdesc = { xpos , Data.LT[shift] , Fit.N , Fit.M } ;
+  double fparams[ fdesc.Nparam ] ;
+  size_t j , p ;
+  for( j = 0 ; j < f[0].NSAMPLES ; j++ ) {
+    // evaluate the fitfunc
+    for( p = 0 ; p < fdesc.Nparam ; p++ ) {
+      fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
+    }
+    data.resampled[j] = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+  }
+  // and the average
+  for( p = 0 ; p < fdesc.Nparam ; p++ ) {
+    fparams[ p ] = f[ Fit.map[shift].p[p] ].avg ;
+  }
+  data.avg = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+
+  compute_err( &data ) ;
+	
+  // free the fitfunction
+  free_ffunction( &fdesc.f , fdesc.Nlogic ) ;
+
+  return data ;
+}
+
 int
 plot_fitfunction( const struct resampled *f ,
 		  const struct data_info Data ,
 		  const struct fit_info Fit )
-{
-  size_t h , i , p ;
-    
-  // set up the fit again
-  struct fit_descriptor fdesc = init_fit( Data , Fit ) ;
-  // loop x
-  const size_t granularity = 101 ;
+{    
+  // loop x with this granularity
+  const size_t granularity = 501 ;
   double *X    = malloc( granularity * sizeof( double ) ) ;
   double *YAVG = malloc( granularity * sizeof( double ) ) ;
   double *YMIN = malloc( granularity * sizeof( double ) ) ;
   double *YMAX = malloc( granularity * sizeof( double ) ) ;
+
+  size_t h , i , p ;
 
   // loop over the simultaneous parameters
   size_t shift = 0 ;
   for( h = 0 ; h < Data.Nsim ; h++ ) {
 
     // loop the x to find the max and min of x
-    double xmin = Data.x[shift].err_lo , xmax = Data.x[shift].err_hi ;
+    double xmin = Data.x[shift].err_lo ;
+    double xmax = Data.x[shift].err_hi ;
     for( i = shift ; i < shift + Data.Ndata[h] ; i++ ) {
       if( Data.x[i].err_lo < xmin ) {
 	xmin = Data.x[i].err_lo ;
@@ -42,35 +77,15 @@ plot_fitfunction( const struct resampled *f ,
 	xmax = Data.x[i].err_hi ;
       }
     }
+    //xmin = 0.0 ;
 
     const double x_step = ( xmax - xmin ) / ( granularity - 1 ) ;
     for( i = 0 ; i < granularity ; i++ ) {
-      const double extrap_x = xmin + x_step*i ;
-      X[ i ] = extrap_x ;
+      
+      X[ i ] = xmin + x_step*i ;
+	    
+      struct resampled data = extrap_fitfunc( f , Data , Fit , X[i] , shift ) ;
 
-      struct resampled data = init_dist( NULL ,
-					 f[0].NSAMPLES ,
-					 f[0].restype ) ;
-      
-      size_t j ;
-      struct x_desc xdesc = { X[i] , Data.LT[shift] , Fit.N , Fit.M } ;
-      double fparams[ fdesc.Nparam ] ;
-      
-      for( j = 0 ; j < f[0].NSAMPLES ; j++ ) {
-	// evaluate the fitfunc
-	for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-	  fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
-	}
-        data.resampled[j] = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
-      }
-      // and the average
-      for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-	fparams[ p ] = f[ Fit.map[shift].p[p] ].avg ;
-      }
-      data.avg = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
-
-      compute_err( &data ) ;
-      
       YMAX[i] = data.err_hi ;
       YAVG[i] = data.avg ;
       YMIN[i] = data.err_lo ;
@@ -89,9 +104,6 @@ plot_fitfunction( const struct resampled *f ,
 
   // free the x, y , ymin and ymax
   free( X ) ; free( YAVG ) ; free( YMIN ) ; free( YMAX ) ;
-
-  // free the fitfunction
-  free_ffunction( &fdesc.f , fdesc.Nlogic ) ;
 
   return SUCCESS ;
 }

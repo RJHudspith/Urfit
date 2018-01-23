@@ -27,7 +27,7 @@ equate_constant( struct resampled *a ,
 		 const resample_type restype ) ;
 
 struct resampled
-init_dist( struct resampled *d , 
+init_dist( const struct resampled *d , 
 	   const int NSAMPLES , 
 	   const resample_type restype ) ;
 
@@ -42,6 +42,11 @@ mult( struct resampled *a ,
 void
 raise( struct resampled *a , 
        const double b ) ;
+
+void
+rapby( struct resampled *a ,
+       const struct resampled b ,
+       const double y ) ;
 
 void
 res_acosh( struct resampled *a ) ;

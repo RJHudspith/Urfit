@@ -112,8 +112,8 @@ ppaa_guesses( double *fparams ,
 	       const struct fit_info Fit )
 {
   fparams[0] = 0.25 ;
-  fparams[1] = 7000 ;
-  fparams[2] = 2000 ;
+  fparams[1] = 36 ;
+  fparams[2] = 4 ;
 
   size_t i ;
   // tell us about the guesses always use the prior as a guess

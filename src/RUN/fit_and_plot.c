@@ -69,7 +69,10 @@ fit_and_plot( struct input_params Input ,
   Data.LT = NULL ;
 
   // sanity check
-  if( Data.Ntot == 0 ) goto memfree ;
+  if( Data.Ntot == 0 ) {
+    fprintf( stderr , "[FIT AND PLOT] Ntot is zero\n" ) ;
+    goto memfree ;
+  }
   
   Data.Ndata = malloc( Data.Nsim * sizeof( size_t ) ) ;
   Data.Nboots = Input.Data.Nboots ;
@@ -87,7 +90,7 @@ fit_and_plot( struct input_params Input ,
 	equate( &Data.x[idx] , Input.Data.x[k] ) ;
 	equate( &Data.y[idx] , Input.Data.y[k] ) ;
 
-	//printf( "%f %f \n" , Data.x[idx].avg , Data.y[idx].avg ) ;
+	printf( "%f %f %f\n" , Data.x[idx].avg , Data.y[idx].avg , Data.y[idx].err ) ;
 	
 	Ndata++ ; idx++ ;
       }
@@ -98,6 +101,7 @@ fit_and_plot( struct input_params Input ,
   
   // set Lt
   if( init_LT( &Data , Input.Traj ) == FAILURE ) {
+    fprintf( stderr , "[FIT AND PLOT] LT initialisation failure\n" ) ;
     goto memfree ;
   }
 

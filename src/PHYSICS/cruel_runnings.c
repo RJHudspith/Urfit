@@ -160,11 +160,11 @@ match_up_OS( const double Alpha_Ms ,
   if( loops <= 2 )
     return Alpha_Ms ; // nice result, threshold effects only kick in at two loops
                       // but we always match the running to one lower order in the matching ...
-  double h2_term = 0. , h3_term = 0. , h4_term = 0. ;
+  double h2_term = 0. , h3_term = 0. , h4_term = 0. , h5_term = 0. ;
   // switch for the scheme we are matching to
   if( loops > 2 ) { h3_term = -0.02955201190 ; }
   if( loops > 3 ) { h4_term = -0.1717036285 + ( nf - 1 ) * 0.008465086429 ; }
-
+  if( loops > 4 ) { h5_term = -0.8815912261210175 + ( nf - 1 ) * ( 0.099500979807077 - ( nf - 1 ) * 0.002458702749996899 ) ; }
   //set up guess and new_guess
   double guess = Alpha_Ms , correction = 1.0 ;
   
@@ -172,9 +172,9 @@ match_up_OS( const double Alpha_Ms ,
   size_t counter = 0 ;
   while( fabs( correction ) > HALLEY_TOL ) {
     //function and its first and second derivatives
-    const double f_x = guess * ( 1. + guess * ( h2_term + guess * ( h3_term + guess * ( h4_term ) ) ) ) - Alpha_Ms ; 
-    const double f_prime = 1. + guess * ( 2. * h2_term + guess * ( 3. * h3_term + guess * ( 4. * h4_term ) ) ) ; 
-    const double f_pprime = 2. * h2_term + guess * ( 6. * h3_term + guess * ( 12. * h4_term ) ) ;
+    const double f_x = guess * ( 1. + guess * ( h2_term + guess * ( h3_term + guess * ( h4_term + guess * h5_term ) ) ) ) - Alpha_Ms ; 
+    const double f_prime = 1. + guess * ( 2. * h2_term + guess * ( 3. * h3_term + guess * ( 4. * h4_term + 5. * guess * h5_term ) ) ) ; 
+    const double f_pprime = 2. * h2_term + guess * ( 6. * h3_term + guess * ( 12. * h4_term + 20. * h5_term ) ) ;
     //halley's method	  
     correction = -2. * f_x * f_prime / (2. * f_prime * f_prime - f_x * f_pprime) ;
 
@@ -202,7 +202,7 @@ match_down_OS( const double Alpha_Ms ,
   if( loops <= 2 )
     return Alpha_Ms ; // nice result, threshold effects only kick in at two loops
                       // but we always match the running to one lower order in the matching ...
-  double h3_term , h4_term ;
+  double h3_term , h4_term , h5_term ;
   if( loops > 2 ) goto loop3 ;
   return Alpha_Ms ;
  loop3 :
@@ -211,7 +211,11 @@ match_down_OS( const double Alpha_Ms ,
   return Alpha_Ms * ( 1.0 + Alpha_Ms * Alpha_Ms * h3_term ) ; 
  loop4 : 
   h4_term = -0.1717036285 + ( nf - 1 ) * 0.008465086429 ;
-  return Alpha_Ms * ( 1.0 + Alpha_Ms * Alpha_Ms * ( h3_term + Alpha_Ms * h4_term ) ) ; 
+  if( loops > 4 ) goto loop5 ;
+  return Alpha_Ms * ( 1.0 + Alpha_Ms * Alpha_Ms * ( h3_term + Alpha_Ms * h4_term ) ) ;
+ loop5 :
+  h5_term = -0.8815912261210175 + ( nf - 1 ) * ( 0.099500979807077 - ( nf - 1 ) * 0.002458702749996899 ) ;
+  return Alpha_Ms * ( 1.0 + Alpha_Ms * Alpha_Ms * ( h3_term + Alpha_Ms * ( h4_term + Alpha_Ms * h5_term ) ) ) ;
 }
 
 // run from scale mu to mu-prime
@@ -307,3 +311,4 @@ test_running( void )
   
   return ;
 }
+

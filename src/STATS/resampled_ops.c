@@ -141,7 +141,7 @@ equate_constant( struct resampled *a ,
 
 // init to zero for (NULL,NSAMPLES,restype) else init to *d
 struct resampled
-init_dist( struct resampled *d , 
+init_dist( const struct resampled *d , 
 	   const size_t NSAMPLES , 
 	   const resample_type restype )
 {
@@ -185,6 +185,22 @@ mult_constant( struct resampled *a ,
     a -> resampled[i] *= b ;
   }
   a -> avg *= b ;
+  compute_err( a ) ;
+  return ;
+}
+
+// rapby a += b * y
+void
+rapby( struct resampled *a ,
+       const struct resampled b ,
+       const double y )
+{
+  resampled_checks( "rapby" , *a , b ) ;
+  size_t i ;
+  for( i = 0 ; i < a -> NSAMPLES ; i++ ) {
+    a -> resampled[i] += b.resampled[i] * y ;
+  }
+  a -> avg += b.avg * y ;
   compute_err( a ) ;
   return ;
 }

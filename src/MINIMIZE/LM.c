@@ -12,7 +12,10 @@
 
 // use second derivs? NRC says that they can be harmful
 // not using them makes the code run faster sometimes
-//#define WITH_D2_DERIVS 
+//#define WITH_D2_DERIVS
+
+//#define VERBOSE
+#define TRUST_REGION
 
 // get the matrices alpha and beta
 static int
@@ -139,7 +142,8 @@ get_alpha_beta( gsl_matrix *alpha ,
 
 // perform trial - ML step return chisq
 double
-lm_step( struct ffunction *f , 
+lm_step( struct ffunction *f ,
+	 double *pred ,
 	 double *old_params ,
 	 gsl_matrix *alpha_new ,
 	 gsl_vector *delta ,
@@ -163,6 +167,7 @@ lm_step( struct ffunction *f ,
     gsl_matrix_set( alpha_new , i , i , 
 		    ( 1.0 + Lambda ) * gsl_matrix_get( alpha , i , i ) ) ;
   }
+
   // solves alpha[p][q] * delta( a[q] ) = beta[p] for delta
   if( gsl_linalg_LU_decomp( alpha_new , perm , &signum ) != GSL_SUCCESS ) {
     printf( "[LM] LU decomp broken?\n" ) ;
@@ -179,6 +184,21 @@ lm_step( struct ffunction *f ,
     printf( "[LM] NEW PARAMS :: %f \n" , f -> fparams[i] ) ;
     #endif
   }
+
+  // compute the predicted chi^2
+  register double loc_sum = f -> chisq ;
+  for( i = 0 ; i < f -> NPARAMS ; i++ ) {
+    loc_sum += gsl_vector_get( delta , i ) * gsl_vector_get( beta , i ) ;
+    size_t j ;
+    for( j = 0 ; j < f -> NPARAMS ; j++ ) {
+      loc_sum +=
+	0.5 * gsl_vector_get( delta , i ) *
+	gsl_matrix_get( alpha , i , j ) *
+	gsl_vector_get( delta , j ) ;
+    }
+  }
+  *pred = loc_sum ;
+  
   // evaluate these functions
   fdesc.F( f -> f , data , f -> fparams ) ;
   // compute new chisq
@@ -196,12 +216,12 @@ lm_iter( void *fdesc ,
   struct fit_descriptor *Fit = (struct fit_descriptor*)fdesc ;
   
   // set maximum iterations
-  const size_t LMMAX = 10000 ; 
+  const size_t LMMAX = 1000 ; 
 
   // lambda multiplying factor
-  const double fac = 10 ;
+  const double fac = 5. ;
 
-  double chisq_diff = 10 , Lambda = 0.1 ;
+  double chisq_diff = 10 , Lambda = 0.5 ;
   size_t iters = 0 , i ;
 
   // get priors
@@ -233,18 +253,73 @@ lm_iter( void *fdesc ,
   // get alpha and beta for the new set of f
   get_alpha_beta( alpha , beta , Fit -> f , W ) ;
 
+#ifdef TRUST_REGION
+  const double Lambda_max = 1E10 ;
+#endif
+
   // loop until chisq evens out
-  while( chisq_diff > TOL ) {
+  double pred = 1.0 ;
+  while( chisq_diff > TOL && iters < LMMAX ) {
 
-    double new_chisq = lm_step( &Fit -> f , old_params , alpha_new , delta , 
-				perm , alpha , beta , *Fit , 
-				data , W , Lambda ) ;    
+    const double new_chisq = lm_step( &Fit -> f , &pred , old_params ,
+				      alpha_new , delta , 
+				      perm , alpha , beta , *Fit , 
+				      data , W , Lambda ) ;
 
+    const double ratio = ( Fit -> f.chisq - new_chisq ) /
+      ( Fit -> f.chisq - pred ) ;
+
+#ifdef TRUST_REGION
+
+    const double eta1 = 0.25 , eta2 = 1.0 ;
+    register double frob = 0.0 ;
+    for( i = 0 ; i < Fit -> f.NPARAMS ; i++ ) {
+      frob += gsl_vector_get( beta , i ) * gsl_vector_get( beta , i ) ;
+    }
+    frob = sqrt( frob ) ;
+
+    #ifdef VERBOSE
+    printf( "Ratio %e | Lambda_prev %e \n" , ratio , Lambda ) ;
+    printf( "%zu Frob %e \n" , iters , frob ) ;
+    #endif
+
+    // update trust region radius
+    if( ratio < eta1 ) {
+      Lambda = fmin( Lambda * 4. , Lambda_max ) ;
+    } else if( ratio > eta2 ) {
+      Lambda = Lambda / 4. ;
+    }
+    
+    // update as we are in the trust region
+    if( ratio > eta1 ) {
+      chisq_diff = fabs( Fit -> f.chisq - new_chisq ) ;
+      Fit -> f.chisq = new_chisq ;
+      for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+	old_params[ i ] = Fit -> f.fparams[ i ] ;
+      }
+      // update derivatives and alpha and beta
+      Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
+      #ifdef WITH_D2_DERIVS
+      Fit -> d2F( Fit -> f.d2f , data , Fit -> f.fparams ) ;
+      #endif
+      get_alpha_beta( alpha , beta , Fit -> f , W ) ;
+    }
+    #ifdef VERBOSE
+    printf( "Chidiff %e \n" , chisq_diff ) ;
+    printf( "Lambda %e \n" , Lambda ) ;
+    #endif
+
+    // if the trust region keeps expanding then we just quit
+    if( Lambda >= Lambda_max ) {
+      //fprintf( stderr , "Lambda == Lambda_max\n" ) ;
+      break ;
+    }
+#else // resort to original version
+    
     #ifdef VERBOSE
     printf( "[ML] chis :: %f %f %e \n" , new_chisq , 
 	    Fit -> f.chisq , fabs( Fit -> f.chisq - new_chisq ) ) ;
     #endif
-
     // update lambda shrinking the size if we are close to a solution
     if( new_chisq <= Fit -> f.chisq && iters < LMMAX ) {
       // update lambda
@@ -267,9 +342,10 @@ lm_iter( void *fdesc ,
       Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ; // reset f
       Lambda *= fac ;
     }
+#endif
 
     // if lambda misses a minimum tell us
-    if( Lambda < 1E-45 || Lambda > 1E45 ) {
+    if( Lambda < 1E-32 || Lambda > 1E32 ) {
       printf( "[LM] Lambda is out of bounds %e \n" , Lambda ) ;
       iters = LMMAX ;
       break ;

@@ -23,7 +23,7 @@ cg_iter( void *fdesc ,
   
   // iterations and CG maximum iterations
   size_t iters = 0 , i , j , k ;
-  const size_t CGMAX = 5000 ;
+  const size_t CGMAX = 1000 ;
 
   // allocate the fitfunction
   struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , 
@@ -52,7 +52,6 @@ cg_iter( void *fdesc ,
   y = malloc( Nsum * sizeof( double ) ) ;
 
   // step down the gradient initially
-  double alpha = 0.0 ;
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     t = y ;
     // set derivatives
@@ -85,26 +84,33 @@ cg_iter( void *fdesc ,
   }
 
   // line search the SD step
+  double alpha[ Fit -> Nlogic ] ;
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+    alpha[ i ] = 1 ;
     // line search best alpha
-    alpha = line_search( &f2 , Fit -> f , old_df , s ,
-			 *Fit , data , W , i ,
-			 fabs( Fit -> f.fparams[i] ) ) ;
-    Fit -> f.fparams[i] += alpha * s[i] ;
+    alpha[ i ] = line_search( &f2 , Fit -> f , old_df , s ,
+			      *Fit , data , W , i ,
+			      alpha[i] ) ;
+    Fit -> f.fparams[i] += alpha[i] * s[i] ;
+    printf( "SD fparam %zu %e \n" , i , Fit -> f.fparams[i] , alpha[i] ) ;
   }
 
-  double chisq_diff = 10 ;
+  double chisq_diff = 10 , chiprev = 123456789 ,
+    chinew = compute_chisq( Fit -> f , W , 
+			    Fit -> f.CORRFIT ) ;
+    
   while( chisq_diff > TOL && iters < CGMAX ) {
-
-    // initially compute the chisq
-    const double chi = compute_chisq( Fit -> f , W , 
-				      Fit -> f.CORRFIT ) ;
     
     // update f which has the gradient direction in
+    chiprev = chinew ;
     Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
     Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
-    Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
-    chisq_diff = fabs( chi - Fit -> f.chisq ) ;
+    chinew = Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
+    chisq_diff = fabs( ( chinew - chiprev ) ) ;
+
+    //#ifdef VERBOSE
+    //fprintf( stdout , "[CG] chidiff %e \n" , chisq_diff ) ;
+    //#endif
 
     // compute beta using polyak - ribiere
     register double num = 0.0 , denom = 0.0 ;
@@ -161,22 +167,32 @@ cg_iter( void *fdesc ,
     #endif
 
     // perform a backtracking line search
+    double alsum = 0.0 ;
     for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
-      alpha = line_search( &f2 , Fit -> f , old_df , s ,
-			   *Fit , data , W , i ,
-			   fabs( Fit -> f.fparams[i] ) ) ;
-      
+      alpha[i] = line_search( &f2 , Fit -> f , old_df , s ,
+			      *Fit , data , W , i ,
+			      alpha[i] ) ;
+      alsum += alpha[i] ;
       #ifdef VERBOSE
-      printf( "[CG] NEW ALPHA = %e \n" , alpha ) ;
+      fprintf( "[CG] NEW ALPHA(%zu) = %e \n" , i , alpha[i] ) ;
       #endif
 
       // set x = x + \alpha * s
-      Fit -> f.fparams[i] += alpha * s[i] ;
+      Fit -> f.fparams[i] += alpha[i] * s[i] ;
 
       #ifdef VERBOSE
       printf( "[CG] NEPARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
       #endif
     }
+
+    /*
+    if( fabs( alsum ) < 1E-15 && iters > 2 ) {
+      fprintf( stdout , "[CG] alphas are all small, exiting %e, exiting\n" ,
+	       alsum ) ;
+      break ;
+    }
+    */
+    
     iters++ ;
   }
 
@@ -191,6 +207,7 @@ cg_iter( void *fdesc ,
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     printf( "PARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
   }
+  //exit(1) ;
 
   // free the directions
   if( s != NULL ) {

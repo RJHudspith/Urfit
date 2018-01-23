@@ -9,7 +9,10 @@ AM_CFLAGS=-I${TOPDIR}/src/HEADERS/
 ANALYSIS_FILES=./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/beta_crit.c ./ANALYSIS/correlator.c ./ANALYSIS/hvp_pade.c \
 	./ANALYSIS/exceptional.c ./ANALYSIS/Qcorr.c ./ANALYSIS/sun_flow.c \
-	./ANALYSIS/inverse.c
+	./ANALYSIS/inverse.c ./ANALYSIS/KKops.c ./ANALYSIS/tetra_gevp.c \
+	./ANALYSIS/KK_BK.c ./ANALYSIS/general_ops.c ./ANALYSIS/Ren_rats.c \
+	./ANALYSIS/CPCV.c ./ANALYSIS/Wall_Local.c ./ANALYSIS/Qmoments.c \
+	./ANALYSIS/statpot.c ./ANALYSIS/adler.c
 
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
@@ -18,14 +21,16 @@ INIT_FILES=./INIT/fake.c ./INIT/init.c
 FITS_FILES=./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/cosh.c ./FITS/exp_plusc.c ./FITS/exp.c ./FITS/Nder.c \
 	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c ./FITS/pp_aa.c \
-	./FITS/pp_aa_ww.c ./FITS/ppaa.c \
-	./FITS/Qcorr_bessel.c ./FITS/sinh.c ./FITS/poles.c ./FITS/qslab.c
+	./FITS/pp_aa_ww.c ./FITS/ppaa.c ./FITS/pp_aa_ww_r2.c \
+	./FITS/Qcorr_bessel.c ./FITS/sinh.c ./FITS/poles.c ./FITS/qslab.c \
+	./FITS/cornell.c ./FITS/pp_aa_exp.c ./FITS/qsusc_su2.c
 
 GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 
 IO_FILES=./IO/distribution.c ./IO/GLU_bswap.c ./IO/io_wrapper.c \
 	./IO/read_flat.c ./IO/read_corr.c ./IO/read_GLU.c \
-	./IO/read_GLU_tcorr.c ./IO/tfold.c 
+	./IO/read_GLU_Qmoment.c \
+	./IO/read_GLU_tcorr.c ./IO/tfold.c ./IO/write_flat.c
 
 INPUT_FILES=./IO/INPUT/read_inputs.c ./IO/INPUT/read_traj.c \
 	./IO/INPUT/read_fit.c ./IO/INPUT/read_graph.c \

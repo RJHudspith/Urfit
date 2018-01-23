@@ -8,6 +8,7 @@
 
 #include "gens.h"
 #include "fitfunc.h"
+#include "make_xmgrace.h"
 #include "resampled_ops.h"
 
 #define EFFMASSTOL 1E-30
@@ -69,6 +70,9 @@ log_effmass( struct resampled *effmass ,
 	     struct resampled y1 , struct resampled y2 ,
 	     struct resampled x1 , struct resampled x2 )
 {
+  if( y2.avg == 0.0 ) { zero_effmass( effmass , y2 ) ; return ; }
+  if( y1.avg == 0.0 ) { zero_effmass( effmass , y1 ) ; return ; }
+  
   equate( effmass , y1 ) ;
   divide( effmass , y2 ) ;
   
@@ -146,24 +150,27 @@ asinh_effmass( struct resampled *effmass ,
 	       struct resampled y2 ,
 	       struct resampled y3 )
 {
+  if( y2.avg == 0.0 ) { zero_effmass( effmass , y2 ) ; return ; }
+  
   // compute ( y[i+1] - y[i-1] / y[i] ) 
   equate( effmass , y1 ) ;
   subtract( effmass , y3 ) ;
   divide( effmass , y2 ) ;
   mult_constant( effmass , 0.5 ) ;
     
-  // asinh is valid for all inputs
+  // asinh is valid for all inputs apart from exact zeros
   res_asinh( effmass ) ;
 
   return ;
 }
 
-
-// computes the effective mass
+// computes the effective mass and plots a graph of it
 struct resampled *
 effective_mass( struct input_params *Input ,
 		const effmass_type type )
 {
+  make_xmgrace_graph( "effmass.agr" , "t/a" , "am\\seff" ) ;
+  
   struct resampled *effmass = malloc( Input -> Data.Ntot * sizeof( struct resampled ) ) ;
 
   size_t i , j , shift = 0 ;
@@ -185,9 +192,16 @@ effective_mass( struct input_params *Input ,
 	// switch the various effective masses
 	switch( type ) {
 	case LOG_EFFMASS :
+	case LOGFWD_EFFMASS :
 	  log_effmass( &effmass[j] ,
 		       Input -> Data.y[j] , Input -> Data.y[j+1] ,
 		       Input -> Data.x[j+1] , Input -> Data.x[j] ) ;
+	  break ;
+	case LOGBWD_EFFMASS :
+	  log_effmass( &effmass[j] ,
+		       Input -> Data.y[j-1] , Input -> Data.y[j] ,
+		       Input -> Data.x[j-1] , Input -> Data.x[j] ) ;
+	  mult_constant( &effmass[j] , -1 ) ;
 	  break ;
 	case ATANH_EFFMASS :
 	  atanh_effmass( &effmass[j] ,
@@ -211,13 +225,16 @@ effective_mass( struct input_params *Input ,
 	}
 	// 
       }
-
-      printf( "%f %f %f \n" , Input -> Data.x[j].avg ,
-	      effmass[j].avg , effmass[j].err ) ;
     }
+
+    plot_data( Input -> Data.x + shift , effmass + shift ,
+	       Input -> Data.Ndata[i] ) ;
+    
     shift = j ;
   }
 
+  close_xmgrace_graph() ;
+  
   return effmass ;
 }
 

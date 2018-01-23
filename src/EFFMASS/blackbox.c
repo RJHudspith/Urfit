@@ -13,31 +13,122 @@
 
 #include "gens.h"
 
-// compute the determinant using the LU decomposition
-static void 
-blackbox_det( double *coefs , 
-	      const double *y , 
-	      const size_t NSTATES )
+// standard Prony's method
+static void
+blackbox2( double complex *x ,
+	   const double *data ,
+	   const size_t Ndata ,
+	   const size_t Nstates ,
+	   const size_t t ,
+	   const size_t Nt )
 {
-  gsl_matrix *A = gsl_matrix_alloc( NSTATES , NSTATES ) ;
-  gsl_permutation *p = gsl_permutation_alloc( NSTATES ) ;
-  double det ;
-  size_t i , j , n ;
-  int signum ;
-  for( n = 0 ; n < NSTATES+1 ; n++ ) {
-    // we fill the A matrix with a reduction of the det related to the X^n term 
-    for( i = 0 ; i < NSTATES ; i++ ) {
-      for( j = 0 ; j < NSTATES ; j++ ) {
-	gsl_matrix_set( A , i , j , y[ ((i<n)?i:(i+1))+j*(NSTATES+1) ] ) ;
-      }
+  size_t i , j , k , n ;
+  //int signum ;
+  double *Y = malloc( Nt*sizeof( double ) ) ;
+  double Y2[ Nt ][ Nstates ] ;
+  for( i = 0 ; i < Nt ; i++ ) {
+    const size_t yidx = ( t + Nstates + i )%Ndata ;
+    
+    for( j = 0 ; j < Nstates ; j++ ) {
+      const size_t didx = ( t + i + j )%Ndata ;
+      Y2[ i ][ j ] = -data[ didx ] ;
     }
-    // we compute the det and multiply by the right sign
-    gsl_linalg_LU_decomp( A , p , &signum ) ;
-    det = gsl_linalg_LU_det( A , signum ) ;
-    coefs[n] = ( n&1 ) ? ( det ) :( -det ) ;
+    Y[i] = data[ yidx ] ;
   }
-  gsl_matrix_free( A ) ;
-  gsl_permutation_free( p ) ;
+
+  // make it into a square Nstates*Nstates matrix by left multiplying by Y2^T
+  // gsl matrix allocations
+  gsl_matrix *alpha = gsl_matrix_alloc( Nstates , Nstates ) ;
+  gsl_matrix *Q     = gsl_matrix_alloc( Nstates , Nstates ) ;
+  gsl_vector *S     = gsl_vector_alloc( Nstates ) ;
+  gsl_vector *Work  = gsl_vector_alloc( Nstates ) ;
+  
+  gsl_vector *beta  = gsl_vector_alloc( Nstates ) ;
+  gsl_vector *delta = gsl_vector_alloc( Nstates ) ;
+  
+  for( i = 0 ; i < Nstates ; i++ ) {
+    register double sum = 0.0 ;
+    for( j = 0 ; j < Nstates ; j++ ) {
+      sum = 0.0 ;
+      for( k = 0 ; k < Nt ; k++ ) {
+	sum += Y2[ k ][ i ] * Y2[ k ][ j ] ;
+      }
+      gsl_matrix_set( alpha , i , j , sum ) ;
+    }
+    sum = 0.0 ;
+    for( k = 0 ; k < Nt ; k++ ) {
+      sum += Y2[ k ][ i ] * Y[k] ;
+    }
+    gsl_vector_set( beta , i , sum ) ;
+  }
+
+#if 0
+  printf( "%f \n" , data[t] ) ;
+  printf( "%f \n" , data[(t+1)%Ndata] ) ;
+
+  // have a look at it
+  printf( "Ymatrix\n" ) ;
+  for( i = 0 ; i < Nstates ; i++ ) {
+    for( j = 0 ; j < Nstates ; j++ ) {
+      printf( " %f " , gsl_matrix_get( alpha , i , j ) ) ;
+    }
+    printf( "\n" ) ;
+  }
+  
+  printf( "Ys\n" ) ;
+  for( i = 0 ; i < Nstates ; i++ ) {
+    printf( " %f " , gsl_vector_get( beta , i ) ) ;
+  }
+  printf( "\n" ) ;
+#endif
+
+  gsl_linalg_SV_decomp( alpha , Q , S , Work ) ;
+
+  for( i = 0 ; i < Nstates ; i++ ) {
+    //printf( "Singular values %zu %e \n" , i , gsl_vector_get( S , i ) ) ;
+    if( gsl_vector_get( S , i ) < gsl_vector_get( S , 0 )*1E-6 ) {
+      gsl_vector_set( S , i , 0.0 ) ;
+    }
+  }
+  //exit(1) ;
+  
+  gsl_linalg_SV_solve( alpha , Q , S , beta , delta ) ;
+
+  //printf( "States \n" ) ;
+  double coeffs[ Nstates+1 ] ;
+
+  for( i = 0 ; i < Nstates ; i++ ) {
+    coeffs[ i ] = gsl_vector_get( delta , i ) ;
+    //printf( "%f\n" , gsl_vector_get( delta , i ) ) ;
+  }
+  coeffs[Nstates] = 1 ;
+
+  gsl_poly_complex_workspace *w =
+    gsl_poly_complex_workspace_alloc( Nstates+1 ) ;
+  double *z = malloc( 2 * Nstates * sizeof( double ) ) ;
+  
+  gsl_poly_complex_solve( coeffs , Nstates+1 , w , z ) ;
+  
+  //
+  //printf( "SOLS\n" ) ;
+  for( i = 0 ; i < Nstates ; i++ ) {
+    x[ i ] = z[ 2*i ] + I * z[ 2*i+1 ] ;
+    //printf( "%f %f \n" , creal( x[i] ) , cimag( x[i] ) ) ;
+  }
+      
+  // free temporary Y-data
+  free( Y ) ;
+  free( z ) ;
+
+  gsl_poly_complex_workspace_free( w ) ;
+
+  // free the gsl vectors
+  gsl_matrix_free( alpha ) ;
+  gsl_matrix_free( Q ) ;
+  
+  gsl_vector_free( beta ) ;
+  gsl_vector_free( delta ) ;
+    
   return ;
 }
 
@@ -59,65 +150,34 @@ blackbox( const double *data ,
 	  const size_t NDATA ,
 	  const size_t NSTATES ,
 	  double masses[ NSTATES ][ NDATA ] )
-{
+{ 
   // some cut off t
-  const size_t smallt = NDATA , nt = NDATA ;
+  const size_t smallt = NDATA ;
 
+  double complex *x = malloc( NSTATES * sizeof( double complex ) ) ;
+  double *e = malloc( NSTATES * sizeof( double ) ) ;
+  
   size_t t , i , j ;
   for( t = 0 ; t < smallt ; t++ ) {
-    // set up the matrix
-    double y[ NSTATES*(NSTATES+1) ] ;
-    double complex x[ NSTATES ] ;
-    double e[ NSTATES ] ;
-    for( i = 0 ; i < NSTATES ; i++ ) {
-      for( j = 0 ; j < NSTATES+1 ; j++ ) {
-	y[ j + i*(NSTATES+1) ] = data[ ( t + j + i )%nt ] ;
-      }
-    }
-    // usual effective mass solution
-    if( NSTATES == 1 ) {
-      x[0] = y[1] / y[0] ;
-    } else if( NSTATES == 2 ) {
-      // we form the polynom ax2+bx+c = det(y0,y1,y2;y3,y4,y5;1,x,x2)
-      const double a = y[0] * y[4] - y[1] * y[3] ;
-      const double b = y[3] * y[2] - y[0] * y[5] ;
-      const double c = y[1] * y[5] - y[2] * y[4] ;
-      // we solve it for x1,x2
-      const double complex delta = fabs(b) * csqrt( 1.0 - 4.0 * a * c / ( b * b ) ) ;
-      x[0] = -( delta - b ) / ( 2.0 * a ) ;
-      x[1] =  ( delta + b ) / ( 2.0 * a ) ;
-      // otherwise use linear pred
-    } else {
 
-      gsl_poly_complex_workspace *w =
-	gsl_poly_complex_workspace_alloc( NSTATES + 1 ) ;
-      double *z = malloc( 2 * NSTATES * sizeof( double ) ) ;
-      double coefs[ NSTATES + 1 ] ;
-
-      // compute a row of the cofactor matrix
-      blackbox_det( coefs , y , NSTATES ) ;
-      gsl_poly_complex_solve( coefs , NSTATES+1 , w , z ) ;
-
-      // 
-      for( i = 0 ; i < NSTATES ; i++ ) {
-	x[ i ] = z[ 2*i ] + I * z[ 2*i+1 ] ;
-      }
-
-      gsl_poly_complex_workspace_free( w ) ;
-      free( z ) ;
-    }
-
+    blackbox2( x , data , NDATA , NSTATES , t , NSTATES ) ;
+    
     // loggy log log .... x[i] = exp( -e[i] )
     for( i = 0 ; i < NSTATES ; i++ ) {
-      e[ i ] = creal( -clog( x[ i ] ) ) ;
+      e[ i ] = fabs( creal( clog( x[i] ) ) ) ;
+      //printf( "%f %f -> %f\n" , creal( x[i] ) , cimag( x[i] ) , e[i] ) ;
     }
-
+    
     // sort the e's ?
     qsort( e , NSTATES , sizeof(double) , comp ) ;
+	
     for( i = 0 ; i < NSTATES ; i++ ) {
       masses[i][t] = e[i] ;
     }
   }
+
+  free( e ) ;
+  free( x ) ;
 
   return ;
 }

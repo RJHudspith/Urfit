@@ -177,6 +177,10 @@ inverse_correlation( struct data_info *Data ,
     // correlation matrix is symmetric
     fill_lower_triangular( C , Data -> Ntot ) ;
 
+    //#ifdef VERBOSE
+    write_corrmatrix( C , Data -> Ntot , Fit.Corrfit ) ;
+    //#endif
+
     // compute the inverse by svd
     if( svd_inverse( Data -> Cov.W , (const double**)C ,
 		     Data -> Ntot , Data -> Ntot ,
@@ -185,9 +189,9 @@ inverse_correlation( struct data_info *Data ,
       flag = FAILURE ;
     }
 
-    #ifdef VERBOSE
+    //#ifdef VERBOSE
     write_corrmatrix( Data -> Cov.W , Data -> Ntot , Fit.Corrfit ) ;
-    #endif
+    //#endif
     
     // free the correlation matrix
     for( i = 0 ; i < Data -> Ntot ; i++ ) {
@@ -211,10 +215,10 @@ write_corrmatrix( const double **correlation ,
   printf( "\n" ) ;
   for( i = 0 ; i < NCUT ; i++ ) {
     if( Corrfit == UNCORRELATED ) {
-      printf( "%f " , correlation[0][i] ) ;
+      printf( "%e " , correlation[0][i] ) ;
     } else {
       for( j = 0 ; j < NCUT ; j++ ) {
-	printf( "%f " , correlation[i][j] ) ;
+	printf( "%e " , correlation[i][j] ) ;
       }
       printf( "\n" ) ;
     }

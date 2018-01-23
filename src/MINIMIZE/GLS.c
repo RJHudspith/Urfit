@@ -5,6 +5,9 @@
 #include "gens.h"
 
 #include "chisq.h"
+#include "svd.h"
+
+#define WITH_SVD
 
 // perform a generalised least squares iteration
 int
@@ -123,7 +126,26 @@ gls_iter( void *fdesc ,
     }
     gsl_vector_set( beta , i , sum ) ;
   }
+
+#ifdef SVD
+  double A[N][N] , Ainv[N][N] ;
+  for( i = 0 ; i < N ; i++ ) {
+    for( j = 0 ; j < N ; j++ ) {
+      A[i][j] = gsl_matrix_get( alpha , i , j ) ;
+    }
+  }
   
+  svd_inverse( Ainv , A , N , N , 1E-16 , true ) ;
+
+  for( i = 0 ; i < N ; i++ ) {
+    register double sum = 0.0 ;
+    for( j = 0 ; j < N ; j++ ) {
+      sum += Ainv[i][j] * gsl_vector_get( beta , i ) ;
+    }
+    Fit -> f.fparams[i] = sum ;
+  }
+  
+#else
   // solves alpha[p][q] * delta( a[q] ) = beta[p] for delta
   int signum , Flag = SUCCESS ;
   if( gsl_linalg_LU_decomp( alpha , perm , &signum ) != GSL_SUCCESS ) {
@@ -142,6 +164,7 @@ gls_iter( void *fdesc ,
       }
     }
   }
+#endif
 
   // set the parameter "f" and compute the chisq
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;

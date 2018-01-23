@@ -4,7 +4,11 @@
  */
 #include "gens.h"
 
-//#define BD
+#include "cruel_runnings.h"
+#include "resampled_ops.h"
+#include "stats.h"
+
+#define BD
 
 int
 fit_inverse( struct input_params *Input )
@@ -84,12 +88,84 @@ fit_inverse( struct input_params *Input )
   for( l = 0 ; l < 5 ; l++ ) {
     for( k = 0 ; k < 5 ; k++ ) {
       compute_err( &Input -> Data.x[ k + 5*l ] ) ;
-      printf( "%f(%f) & " , l , k ,
-	      Input -> Data.x[ k + 5*l ].avg ,
-	      Input -> Data.x[ k + 5*l ].err ) ;
+      if( k != 4 ) {
+	printf( "%f(%f) & " ,
+		Input -> Data.x[ k + 5*l ].avg ,
+		Input -> Data.x[ k + 5*l ].err ) ;
+      } else {
+	printf( "%f(%f) \\\\ \n" ,
+		Input -> Data.x[ k + 5*l ].avg ,
+		Input -> Data.x[ k + 5*l ].err ) ;
+      }
     }
-    printf( "\\\\ \n" ) ;
   }
-				   
+
+  // write out a flat file
+  FILE *file = fopen( "Z.flat" , "w" ) ;
+  fprintf( file , "%d\n" , Input -> Data.x[0].restype ) ;
+  fprintf( file , "%d\n" , 25 ) ;
+  for( l = 0 ; l < 5 ; l++ ) {
+    for( k = 0 ; k < 5 ; k++ ) {
+      fprintf( file , "%zu\n" , Input -> Data.x[k+5*l].NSAMPLES ) ;
+      for( j = 0 ; j < Input -> Data.x[k+5*l].NSAMPLES ; j++ ) {
+	fprintf( file , "%1.15e %1.15e\n" , (double)k+5*l , Input -> Data.x[k+5*l].resampled[j] ) ;
+      }
+    }
+  }
+
+  // get alpha_s / ( 4 * M_PI )
+  const double a_4pi = run_MZ_2nf3( 0.1182 , Input -> Traj[0].Fit_Low , 5 ) / ( 4*M_PI ) ;
+
+  // convert to MS
+  const double dGGMS[5][5] = { { 1. + a_4pi * 0.2118441111462292 , 0 , 0 , 0 , 0 } ,
+			       { 0 , 1. + a_4pi *0.04318883230477005 , a_4pi * 0.25913299382862 , 0 , 0 } ,
+			       { 0 , a_4pi * 0.8068528194400547 , 1. + a_4pi * 4.495606258202168 , 0 , 0 } ,
+			       { 0 , 0 , 0 , 1. + a_4pi * 1.026125409459049 , a_4pi * 0.495776772984037 } ,
+			       { 0 , 0 , 0 , - a_4pi * 2.877724730449623 , 1. + a_4pi * 5.737215148874458 } } ;
+
+  printf( "MS-bar conversion matrix\n" ) ;
+  for( l = 0 ; l < 5 ; l++ ) {
+    for( k = 0 ; k < 5 ; k++ ) {
+      printf( "%f " , dGGMS[l][k] ) ;
+    }
+    printf( "\n" ) ;
+  }
+
+  struct resampled *Zms = malloc( 25 * sizeof( struct resampled ) ) ;
+  for( l = 0 ; l < 25 ; l++ ) {
+    Zms[l] = init_dist( NULL , Input -> Data.x[l].NSAMPLES , Input -> Data.x[l].restype ) ;
+  }
+  
+  for( l = 0 ; l < 5 ; l++ ) {
+    for( k = 0 ; k < 5 ; k++ ) {					
+      for( j = 0 ; j < 5 ; j++ ) {
+	// R[lj] * Z[jk]
+	rapby( &Zms[k+5*l] , Input -> Data.x[k+j*5] , dGGMS[l][j] ) ;
+      }
+      printf( "(%f %f) " , Zms[k+5*l].avg , Zms[k+5*l].err ) ;
+    }
+    printf( "\n" ) ;
+  }
+
+  
+  file = fopen( "ZMS_gg.flat" , "w" ) ;
+  fprintf( file , "%d\n" , Zms[0].restype ) ;
+  fprintf( file , "%d\n" , 25 ) ;
+  for( l = 0 ; l < 5 ; l++ ) {
+    for( k = 0 ; k < 5 ; k++ ) {
+      fprintf( file , "%zu\n" , Zms[k+l*5].NSAMPLES ) ;
+      for( j = 0 ; j < Zms[k+5*l].NSAMPLES ; j++ ) {
+	fprintf( file , "%1.15e %1.15e\n" , (double)k+5*l , Zms[k+5*l].resampled[j] ) ;
+      }
+    }
+  }
+
+  for( l = 0 ; l < 25 ; l++ ) {
+    free( Zms[l].resampled ) ;
+  }
+  free( Zms ) ;
+
+  fclose( file ) ;
+  
   return SUCCESS ;
 }

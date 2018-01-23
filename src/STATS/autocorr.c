@@ -26,10 +26,10 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <complex.h>
 
 #include "gens.h"
-
-#include <complex.h>
+#include "stats.h"
 
 #define HAVE_FFTW3_H
 
@@ -38,7 +38,7 @@
 #include <fftw3.h>
 
 // some defines
-#define message(a)( printf( "--> %s <--\n\n" , a ) )
+#define message(a)( fprintf( stdout , "--> %s <--\n\n" , a ) )
 
 // if we have these 
 #if ( defined OMP_FFTW ) && ( defined HAVE_OMP_H )
@@ -64,7 +64,7 @@ parallel_ffts( void )
     { nthreads = omp_get_num_threads( ) ; } // set nthreads
   }
   fftw_plan_with_nthreads( nthreads ) ;
-  printf("[PAR] FFTW using %d thread(s) \n" , nthreads ) ;
+  fprintf( stdout , "[PAR] FFTW using %d thread(s) \n" , nthreads ) ;
 #endif
   return SUCCESS ;
 }
@@ -79,7 +79,8 @@ autocorrelation( const struct resampled RAW ,
   parallel_ffts( ) ;
 
   if( RAW.restype != Raw ) {
-    printf( "Resampled data is not RAW ... Cannot compute autocorrelation\n" ) ;
+    fprintf( stderr , "Resampled data is not RAW ..."
+	     " Cannot compute autocorrelation\n" ) ;
     return FAILURE ;
   }
 
@@ -87,9 +88,9 @@ autocorrelation( const struct resampled RAW ,
   const size_t N = RAW.NSAMPLES ;
   const size_t N2 = 2 * N ;
 
-  printf( "RAWDATA has %d samples\n" , N ) ;
+  fprintf( stdout , "RAWDATA has %zu samples\n" , N ) ;
 
-  printf( "Measurement separation %d\n\n" , NSEP ) ;
+  fprintf( stdout , "Measurement separation %zu\n\n" , NSEP ) ;
 
   // allocate memory
   double complex *in  = calloc( N2 , sizeof( double complex ) ) ;
@@ -102,6 +103,10 @@ autocorrelation( const struct resampled RAW ,
     in[ i ] = ( RAW.resampled[ i ] - RAW.avg ) ;
   }
 
+  for( i = 0 ; i < N ; i++ ) {
+    printf( "This %zu %f \n" , i , RAW.resampled[ i ] ) ;
+  }
+  
   message( "FFT planning" ) ;
 
   // are we doing this using openmp ffts?
@@ -145,14 +150,14 @@ autocorrelation( const struct resampled RAW ,
   printf( "Writing tau(n) to file %s \n" , output ) ;
 
   size_t n , j ;
-  for( n = 0 ; n < N/10 ; n++ ) {
+  for( n = 0 ; n < N ; n++ ) {
     register double sum = 0.5 ;
     for( j = 0 ; j < n ; j++ ) {
       sum += NSEP * in[j] ;
     }
     // simple error estimate
     const double err = n * sqrt( ( sum ) / N ) ;
-    fprintf( output_file , "%zu %e %e \n" , n * NSEP , sum , err ) ;
+    fprintf( output_file , "TAU_%zu %e %e \n" , n * NSEP , sum , err ) ;
   }
 
   fclose( output_file ) ;
@@ -187,7 +192,7 @@ autocorrelation( const struct resampled RAW ,
 int
 ACmeasure( const struct input_params Input )
 {
-  size_t i , j , k , shift = 0 ;
+  size_t i , j , shift = 0 ;
   for( i = 0 ; i < Input.Data.Nsim ; i++ ) {
     for( j = shift ; j < shift + Input.Data.Ndata[i] ; j++ ) {
       char str[ 256 ] = {} ;

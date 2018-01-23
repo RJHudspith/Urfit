@@ -30,12 +30,13 @@ typedef enum {
 
 // effective mass types
 typedef enum {
-  LOG_EFFMASS , LOG2_EFFMASS , ACOSH_EFFMASS , 
-  ASINH_EFFMASS , ATANH_EFFMASS , EVALUE_EFFMASS } effmass_type ;
+  LOG_EFFMASS , LOGFWD_EFFMASS , LOGBWD_EFFMASS , LOG2_EFFMASS ,
+  ACOSH_EFFMASS , ASINH_EFFMASS , ATANH_EFFMASS ,
+  EVALUE_EFFMASS } effmass_type ;
 
 // fit types
 typedef enum {
-  ALPHA_D0 , ALPHA_D0_MULTI , EXP , COSH , EXP_PLUSC , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , PPAA , QCORR_BESSEL , SINH , POLES , QSLAB
+  ALPHA_D0 , ALPHA_D0_MULTI , EXP , COSH , EXP_PLUSC , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , PP_AA_WW_R2 , PP_AA_EXP , PPAA , QCORR_BESSEL , QSUSC_SU2 , SINH , POLES , QSLAB , CORNELL
 } fittype ;
 
 // time folding types
@@ -50,9 +51,9 @@ enum { Vi = 123 , Ai = 678 , Tij = 10203 , Tit = 31323 } ;
 typedef enum { Raw , JackKnife , BootStrap } resample_type ;
 
 // file type we expect to read
-typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File } file_type ;
+typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File , GLU_Qmoment_File } file_type ;
 
-typedef enum { Alphas , Beta_crit , Correlator , Exceptional , Fit , HVP , Qcorr , Qsusc , Qslab , Wflow } analysis_type ;
+typedef enum { Adler , Alphas , Beta_crit , Correlator , Exceptional , Fit , General , HVP , KKops , KK_BK , Qcorr , Qsusc , Qslab , Ren_Rats , StaticPotential , TetraGEVP , Wflow } analysis_type ;
 
 // x-data descriptor
 struct x_desc {
@@ -132,6 +133,8 @@ struct data_info {
 struct fit_info {
   corrtype Corrfit ;
   fittype Fitdef ;
+  double *Guess ;
+  bool Guesses_Initialised ;
   size_t M ;
   struct pmap *map ;
   int (*Minimize) ( void *fdesc ,

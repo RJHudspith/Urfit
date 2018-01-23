@@ -204,6 +204,7 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
   size_t i ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
 
+    /*
     struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
 			DATA -> N , DATA -> M } ;
 
@@ -213,8 +214,9 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
 					   DATA -> map[i].bnd ,
 					   fparams , j , DATA -> Npars ) ;
     }
+    */
     
-#if 0
+    //#if 0
     // this is the data index
     const size_t mref = DATA -> map[i].bnd ;
 
@@ -278,7 +280,7 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
     #ifdef FIT_D5
     df[ DATA -> map[i].p[4] ][i] = pow( a_pi , 5 ) ;
     #endif
-#endif
+    //#endif
   }
   
   return ;

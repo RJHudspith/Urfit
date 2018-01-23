@@ -1,6 +1,8 @@
 /**
    @file jacknife.c
    @brief jacknife resampling
+
+   Is actually a Bias-corrected double super jacknife or something
  */
 #include "gens.h"
 
@@ -34,11 +36,15 @@ void
 jackknife_full( struct input_params *Input )
 {
   size_t i , j = 0 , k , shift = 0 ;
-  
+
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
 
+      const size_t Ntot = Input -> Data.x[j].NSAMPLES <= Input -> Data.Nboots ?
+	Input -> Data.Nboots : Input -> Data.x[j].NSAMPLES ;
+      const size_t Nspill = Input -> Data.x[j].NSAMPLES ;
+      
       const size_t N = Input -> Data.x[j].NSAMPLES ;
       const double NORM = 1.0 / ( N - 1.0 ) ;
 
@@ -85,6 +91,25 @@ jackknife_full( struct input_params *Input )
       jackknife_error( &(Input -> Data.x[j]) ) ;
       jackknife_error( &(Input -> Data.y[j]) ) ;
 
+      #ifdef VERBOSE
+      printf( "JACKNIFE %f %f || %f %f \n" ,
+	      Input -> Data.x[j].avg , Input -> Data.x[j].err ,
+	      Input -> Data.y[j].avg , Input -> Data.y[j].err ) ;
+      #endif
+
+      // reallocate to a bigger value and put the average at the end
+      Input -> Data.x[j].NSAMPLES = Input -> Data.y[j].NSAMPLES = Ntot ;
+      Input -> Data.x[j].resampled =		\
+	realloc( Input -> Data.x[j].resampled , Ntot * sizeof( double ) ) ;
+      Input -> Data.y[j].resampled = \
+	realloc( Input -> Data.y[j].resampled , Ntot * sizeof( double ) ) ;
+      for( k = N ; k < Ntot ; k++ ) {
+	Input -> Data.x[j].resampled[k] = Input -> Data.x[j].avg ;
+	Input -> Data.y[j].resampled[k] = Input -> Data.y[j].avg ;
+      }
+      jackknife_error( &(Input -> Data.x[j]) ) ;
+      jackknife_error( &(Input -> Data.y[j]) ) ;
+      
       #ifdef VERBOSE
       printf( "JACKNIFE %f %f || %f %f \n" ,
 	      Input -> Data.x[j].avg , Input -> Data.x[j].err ,

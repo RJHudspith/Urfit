@@ -127,6 +127,7 @@ read_inputs( struct input_params *Input ,
   Input -> Fit.Sims = NULL ;
   Input -> Fit.Prior = NULL ;
   Input -> Fit.map = NULL ;
+  Input -> Fit.Guess = NULL ;
 
   Input -> Graph.Name = NULL ;
   Input -> Graph.Xaxis = NULL ;
@@ -161,6 +162,8 @@ read_inputs( struct input_params *Input ,
       Input -> FileType = Flat_File ;
     } else if( are_equal( Flat[ io_tag ].Value , "GLU_Tcorr_File" ) ) {
       Input -> FileType = GLU_Tcorr_File ;
+    } else if( are_equal( Flat[ io_tag ].Value , "GLU_Qmoment_File" ) ) {
+      Input -> FileType = GLU_Qmoment_File ;
     } else if( are_equal( Flat[ io_tag ].Value , "GLU_File" ) ) {
       Input -> FileType = GLU_File ;
     } else {
@@ -177,6 +180,8 @@ read_inputs( struct input_params *Input ,
   } else {
     if( are_equal( Flat[ an_tag ].Value , "Alphas" ) ) {
       Input -> Analysis = Alphas ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Adler" ) ) {
+      Input -> Analysis = Adler ;
     } else if( are_equal( Flat[ an_tag ].Value , "Beta_crit" ) ) {
       Input -> Analysis = Beta_crit ;
     } else if( are_equal( Flat[ an_tag ].Value , "Correlator" ) ) {
@@ -195,6 +200,18 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = Qsusc ;
     } else if( are_equal( Flat[ an_tag ].Value , "Qslab" ) ) {
       Input -> Analysis = Qslab ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Ren_Rats" ) ) {
+      Input -> Analysis = Ren_Rats ;
+    } else if( are_equal( Flat[ an_tag ].Value , "KKops" ) ) {
+      Input -> Analysis = KKops ;
+    } else if( are_equal( Flat[ an_tag ].Value , "KK_BK" ) ) {
+      Input -> Analysis = KK_BK ;
+    } else if( are_equal( Flat[ an_tag ].Value , "General" ) ) {
+      Input -> Analysis = General ;
+    } else if( are_equal( Flat[ an_tag ].Value , "TetraGEVP" ) ) {
+      Input -> Analysis = TetraGEVP ;
+    } else if( are_equal( Flat[ an_tag ].Value , "StaticPotential" ) ) {
+      Input -> Analysis = StaticPotential ;
     } else {
       fprintf( stderr , "[INPUT] Analysis %s not recognised\n" ,
 	       Flat[ an_tag ].Value ) ;

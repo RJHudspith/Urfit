@@ -67,7 +67,9 @@ read_GLU_tcorr( struct input_params *Input )
       // print in the trajectory index
       sprintf( str , Input -> Traj[i].FileY , j ) ;
 
+      #ifdef verbose
       printf( "%s \n" , str ) ;
+      #endif
 
       // open the file
       FILE *Infile = fopen( str , "rb" ) ;
@@ -117,22 +119,29 @@ read_GLU_tcorr( struct input_params *Input )
       #ifndef WORDS_BIGENDIAN
       bswap_64( Lt[0] , Ct ) ;
       #endif
+
+      #ifdef verbose
       for( k = 0 ; k < Lt[0] ; k++ ) {
 	printf( "Corr %e \n" , creal( Ct[k] ) ) ;
       }
+      #endif
 
       // set x and y data
       for( k = 0 ; k < Lt[0] ; k++ ) {
 	Input -> Data.x[ shift + k ].resampled[idx] = k ;
 	Input -> Data.y[ shift + k ].resampled[idx] = Ct[k] ;
+	#ifdef verbose
 	printf( "Check :: %f %f \n" ,
 		Input -> Data.x[ shift + k ].resampled[idx] ,
 		Input -> Data.y[ shift + k ].resampled[idx] ) ;
+	#endif
       }
 
       idx++ ;
 
+      #ifdef verbose
       printf( "Closing file \n" ) ;
+      #endif
       
       fclose( Infile ) ;
     }

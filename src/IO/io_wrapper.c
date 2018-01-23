@@ -11,6 +11,7 @@
 #include "read_flat.h"
 #include "read_GLU.h"
 #include "read_GLU_tcorr.h"
+#include "read_GLU_Qmoment.h"
 
 // wrapper function for the IO
 int
@@ -59,6 +60,15 @@ io_wrap( struct input_params *Input )
     return SUCCESS ;
   case GLU_Tcorr_File :
     if( read_GLU_tcorr( Input ) == FAILURE ) {
+      return FAILURE ;
+    }
+    // set Lt
+    if( init_LT( &Input -> Data , Input -> Traj ) == FAILURE ) {
+      return FAILURE ;
+    }
+    return SUCCESS ;
+  case GLU_Qmoment_File :
+    if( read_GLU_Qmoment( Input ) == FAILURE ) {
       return FAILURE ;
     }
     // set Lt

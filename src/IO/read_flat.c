@@ -6,6 +6,10 @@
    Sample Type - size_t
    Ndata - size_t
    Nsamples - size_t
+
+   .. data
+
+   AVG %lf %lf
  */
 #include "gens.h"
 
@@ -77,6 +81,13 @@ read_flat_double( struct input_params *Input ,
 	      Input -> Data.y[ shift + i ].resampled[j] ) ;
       #endif
     }
+    // do the average
+    fscanf( file , "AVG %lf %lf\n" ,
+	    &Input -> Data.x[ shift + i ].avg ,
+	    &Input -> Data.y[ shift + i ].avg ) ;
+    
+    compute_err( &Input -> Data.x[ shift + i ] ) ;
+    compute_err( &Input -> Data.y[ shift + i ] ) ;
   }
 
   fclose(file) ;
@@ -108,6 +119,7 @@ init_data( struct input_params *Input )
 
     // read the sample type
     if( read_initial( file , &Restype[i] , &Ndata[i] ) == FAILURE ) {
+      fprintf( stderr , "[IO] failed to read initial sample type \n" ) ;
       return FAILURE ;
     }
 
@@ -163,10 +175,10 @@ int
 read_flat( struct input_params *Input )
 {
   if( init_data( Input ) == FAILURE ) {
+    fprintf( stderr , "[IO] data initialisation failure \n" ) ;
     return FAILURE ;
   }
 
-  
   size_t i , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     // x and y data in different files
@@ -185,7 +197,7 @@ read_flat( struct input_params *Input )
   }
   Input -> Data.Ntot = shift ;
 
-#ifdef VERBOSE
+  #ifdef VERBOSE
   printf( "WHAT :: %zu %zu %zu \n" , Input -> Data.Nsim , Input -> Data.Ndata[0] , Input -> Data.Ntot ) ;
 
   // test
@@ -201,7 +213,7 @@ read_flat( struct input_params *Input )
     }
     shift += Input -> Data.Ndata[i] ;
   }
-#endif
+  #endif
   
   return SUCCESS ;  
 }

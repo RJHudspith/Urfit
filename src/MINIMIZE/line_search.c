@@ -31,6 +31,81 @@ test_step( struct ffunction *f2 ,
   return compute_chisq( *f2 , W , f2 -> CORRFIT ) ;
 }
 
+// armijo condition
+int
+armijo( struct ffunction *f2 ,
+	const struct ffunction f1 ,
+	const double *grad ,
+	const double *descent , 
+	const struct fit_descriptor fdesc ,
+	const void *data ,
+	const double **W ,
+	const size_t jidx ,
+	const double abest )
+{
+  double *y = NULL , *t = NULL ;
+  size_t Nsum = f1.N ;
+  switch( f1.CORRFIT ) {
+  case UNWEIGHTED : case UNCORRELATED : break ;
+  case CORRELATED : Nsum = f1.N * f1.N ; break ;
+  }
+  y = malloc( Nsum * sizeof( double ) ) ;
+  
+  // add the armijo condition
+  // == alpha * beta * g * p , where p is the descent direction and g is 
+  // gradient is g
+  double armijo = 0.0 , curve1 = 0.0 , curve2 = 1.0 ;
+
+  const double c1 = 1.0E-4 , c2 = 0.1 ;
+  armijo = c1 * abest * grad[jidx] * descent[jidx] ;
+
+  size_t i , k ;
+  t = y ;
+  switch( f1.CORRFIT ) {
+  case UNWEIGHTED :
+    for( i = 0 ; i < f1.N ; i++ ) {
+      *t = -f2 -> df[jidx][i] * f2 -> f[i] ; t++ ;
+    }
+    break ;
+  case UNCORRELATED :
+    for( i = 0 ; i < f1.N ; i++ ) {
+      *t = -f2 -> df[jidx][i] * W[0][i] * f2 -> f[i] ; t++ ;
+    }
+    break ;
+  case CORRELATED :
+    for( i = 0 ; i < f1.N ; i++ ) {
+      for( k = 0 ; k < f1.N ; k++ ) {
+	*t = -f2 -> df[jidx][i] * W[i][k] * f2 -> f[k] ; t++ ;
+      }
+    }
+    break ;
+  }
+  register double newgrad = kahan_summation( y , Nsum ) ;
+  // add any prior stuff
+  if( f1.Prior[ jidx ].Initialised == true ) {
+    newgrad -= ( f2 -> fparams[ jidx ] - f2 -> Prior[ jidx ].Val ) /
+      ( f2 -> Prior[ jidx ].Err * f2 -> Prior[ jidx ].Err) ;
+  }
+  curve1 = descent[jidx] * newgrad ;
+  curve2 = c2 * descent[ jidx ] * grad[ jidx ] ;
+
+  const double chib = test_step( f2 , descent[jidx] , f1 , fdesc , 
+				 data , W , jidx , abest ) ;
+#ifdef VERBOSE
+  printf( "[LINE SEARCH] LS diff :: %e %e \n" ,
+	  chib , ( f1.chisq + armijo ) ) ;
+  printf( "[LINE SEARCH] curves  %e %e \n" ,
+	  curve1 , curve2 ) ;
+#endif
+  
+  // free the temporary storage
+  if( y != NULL ) {
+    free( y ) ;
+  }
+
+  return ( chib <= ( f1.chisq + armijo ) ) && ( curve1 >= curve2 ) ;
+}
+
 // backtracking line search with Wolfe conditions
 double
 line_search( struct ffunction *f2 ,
@@ -44,132 +119,55 @@ line_search( struct ffunction *f2 ,
 	     const double alpha )
 {
   // perform a "backtracking line search" should use brent's method
-  // really and probably will do at some point
-  double fac = 0.1 ;
+  // really and probably will do at some point, uses a golden ratio
+  // search to find approximately the minimum as long as this minimum
+  // satisfies the wolfe conditions
+  const double fac = 0.1 ;
 
   // do a rough search 1^12 -> 1E-12 for abest step 100
-  double min = 123456789 ;
-  double atrial = 1E22 , abest = 1 ;
-  while( atrial > 1E-15 ) {
-    atrial *= 0.01 ;
+  double min = 1234567891000 ;
+  double atrial = 1E8*alpha , abest = 1 ;
+  size_t iters = 0 ;
+  while( atrial > (1E-8)*alpha ) {
+    atrial *= fac ;
     double trial = test_step( f2 , descent[jidx] , f1 , fdesc , 
 			      data , W , jidx , atrial ) ;
-    //printf( "%e trial %e min %e \n" , atrial , trial , min ) ;
+    iters++ ;
+    if( isnan( trial ) ) continue ;
+    if( isinf( trial ) ) continue ;
     if( trial < min ) {
       abest = atrial ;
       min = trial ;
     }
   }
 
-  size_t iters = 0 , ITERMAX = 25 ;
-
-  double *y = NULL , *t = NULL ;
-  size_t Nsum = f1.N ;
-  switch( f1.CORRFIT ) {
-  case UNWEIGHTED : case UNCORRELATED : break ;
-  case CORRELATED : Nsum = f1.N * f1.N ; break ;
-  }
-  y = malloc( Nsum * sizeof( double ) ) ;
-
-  double chia , chib , chic ;
-  
   double amid = abest ;
   double aup = amid / fac , adn = amid * fac ;
+
+  const double gr = ( sqrt( 5. ) + 1. ) / 2. ;
   
-  while( iters < ITERMAX ) {
-
-    // bracket a minimum
-    chia = test_step( f2 , descent[jidx] , f1 , fdesc , 
-		      data , W , jidx , aup ) ;
-
-    chib = test_step( f2 , descent[jidx] , f1 , fdesc , 
-		      data , W , jidx , amid ) ;
-
-    chic = test_step( f2 , descent[jidx] , f1 , fdesc , 
-		      data , W , jidx , adn ) ;
-
-    if( isnan( chia ) || isnan( chib ) || isnan( chic ) ) {
-      aup *= fac ; amid *= fac ; adn *= fac ; continue ;
-    } else if( isinf( chia ) || isinf( chib ) || isinf( chic ) ) {
-      aup *= fac ; amid *= fac ; adn *= fac ; continue ;
-    }
-
-    if( chia < chib && chib < chic ) {
-      adn = amid ; amid = aup ; aup = aup / ( fac ) ; 
-    } else if( chic < chib && chib < chia ) {
-      aup = amid ; amid = adn ; adn = adn * fac ;
+  // perform golden ratio line search
+  double c = aup - ( aup - adn ) / gr ;
+  double d = adn + ( aup - adn ) / gr ;
+  
+  while( fabs( (c - d) ) > 1E-4 ) {
+    const double fc = test_step( f2 , descent[jidx] , f1 , fdesc , 
+				 data , W , jidx , c ) ;
+    const double fd = test_step( f2 , descent[jidx] , f1 , fdesc , 
+				 data , W , jidx , d ) ;
+    if( fc < fd ) {
+      aup = d ;
     } else {
-      fac = sqrt( fac ) ;
-      aup = amid/fac ; adn = amid*fac ;
+      adn = c ;
     }
-
-    abest = amid ;
-
-    // add the armijo condition
-    // == alpha * beta * g * p , where p is the descent direction and g is 
-    // gradient is g
-    double armijo = 0.0 , curve1 = 0.0 , curve2 = 1.0 ;
-
-    const double c1 = 1.0E-4 , c2 = 0.1 ;
-    armijo = c1 * abest * grad[jidx] * descent[jidx] ;
-    #ifdef VERBOSE
-    printf( "[LINE SEARCH] %e %e %e\n" , chib , f1.chisq , armijo ) ;
-    #endif
-
-    size_t i , k ;
-    t = y ;
-    switch( f1.CORRFIT ) {
-    case UNWEIGHTED :
-      for( i = 0 ; i < f1.N ; i++ ) {
-        *t = -f2 -> df[jidx][i] * f2 -> f[i] ; t++ ;
-      }
-      break ;
-    case UNCORRELATED :
-      for( i = 0 ; i < f1.N ; i++ ) {
-	*t = -f2 -> df[jidx][i] * W[0][i] * f2 -> f[i] ; t++ ;
-      }
-      break ;
-    case CORRELATED :
-      for( i = 0 ; i < f1.N ; i++ ) {
-	for( k = 0 ; k < f1.N ; k++ ) {
-	  *t = -f2 -> df[jidx][i] * W[i][k] * f2 -> f[k] ; t++ ;
-	}
-      }
-      break ;
-    }
-    register double newgrad = kahan_summation( y , Nsum ) ;
-    // add any prior stuff
-    if( f1.Prior[ jidx ].Initialised == true ) {
-      newgrad -= ( f2 -> fparams[ jidx ] - f2 -> Prior[ jidx ].Val ) /
-	( f2 -> Prior[ jidx ].Err * f2 -> Prior[ jidx ].Err) ;
-    }
-    curve1 = descent[jidx] * newgrad ;
-    curve2 = c2 * descent[ jidx ] * grad[ jidx ] ;
-
-    #ifdef VERBOSE
-    printf( "[LINE SEARCH] LS diff %zu :: %e %e \n" ,
-	    iters , chib , ( f1.chisq + armijo ) ) ;
-    printf( "[LINE SEARCH] curves  %e %e \n" ,
-	    curve1 , curve2 ) ;
-    #endif
-
-    // compute test chi  
-    if( ( chib <= ( f1.chisq + armijo ) )
-	//&& ( curve1 >= curve2 ) curve condition is tricky to get to work
-	) {
-      break ;
-    }
-
     
-    // some little checks to avoid wasting time
-    if( abest < 1E-15 ) iters = ITERMAX ;
+    c = aup - ( aup - adn ) / gr ;
+    d = adn + ( aup - adn ) / gr ;
 
-    iters++ ;
-  }
-
-  // free the temporary storage
-  if( y != NULL ) {
-    free( y ) ;
+    if( armijo( f2 , f1 , grad , descent , fdesc , data , W ,
+		jidx , ( aup + adn )/2 ) ) {
+      abest = ( aup + adn ) / 2. ;
+    }
   }
   
   #ifdef VERBOSE

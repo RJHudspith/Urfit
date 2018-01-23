@@ -4,6 +4,8 @@
  */
 #include "gens.h"
 
+#include <stdint.h>
+
 #include "GLU_bswap.h"
 #include "resampled_ops.h"
 #include "tfold.h"
@@ -53,7 +55,7 @@ read_magic_gammas( FILE *file ,
   if( magic[0] != 67798233 ) {
     bswap_32( 1 , magic ) ;
     if( magic[0] != 67798233 ) {
-      fprintf( stderr , "Magic number read failure %u \n" , magic[0] ) ;
+      fprintf( stderr , "[IO] Magic number read failure %u \n" , magic[0] ) ;
       return FAILURE ;
     }
     must_swap = true ;
@@ -74,12 +76,19 @@ read_magic_gammas( FILE *file ,
       if( n[mu] == mompoint[mu-1] ) matches++ ;
       if( matches == 3 ) *mommatch = (uint32_t)p ;
     }
+    #ifdef VERBOSE
+    fprintf( stdout , "%u %u %u %u\n" , n[0] , n[1] , n[2] , n[3] ) ;
+    #endif
   }
 
   FREAD32( NMOM , sizeof( uint32_t ) , 1 , file ) ;
   FREAD32( NGSRC , sizeof( uint32_t ) , 1 , file ) ;
   FREAD32( NGSNK , sizeof( uint32_t ) , 1 , file ) ;
   FREAD32( LT , sizeof( uint32_t ) , 1 , file ) ;
+
+  #ifdef VERBOSE
+  printf( "%u %u %u %u\n" , *NMOM , *NGSRC , *NGSNK , *LT ) ;
+  #endif
 
   return SUCCESS ;
 }
@@ -105,7 +114,7 @@ pre_allocate( struct input_params *Input ,
       fprintf( stderr , "[IO] cannot open %s \n" , str ) ;
       return FAILURE ;
     }
-    printf( "file :: %s \n" , str ) ;
+    //printf( "file :: %s \n" , str ) ;
 
     // read a file to figure out how long it is
     uint32_t Ngsrc , Ngsnk , LT ;
@@ -115,8 +124,12 @@ pre_allocate( struct input_params *Input ,
       return FAILURE ;
     }
 
+    //printf( "WHAT? %zu %zu %zu \n" , Ngsrc , Ngsnk , LT ) ;
+
     // sanity check LT
-    if( (size_t)LT != Input -> Traj[i].Dimensions[ Input -> Traj[i].Nd - 1 ] ) {
+    if( (size_t)(2*LT) == Input -> Traj[i].Dimensions[ Input -> Traj[i].Nd - 1 ] ) {
+      fprintf( stdout , "[IO] File LT is twice input time length\n" ) ;
+    } else if( (size_t)LT != Input -> Traj[i].Dimensions[ Input -> Traj[i].Nd - 1 ] ) {
       fprintf( stderr , "[IO] File LT and input file LT do not match!\n" ) ;
       return FAILURE ;
     }
@@ -181,6 +194,7 @@ get_correlator( double complex *C ,
     fprintf( stderr , "[IO] cannot open %s \n" , str ) ;
     return FAILURE ;
   }
+  
   // read in the correlator data and poke into "y"
   uint32_t NGSRC , NGSNK, LT ;
   if( read_magic_gammas( file , &NGSRC , &NGSNK , &LT ,
@@ -193,38 +207,46 @@ get_correlator( double complex *C ,
 	     src , snk , NGSRC , NGSNK ) ;
     return FAILURE ;
   }
-  // mommatch is at the zero point for the moment
-  const size_t Gseek = (size_t)( snk + NGSRC * src ) * ( mommatch + 1 ) ;
-  // skip all of the correlators that are in the file
-  const size_t Cseek = Gseek * (size_t)( LT * sizeof( double complex ) ) ;
-  // skip all of the LT's that are in the file up to the one we want to check
-  const size_t Lseek = (Gseek-1) * (size_t)( sizeof( uint32_t ) ) ;
-  // skip the file to the correlator we need
-  fseek( file , Lseek + Cseek , SEEK_CUR ) ;
 
-  // read the initial LT and make sure that it is the same as Ndata
-  if( FREAD32( &LT , sizeof( uint32_t ) , 1 , file ) == FAILURE ) {
-    fprintf( stderr , "[IO] Fread failure (LT)\n" ) ;
-    return FAILURE ;
-  }
-  if( LT != Nlt ) {
-    fprintf( stderr , "[IO] LT mismatch (read %d) (Ndata %zu)\n" ,
-	     LT , Nlt ) ;
-    return FAILURE ;
+  double complex *Ctmp = calloc( LT , sizeof( double complex ) ) ;
+  size_t i ;
+
+  // seeking code
+  const size_t goffset = snk + src * (size_t)NGSNK ;
+  const size_t OFFSET = goffset * ( Nlt * sizeof( double complex ) + sizeof( uint32_t ) ) ;
+  
+  if( fseek( file , OFFSET , SEEK_CUR ) != 0 ) {
+    fprintf( stderr , "[IO] Fseek failed\n" ) ;
   }
 
-  double complex Ctmp[ LT ] ;
   if( FREAD64( Ctmp , sizeof( double complex ) , LT , file ) == FAILURE ) {
     fprintf( stderr , "[IO] Fread failure C(t) \n" ) ;
     return FAILURE ;
   }
+  
+  // read the final LT and make sure that it is the same as Ndata
+  if( src != (NGSRC-1) && snk != (NGSNK-1) ) {
+    if( FREAD32( &LT , sizeof( uint32_t ) , 1 , file ) == FAILURE ) {
+      fprintf( stderr , "[IO] Fread failure (LT) %u \n" , LT ) ;
+      return FAILURE ;
+    }
+  }
+  if( LT != Nlt ) {
+    fprintf( stderr , "[IO] LT mismatch (read %u) (Ndata %zu)\n" ,
+	     LT , Nlt ) ;
+    return FAILURE ;
+  }
+
+  
+ corr :
 
   // sum into C
-  size_t i ;
   for( i = 0 ; i < LT ; i++ ) {
     C[ i ] += Ctmp[ i ] ;
   }
   fclose( file ) ;
+
+  free( Ctmp ) ;
   
   return SUCCESS ;
 }
@@ -257,8 +279,7 @@ read_corr( struct input_params *Input ,
     free( mompoint ) ;
     return FAILURE ;
   }
-  printf( "In here \n" ) ;
-  
+
   // reread files and poke in the data
   int Flag = SUCCESS ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
@@ -297,6 +318,8 @@ read_corr( struct input_params *Input ,
 	Flag = FAILURE ;
 	break ;
       }
+
+      fprintf( stdout , "[IO] measurement %zu done\n" , meas ) ;
 
       free( C ) ;
       meas ++ ;

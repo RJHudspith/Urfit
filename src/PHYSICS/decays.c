@@ -23,6 +23,7 @@ decay( const struct resampled *fitparams ,
   // f = 
   equate( &result , fitparams[ AL ] ) ;
   mult( &result , fitparams[ AL ] ) ;
+  // AL^2
   mult_constant( &result , vol_fac ) ;
   divide( &result , fitparams[ MASS ] ) ;
   root( &result ) ;

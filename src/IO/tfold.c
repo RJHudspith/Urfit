@@ -7,6 +7,18 @@
 #include "gens.h"
 #include "read_corr.h"
 
+#define REAL
+
+#ifdef REAL
+static double part( const double complex C ) { return creal( C ) ; }
+#elif (defined IMAG)
+static double part( const double complex C ) { return cimag( C ) ; }
+#elif (defined ABS)
+static double part( const double complex C ) { return cabs( C ) ; }
+#else
+static double part( const double complex C ) { return creal( C ) ; }
+#endif
+
 // map the input file selections to correlators in the file
 double complex*
 map_correlator( const struct traj Traj ,
@@ -81,7 +93,7 @@ map_correlator( const struct traj Traj ,
   return C ;
 }
 
-
+// fold the correlator symmetrically
 int
 time_fold( struct resampled *sample ,
 	   const double complex *C ,
@@ -93,37 +105,37 @@ time_fold( struct resampled *sample ,
   size_t t ;
   switch( fold ) {
   case PLUS_PLUS :
-    sample[0].resampled[meas] = creal( C[0] ) ;
+    sample[0].resampled[meas] = part( C[0] ) ;
     for( t = 1 ; t < L2 ; t++ ) {
-      sample[t].resampled[meas] = 0.5 * creal( C[t] + C[LT-t] ) ;
+      sample[t].resampled[meas] = 0.5 * part( C[t] + C[LT-t] ) ;
     }
     break ;
   case PLUS_MINUS :
     sample[0].resampled[meas] = creal( C[0] ) ;
     for( t = 1 ; t < L2 ; t++ ) {
-      sample[t].resampled[meas] = 0.5 * creal( C[t] - C[LT-t] ) ;
+      sample[t].resampled[meas] = 0.5 * part( C[t] - C[LT-t] ) ;
     }
     break ;
   case MINUS_PLUS :
     sample[0].resampled[meas] = -creal( C[0] ) ;
     for( t = 1 ; t < L2 ; t++ ) {
-      sample[t].resampled[meas] = 0.5 * creal( -C[t] + C[LT-t] ) ;
+      sample[t].resampled[meas] = -0.5 * part( C[t] - C[LT-t] ) ;
     }
     break ;
   case MINUS_MINUS :
     sample[0].resampled[meas] = -creal( C[0] ) ;
     for( t = 1 ; t < L2 ; t++ ) {
-      sample[t].resampled[meas] = -0.5 * creal( C[t] + C[LT-t] ) ;
+      sample[t].resampled[meas] = -0.5 * part( C[t] + C[LT-t] ) ;
     }
     break ;
   case NOFOLD :
     for( t = 0 ; t < LT ; t++ ) {
-      sample[t].resampled[meas] = creal( C[t] ) ;
+      sample[t].resampled[meas] = part( C[t] ) ;
     }
     break ;
   case NOFOLD_MINUS :
     for( t = 0 ; t < LT ; t++ ) {
-      sample[t].resampled[meas] = -creal( C[t] ) ;
+      sample[t].resampled[meas] = -part( C[t] ) ;
     }
     break ;
   }

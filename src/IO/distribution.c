@@ -133,7 +133,9 @@ init_dists( struct input_params *Input )
 	q[mu] = 2 * M_PI * mom[mu] / Input -> Traj[i].Dimensions[mu] ;
       }
 
-      if( cylinder_DF( size[0] , q , size[0] , 0.24 ) == ADD_TO_LIST ) {
+      // 0.24
+      const double W[ 3 ] = { 0.26 , 0.22 , 0.19 } ;
+      if( cylinder_DF( size[0] , q , size[0] , W[ i/12 ] ) == ADD_TO_LIST ) {
 	sum++ ;
 	inlist[i][j] = true ;
       } else {

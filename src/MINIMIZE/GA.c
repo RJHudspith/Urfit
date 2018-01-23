@@ -41,21 +41,24 @@
 
 //#define VERBOSE
 
-#define NGEN (1024) // number of generations in gene pool
+#define NGEN (2048) // number of generations in gene pool
 
 // percentage that persist from the previous generation
-#define NBREED ((int)(0.25*NGEN))  
+#define NBREED ((int)(4)) 
 
-// percentage of pop that are children
-#define NCHILD ((int)(0.65*NGEN))
+// number of parents of a child
+#define NPARENTS (int)(4)
 
-#define NMUTANTS (NGEN - NBREED - NCHILD) // number of mutants
+#define NTOURNAMENT (int)(15)
+
+// probability of mutation of the whole pop
+#define PMUTANT (0.15)
 
 // It turns out this one is very important!! WHY???
 #define NOISE (0.1) // guesses * gaussian of width NOISE to start our run
 
 // defaults to selection sort but can use insertion sort here too
-//#define INSERTION_SORT
+#define INSERTION_SORT
 
 // struct for holding our gene pool
 struct genes {
@@ -87,8 +90,6 @@ compute_chi( struct ffunction *f2 ,
   fdesc -> F( f2 -> f , data , f2 -> fparams ) ;
   return compute_chisq( *f2 , W , f2 -> CORRFIT ) ;
 }
-
-#ifdef INSERTION_SORT
 
 // simple insertion sort is enough for small population which is
 // likely to be roughly sorted already
@@ -123,41 +124,7 @@ insertion_sort_GA( struct genes *G )
   return ;
 }
 
-#else
-
-// instead of insertion we do a selection sort whereby the lowest
-// number is swapped in place, this is beneficial as we only need
-// to sort the first NBREED
-static void
-selection_sort_GA( struct genes *G )
-{
-  register double tmp ;
-  const size_t Nlogic = G -> Nlogic ;
-  size_t i , j , chimin ;
-  for( i = 0 ; i < NBREED ; i++ ) {
-    chimin = i ;
-    for( j = i+1 ; j < NGEN ; j++ ) {
-      if( G[j].chisq < G[chimin].chisq ) {
-	chimin = j ;
-      }
-    }
-    // if we found a better one then we swap it in
-    if( chimin != i ) {
-      for( j = 0 ; j < Nlogic ; j++ ) {
-	tmp            = G[i].g[j] ;
-	G[i].g[j]      = G[chimin].g[j] ;
-	G[chimin].g[j] = tmp ;
-      }
-      tmp             = G[i].chisq ;
-      G[i].chisq      = G[chimin].chisq ;
-      G[chimin].chisq = tmp ;
-    }
-  }
-}
-
-#endif
-
-#ifdef VERBOSE
+//#ifdef VERBOSE
 // print out the whole population
 static void
 print_population( struct genes *G )
@@ -171,7 +138,7 @@ print_population( struct genes *G )
   }
   return ;
 }
-#endif
+//#endif
 
 // computes the width of the distribution
 static void
@@ -182,7 +149,7 @@ compute_sigma( struct sigma *Sig ,
   size_t i , j ;
   for( i = 0 ; i < Nlogic ; i++ ) {
     double max = G[0].g[i] , min = G[0].g[i] ;
-    for( j = 1 ; j < NBREED + NCHILD ; j++ ) {
+    for( j = 1 ; j < NGEN ; j++ ) {
       if( G[j].g[i] < min ) {
 	min = G[j].g[i] ;
       }
@@ -192,6 +159,45 @@ compute_sigma( struct sigma *Sig ,
     }
     Sig -> s[i] = ( max - min ) ;
   }
+  return ;
+}
+
+// perform simple selection
+static size_t
+tournament_selection( const struct genes *G ,
+		      gsl_rng *r )
+{
+  // select a bunch of NTOURNAMENT elements at random
+  size_t i , idx_best = gsl_rng_uniform_int( r , NGEN ) ;
+  double tbest = G[ idx_best ].chisq ;
+  for( i = 0 ; i < NTOURNAMENT ; i++ ) {
+    size_t idx = gsl_rng_uniform_int( r , NGEN ) ;
+    if( G[ idx ].chisq < tbest ) {
+      tbest = G[idx].chisq ;
+      idx_best = idx ;
+    }
+  }
+  return idx_best ;
+}
+
+// perform normalisation
+static void
+normalise_pop( struct genes *G )
+{
+  size_t i ;
+  register double Nsum = 0.0 ;
+  for( i = 0 ; i < NGEN ; i++ ) {
+    //printf( "%zu %e \n" , i , G[i].chisq ) ;
+    Nsum += G[i].chisq ;
+  }
+  for( i = 0 ; i < NGEN ; i++ ) {
+    G[i].chisq /= Nsum ;
+  }
+  for( i = 1 ; i < NGEN ; i++ ) {
+    G[i].chisq += G[i-1].chisq ;
+    //printf( "%zu %e\n" , i , G[i].chisq ) ;
+  }
+  //printf( "CHECK %f \n" , G[NGEN-1].chisq ) ;
   return ;
 }
 
@@ -274,64 +280,43 @@ ga_iter( void *fdesc ,
 	  ( 1 + gsl_ran_gaussian( r , fabs( Fit -> f.fparams[j] ) * NOISE ) ) ;
       }
     }
-    G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
-			      G[i].g , data , W ) ;
+    G[i].chisq = compute_chi( &f2 , Fit -> f , Fit , G[i].g , data , W ) ;
   }
 
+  // normalise it
+  //normalise_pop( G ) ;
+
   // sort by chisq
-  #ifdef INSERTION_SORT
   insertion_sort_GA( G ) ;
-  #else
-  selection_sort_GA( G ) ;
-  #endif
   
-  #ifdef VERBOSE
-  print_population( G ) ;
-  #endif
+  //#ifdef VERBOSE
+  //print_population( G ) ;
+  //#endif
   
   // iterate the algorithm
   double chisq_diff = 10 ;
   while( chisq_diff > TOL && iters < GAMAX ) {
 
-    // keep the top NBREED breed them to create children
-    for( i = NBREED ; i < NGEN - NMUTANTS ; i++ ) {
-      const size_t father = gsl_rng_uniform_int( r , NBREED ) ;
-      const size_t mother = gsl_rng_uniform_int( r , NBREED ) ;
-      for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
-	// roll the dice to decide where the genes go!
-	G[i].g[j] = 0.5 * ( G[ father ].g[j] + G[ mother ].g[j] ) ;
-      }
-      G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
-				G[i].g , data , W ) ;
-    }
- 
-    // recompute sigma, estimating from the breeding population
-    compute_sigma( &Sig , G , Fit -> Nlogic ) ;
 
-    #ifdef VERBOSE
-    for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
-      printf( "Sigma :: %e \n" , Sig.s[j] ) ;
-    }
-    #endif
-    
-    // bottom mutants come from mutations to the breeding population
-    for( i = NGEN - NMUTANTS ; i < NGEN ; i++ ) {
-      const size_t mutate = gsl_rng_uniform_int( r , NBREED + NCHILD ) ;
+    for( i = NBREED ; i < NGEN ; i++ ) {
+      size_t parent[ NPARENTS ] , k ;
+      for( k = 0 ; k < NPARENTS ; k++ ) {
+	parent[k] = tournament_selection( G , r ) ;
+      }
+      // breed into the new population
       for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
-	// if we have prior information we use it
-	if( Fit -> Prior[j].Initialised == true ) {
-	  G[i].g[j] = G[ mutate ].g[j] * 
-	    ( 1 + gsl_ran_gaussian( r , Fit -> Prior[j].Err ) ) ;
-	} else {
-	  G[i].g[j] = G[ mutate ].g[j] * 
-	    ( 1 + gsl_ran_gaussian( r , Sig.s[j] ) ) ;
+	G[i].g[j] = 0.0 ;
+	for( k = 0 ; k < NPARENTS ; k++ ) {
+	  G[i].g[j] += G[ parent[k] ].g[j] ;
 	}
+        G[i].g[j] /= NPARENTS ;
       }
       G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
 				G[i].g , data , W ) ;
     }
 
-    // sort for the next breeding population
+
+        // sort for the next breeding population
     #ifdef INSERTION_SORT
     insertion_sort_GA( G ) ;
     #else
@@ -340,15 +325,36 @@ ga_iter( void *fdesc ,
     
     // look for the elites to be static as an 
     // opportunity to turn off the fit
-    chisq_diff = fabs( G[0].chisq - G[NBREED-1].chisq ) ;
+    //printf( "%e %e \n" , G[0].chisq , G[NGEN-1].chisq  ) ;
+    chisq_diff = fabs( G[0].chisq - G[NGEN-1].chisq ) ;
+
+    // compute the width of the distribution as-is and use
+    // that as a guide for how to add noise
+    compute_sigma( &Sig , G , Fit -> Nlogic ) ;
+
+    // perform a mutation on the entire pop with mutation
+    // chance PMUTANT
+    for( i = 0 ; i < NGEN ; i++ ) {
+      if( gsl_rng_uniform( r ) < PMUTANT ) {
+	for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
+	  // if we have prior information we use it
+	  if( Fit -> Prior[j].Initialised == true ) {
+	    G[i].g[j] = G[ i ].g[j] * 
+	      ( 1 + gsl_ran_gaussian( r , Fit -> Prior[j].Err ) ) ;
+	  } else {
+	    G[i].g[j] = G[ i ].g[j] * 
+	      ( 1 + gsl_ran_gaussian( r , Sig.s[j] ) ) ;
+	  }
+	}
+	G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
+				  G[i].g , data , W ) ;
+      }
+    }    
+
+    // sort for the next breeding population
+    insertion_sort_GA( G ) ;
     
     iters++ ;
-	
-    #ifdef VERBOSE
-    //print_population( G ) ;
-    printf( "\nCHISQ_DIFF :: %e || %e %e \n\n" , chisq_diff , 
-	    G[0].chisq , G[NBREED-1].chisq ) ;
-    #endif
   }
 
   // set the fit parameters as the best gene and set the chisq

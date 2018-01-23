@@ -12,6 +12,11 @@
    FitTol = tolerance we minimize to
    FitMin = minimizer we use {CG,GA,LM,SD}
 
+   Guess_0 = val
+   Guess_1 = val
+   ....
+   Must have NLOGIC of these, need to be in order
+
    @warning code needs to be called after the trajectories have been figured out
  */
 #include "gens.h"
@@ -50,6 +55,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = ALPHA_D0 ;
   } else if( are_equal( Flat[tag].Value , "ALPHA_D0_MULTI" ) ) {
     Input -> Fit.Fitdef = ALPHA_D0_MULTI ;
+  } else if( are_equal( Flat[tag].Value , "CORNELL" ) ) {
+    Input -> Fit.Fitdef = CORNELL ;
   } else if( are_equal( Flat[tag].Value , "COSH" ) ) {
     Input -> Fit.Fitdef = COSH ;
   } else if( are_equal( Flat[tag].Value , "EXP" ) ) {
@@ -66,8 +73,12 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = POLES ; 
   } else if( are_equal( Flat[tag].Value , "PP_AA" ) ) {
     Input -> Fit.Fitdef = PP_AA ;
+  } else if( are_equal( Flat[tag].Value , "PP_AA_EXP" ) ) {
+    Input -> Fit.Fitdef = PP_AA_EXP ;
   } else if( are_equal( Flat[tag].Value , "PP_AA_WW" ) ) {
     Input -> Fit.Fitdef = PP_AA_WW ;
+  } else if( are_equal( Flat[tag].Value , "PP_AA_WW_R2" ) ) {
+    Input -> Fit.Fitdef = PP_AA_WW_R2 ;
   } else if( are_equal( Flat[tag].Value , "PPAA" ) ) {
     Input -> Fit.Fitdef = PPAA ;
   } else if( are_equal( Flat[tag].Value , "SINH" ) ) {
@@ -76,6 +87,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = QCORR_BESSEL ;
   } else if( are_equal( Flat[tag].Value , "QSLAB" ) ) {
     Input -> Fit.Fitdef = QSLAB ;
+  } else if( are_equal( Flat[tag].Value , "QSUSC_SU2" ) ) {
+    Input -> Fit.Fitdef = QSUSC_SU2 ;
   } else {
     return FAILURE ;
   }
@@ -121,14 +134,14 @@ get_fitMin( struct input_params *Input ,
   } else if( are_equal( Flat[tag].Value , "GA" ) ) {
     Input -> Fit.Minimize = ga_iter ;
   } else if( are_equal( Flat[tag].Value , "GLS" ) ) {
-    if( Input -> Fit.Fitdef == POLY ) {
+    if( Input -> Fit.Fitdef == POLY || Input -> Fit.Fitdef == NOFIT ) {
       Input -> Fit.Minimize = gls_iter ;
     } else {
       fprintf( stderr , "[INPUTS] GLS only supports POLY type fit\n" ) ;
       return FAILURE ;
     }
   } else if( are_equal( Flat[tag].Value , "GLS_pade" ) ) {
-    if( Input -> Fit.Fitdef == PADE ) {
+    if( Input -> Fit.Fitdef == PADE || Input -> Fit.Fitdef == NOFIT ) {
       Input -> Fit.Minimize = gls_pade_iter ;
     } else {
       fprintf( stderr , "[INPUTS] GLS only supports PADE type fit\n" ) ;
@@ -179,7 +192,7 @@ get_Priors( struct input_params *Input ,
       Ncommon++ ;
     }
   }
-  Input-> Fit.Nlogic = Input -> Data.Nsim * ( Input -> Fit.Nparam - Ncommon )
+  Input -> Fit.Nlogic = Input -> Data.Nsim * ( Input -> Fit.Nparam - Ncommon )
     + Ncommon ;
   
   // allocate and initialise to no priors
@@ -224,6 +237,43 @@ get_Priors( struct input_params *Input ,
   return SUCCESS ;
 }
 
+// get the guesses from the input file, called after get_Priors
+static int
+get_Guesses( struct input_params *Input ,
+	     const struct flat_file *Flat ,
+	     const size_t Ntags )
+{
+  // allocate and initialise to no guesses
+  Input -> Fit.Guesses_Initialised = false ;
+  Input -> Fit.Guess = malloc( Input -> Fit.Nlogic * sizeof( double ) ) ;
+
+  // as the guesses should be in order this becomes a finite-state machine
+  size_t block_idx , i ;
+  for( i = 0 ; i < Input -> Fit.Nlogic ; i++ ) {
+    Input -> Fit.Guess[i] = UNINIT_FLAG ;
+    char guess_str[ 32 ] , *endptr ;
+    sprintf( guess_str , "Guess_%zu" , i ) ;
+    
+    block_idx = tag_search( Flat , guess_str , block_idx , Ntags ) ;
+
+    // if we can't fint the specific tag we leave not initialising any
+    // of the guesses
+    if( block_idx == Ntags ) {
+      printf( "%s not found\n" , guess_str ) ;
+      goto end ;
+    }
+    
+    // set the value
+    Input -> Fit.Guess[i] = strtod( Flat[block_idx].Value , &endptr ) ;
+  }
+
+  // we have initialised all the guesses so we set this flag
+  Input -> Fit.Guesses_Initialised = true ;
+
+ end :
+  return SUCCESS ;
+}
+  
 // fill out the fit_info struct of Input
 int
 get_fit( struct input_params *Input ,
@@ -305,14 +355,26 @@ get_fit( struct input_params *Input ,
     return FAILURE ;
   }
 
+  // get the guesses
+  if( get_Guesses( Input , Flat , Ntags ) == FAILURE ) {
+    return FAILURE ;
+  }
+
   // print out a summary of the priors and simultaneous parameters
   fprintf( stdout , "\n[INPUTS] Summary for fit parameters\n" ) ;
   fprintf( stdout , "[INPUTS] Fit tolerance %e \n" , Input -> Fit.Tol ) ;
   for( i = 0 ; i < Input -> Fit.Nlogic ; i++ ) {
-    fprintf( stdout , "[INPUTS] PRIOR %zu %d %f %f \n" , i ,
-	     Input -> Fit.Prior[i].Initialised ,
-	     Input -> Fit.Prior[i].Val ,
-	     Input -> Fit.Prior[i].Err ) ;
+    if( Input -> Fit.Prior[i].Initialised == true ) {
+      fprintf( stdout , "[INPUTS] PRIOR %zu %f %f \n" , i ,
+	       Input -> Fit.Prior[i].Val ,
+	       Input -> Fit.Prior[i].Err ) ;
+    }
+  }
+  if( Input -> Fit.Guesses_Initialised == true ) {
+    for( i = 0 ; i < Input -> Fit.Nlogic ; i++ ) {
+      fprintf( stdout , "[INPUTS] Guess %zu %e \n" , i ,
+	       Input -> Fit.Guess[i] ) ;
+    }
   }
   for( i = 0 ; i < Input -> Fit.Nparam ; i++ ) {
     if( Input -> Fit.Sims[i] == true ) {

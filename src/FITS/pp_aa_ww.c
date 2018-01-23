@@ -229,4 +229,17 @@ pp_aa_ww_guesses( double *fparams ,
   fparams[2] = 3 ;
   fparams[3] = 8000 ;
   fparams[4] = 5000 ;
+
+  size_t i ;
+  // tell us about the guesses always use the prior as a guess
+  printf( "\n" ) ;
+  for( i = 0 ; i < Fit.Nlogic ; i++ ) {
+    if( Fit.Prior[i].Initialised == true ) {
+      fparams[i] = Fit.Prior[i].Val ;
+    } 
+    printf( "[GUESS] Fit param guess %zu -> %f \n" , i , fparams[i] ) ; 
+  }
+  printf( "\n" ) ;
+
+  return ;
 }

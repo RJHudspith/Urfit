@@ -45,8 +45,16 @@ single_fit( struct resampled *fitparams ,
 		    fdesc.Nparam , Fit.map , Fit.N , Fit.M } ;
 
   // set the data to the fit params average for a guess
+  // guesses are either generated in the fit function or by
+  // the user in the input file
   if( is_average == true ) {
-    fdesc.guesses( fdesc.f.fparams , Data , Fit ) ;
+    if( Fit.Guesses_Initialised == false ) {
+      fdesc.guesses( fdesc.f.fparams , Data , Fit ) ;
+    } else {
+      for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
+	fdesc.f.fparams[j] = Fit.Guess[j] ;
+      }
+    }
   } else {
     for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
       fdesc.f.fparams[j] = fitparams[j].avg ;
@@ -138,7 +146,7 @@ perform_bootfit( const struct data_info Data ,
   // divide out the number of degrees of freedom
   divide_constant( &chisq , ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ) ;
   fprintf( stdout , "[CHISQ / (d.o.f)] %e %e \n" , chisq.avg , chisq.err ) ;
-
+  
   // set the chi value
   *Chi = chisq.avg ;
   

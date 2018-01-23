@@ -93,8 +93,8 @@ svd_inverse( double **Ainv ,
   printf( "[SVD] Decomposition accuracy :: %le \n" , diff ) ;
 #endif
   diff /= (double)( NCOLS * NROWS ) ;
-  if( diff > 1E-12 ) {
-    printf( "[SVD] accuracy below tolerance %e < %e \n" , diff ,
+  if( diff > 1E-14*Diag[0] ) {
+    printf( "[SVD] accuracy below tolerance %e < %e \n" , diff*Diag[0] ,
 	    1E-12 ) ;
     FLAG = FAILURE ;
     goto FREE ;

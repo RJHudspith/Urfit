@@ -44,13 +44,14 @@ fit_alphas( struct input_params *Input )
   // compute delta == ( \Pi( q_1^2 ) - \Pi( q^2 ) ) / ( t1 - t2 )
   
   // highest
-  const double q1ref[3] = { 2.0*2.0 , 2.1*2.1 , 2.2*2.2 } ;
+  //const double q1ref[3] = { 2.0*2.0 , 2.1*2.1 , 2.2*2.2 } ;
   
   // hi
   //const double q1ref[3] = { 1.9*1.9 , 2.0*2.0 , 2.1*2.1 } ;
+  //const double q1ref[3] = { 1.8*1.8 , 1.95*1.95 , 2.1*2.1 } ;
 
   // mid
-  //const double q1ref[3] = { 1.8*1.8 , 1.9*1.9 , 2.0*2.0 } ;
+  const double q1ref[3] = { 1.8*1.8 , 1.9*1.9 , 2.0*2.0 } ;
   
   // low
   //const double q1ref[3] = { 1.7*1.7 , 1.8*1.8 , 1.9*1.9 } ;

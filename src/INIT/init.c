@@ -63,6 +63,10 @@ free_Fit( struct fit_info *Fit ,
   if( Fit -> Prior != NULL ) {
     free( Fit -> Prior ) ;
   }
+  // free the guesses
+  if( Fit -> Guess != NULL ) {
+    free( Fit -> Guess ) ;
+  }
   return ;
 }
 

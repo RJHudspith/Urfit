@@ -10,6 +10,9 @@
 
 #include "rng.h"
 
+// iterated bootstrap
+#define BOOT_ITER (8)
+
 // a wrapper for the resampling
 void
 compute_err( struct resampled *replicas )
@@ -35,7 +38,7 @@ resample_data( struct input_params *Input )
   size_t i ;
   bool must_resample = false ;
   
-  // compute the error
+  // compute the error and check if we must resample
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     compute_err( &Input -> Data.x[i] ) ;
     compute_err( &Input -> Data.y[i] ) ;
@@ -47,6 +50,7 @@ resample_data( struct input_params *Input )
   }
   
   // bootstrap it
+  size_t Nboots = 0 ;
   if( must_resample == true ) {
     switch( Input -> Data.Restype ) {
     case BootStrap :

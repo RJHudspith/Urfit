@@ -20,7 +20,7 @@ sd_iter( void *fdesc ,
   struct fit_descriptor *Fit = (struct fit_descriptor*)fdesc ;
   
   // counters and max iterations SDMAX
-  const size_t SDMAX = 10000 ;
+  const size_t SDMAX = 1000 ;
   size_t iters = 0 , i ;
 
   // allocate the temporary fitfunction for computing new steps 
@@ -30,7 +30,7 @@ sd_iter( void *fdesc ,
 
   // allocate the gradient
   double *grad = malloc( Fit -> Nlogic * sizeof( double ) ) ;
-  double *y = NULL , *t ;
+  double *y = NULL , *t , alpha[ Fit -> Nlogic ] ;
   size_t Nsum = Fit -> f.N ;
   switch( Fit -> f.CORRFIT ) {
   case UNWEIGHTED : case UNCORRELATED : break ;
@@ -46,6 +46,11 @@ sd_iter( void *fdesc ,
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
   Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
   Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
+
+  // set array of alphas to the fit parameters as an initial guess
+  for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
+    alpha[i] = Fit -> f.fparams[i] ;
+  }
   
   double chisq_diff = 10 ;
   while( chisq_diff > TOL && iters < SDMAX ) {
@@ -86,14 +91,14 @@ sd_iter( void *fdesc ,
     for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
 
       // line search best alpha
-      const double ap = line_search( &f2 , Fit -> f , grad , grad ,
-				     *Fit , data , W , i ,
-				     Fit -> f.fparams[i] ) ;
+      alpha[i] = line_search( &f2 , Fit -> f , grad , grad ,
+			      *Fit , data , W , i ,
+			      alpha[i] ) ;
       
-      Fit -> f.fparams[i] += ap * grad[i] ;
+      Fit -> f.fparams[i] += alpha[i] * grad[i] ;
 
       #ifdef VERBOSE
-      printf( "[SD] line ap :: %e \n" , ap ) ;
+      printf( "[SD] line ap :: %e \n" , alpha[i] ) ;
       #endif
     }
 
