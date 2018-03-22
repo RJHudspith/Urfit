@@ -12,7 +12,7 @@
 #include "stats.h"
 #include "rng.h"
 
-#define Q (5)
+static double Q = 2 ;
 
 // quicksort comparator
 static int
@@ -86,6 +86,10 @@ histmin( double *width ,
 int
 beta_crit( struct input_params *Input )
 {
+  Q = Input -> Fit.M ;
+
+  printf( "[BETA] Q changed to %f \n" , Q ) ;
+  
   // initialise the rng to some value
   init_rng( 123456 ) ;
 
@@ -100,7 +104,7 @@ beta_crit( struct input_params *Input )
       double best = mid , widthbest = width ;
 
       size_t nconsistent = 0 , bestconsistent = 0 , Nbin ;
-      for( Nbin = 15 ; Nbin < 27 ; Nbin++ ) {
+      for( Nbin = 15 ; Nbin < 40 ; Nbin++ ) {
 
         mid = histmin( &width , Input -> Data.y[j] , Nbin ) ;
 
@@ -111,6 +115,8 @@ beta_crit( struct input_params *Input )
 	    best = midprev ;
 	    widthbest = errprev ;
 	    bestconsistent = nconsistent ;
+	    // refresh nconsistent as they arent overlapping
+	    nconsistent = 0 ;
 	  }
 	}
 	midprev = mid ;
@@ -158,16 +164,17 @@ beta_crit( struct input_params *Input )
       //rng_reseed() ;
       for( k = 0 ; k < Input -> Data.Nboots ; k++ ) {
         Input -> Data.y[j].resampled[k] = sep + rng_gaussian( seperr ) ;
+	Input -> Data.x[j].resampled[k] = Input -> Data.x[j].avg ;
       }
 
       compute_err( &Input -> Data.y[j] ) ;
       compute_err( &Input -> Data.x[j] ) ;
 
-      #ifdef VERBOSE
+      //#ifdef VERBOSE
       fprintf( stdout , "%f %f %f %f \n" ,
 	Input -> Data.x[j].avg , Input -> Data.x[j].err ,
 	Input -> Data.y[j].avg , Input -> Data.y[j].err ) ;
-      #endif
+      //#endif
       
       if( fabs( sep ) < sep_best ) {
 	sep_best  = Input -> Data.y[j].avg ;
@@ -180,6 +187,8 @@ beta_crit( struct input_params *Input )
   fprintf( stdout , "[BC] SEP closest to zero %f %f \n", beta_best , sep_best ) ;
   
   free_rng( ) ;
+
+  printf( "Fitting\n" ) ;
 
   double chisq ;
   struct resampled *fit = fit_and_plot( *Input , &chisq ) ;
