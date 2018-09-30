@@ -1,12 +1,10 @@
 #ifndef GEVP_H
 #define GEVP_H
 
-int
-solve_gevp( double *re_evalues , 
-	    const double *A ,
-	    const double *B , 
-	    const size_t n ,
-	    const bool before ,
-	    const bool write_evalues ) ;
+struct resampled *
+solve_GEVP( struct input_params *Input ,
+	    const size_t N ,
+	    const size_t M ,
+	    const size_t t0 ) ;
 
 #endif

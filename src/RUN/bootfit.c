@@ -144,8 +144,11 @@ perform_bootfit( const struct data_info Data ,
   }
   
   // divide out the number of degrees of freedom
-  divide_constant( &chisq , ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ) ;
-  fprintf( stdout , "[CHISQ / (d.o.f)] %e %e \n" , chisq.avg , chisq.err ) ;
+  if( ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) != 0 ) {
+    divide_constant( &chisq , ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ) ;
+    fprintf( stdout , "[ CHISQ/dof ] %e %e (Ndof) %zu\n" ,
+	     chisq.avg , chisq.err , ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ) ;
+  }
   
   // set the chi value
   *Chi = chisq.avg ;
@@ -168,9 +171,13 @@ perform_bootfit( const struct data_info Data ,
   if( chisq.resampled != NULL ) {
     free( chisq.resampled ) ;
   }
+
+  printf( "free ffunc %zu \n" , fdesc.Nlogic ) ;
   
   // free the fitfunction
   free_ffunction( &fdesc.f , fdesc.Nlogic ) ;
+
+  printf( "free ffunc\n" ) ;
 
   return fitparams ;
 }

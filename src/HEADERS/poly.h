@@ -21,7 +21,8 @@ poly_guesses( double *fparams ,
 void
 poly_linmat( double **U ,
 	     const void *data ,
-	     const size_t Nparam ,
+	     const size_t N ,
+	     const size_t M ,
 	     const size_t Nlogic ) ;
 
 #endif

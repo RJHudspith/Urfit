@@ -9,15 +9,19 @@
 #include "effmass.h"
 #include "fit_and_plot.h"
 #include "init.h"
+#include "make_xmgrace.h"
+#include "pade_laplace.h"
 #include "resampled_ops.h"
 #include "stats.h"
 #include "write_flat.h"
 
-//#define MATRIX_PRONY
+#define MATRIX_PRONY
 
 void 
-matrix_prony( const struct input_params *Input )
+my_little_prony( const struct input_params *Input )
 {
+  make_xmgrace_graph( "MProny.agr" , "t/a" , "am\\seff" ) ;
+  
   const size_t Nstates = Input -> Fit.N ;
   size_t i , j , k , l , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
@@ -37,10 +41,12 @@ matrix_prony( const struct input_params *Input )
       for( j = shift ; j < shift + Ndata ; j++ ) {
 	data[ j - shift ] = Input -> Data.y[j].resampled[k] ;
       }
+      
       blackbox( data , Ndata , Nstates , masses ) ;
+      
       for( l = 0 ; l < Nstates ; l++ ) {
 	for( j = 0 ; j < Ndata ; j++ ) {
-	  effmass[j + l*Nstates].resampled[k] = masses[l][j] ;
+	  effmass[j + l*Ndata].resampled[k] = masses[l][j] ;
 	}
       }
       printf( "[PRONY] Samples %1.2f percent done\n" ,
@@ -54,7 +60,7 @@ matrix_prony( const struct input_params *Input )
     blackbox( data , Ndata , Nstates , masses ) ;
     for( l = 0 ; l < Nstates ; l++ ) {
       for( j = 0 ; j < Ndata ; j++ ) {
-	effmass[j + l*Nstates].avg = masses[l][j] ;
+	effmass[j + l*Ndata].avg = masses[l][j] ;
       }
     } 
     
@@ -63,10 +69,8 @@ matrix_prony( const struct input_params *Input )
     }
 
     for( l = 0 ; l < Nstates ; l++ ) {
-      for( j = 0 ; j < Ndata ; j++ ) {
-	printf( "%zu %e %e \n" , j , effmass[j + l*Nstates].avg , effmass[j + l*Nstates].err ) ;
-      }
-      printf( "\n" ) ;
+      plot_data( Input -> Data.x + shift , effmass + l*Ndata ,
+		 Input -> Data.Ndata[i] ) ;
     }
 
     for( j = 0 ; j < Nstates * Ndata ; j++ ) {
@@ -76,25 +80,102 @@ matrix_prony( const struct input_params *Input )
     
     shift += Ndata ;
   }
+  close_xmgrace_graph() ;
 
+  return ;
+}
+
+static int
+write_fitmass_graph( FILE *file , 
+		     const struct resampled mass ,
+		     const double lo ,
+		     const double hi )
+{
+  fprintf( file , "%e %e\n%e %e\n\n" , lo , mass.err_hi , hi , mass.err_hi ) ; 
+  fprintf( file , "%e %e\n%e %e\n\n" , lo , mass.avg , hi , mass.avg ) ;
+  fprintf( file , "%e %e\n%e %e\n\n" , lo , mass.err_lo , hi , mass.err_lo ) ;
+  return SUCCESS ;
+}
+
+void 
+boot_pade_laplace( const struct input_params *Input )
+{
+  // do the average first
+  size_t i , j , k , shift = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    double p0 ;
+    const size_t Ndata = Input -> Data.Ndata[i] ;
+    double y[ Ndata ] , x[ Ndata ] ;
+    double fparams[ 2*Input -> Fit.N ] ;
+    struct resampled *poles = malloc( Input -> Fit.N * 2 * sizeof( struct resampled ) ) ;
+
+    // loop taylor expansion point
+    for( p0 = 0.0 ; p0 < 5.0 ; p0 += 0.25 ) {
+
+      for( j = 0 ; j < Input -> Fit.N * 2 ; j++ ) {
+	poles[ j ] = init_dist( NULL ,
+				Input -> Data.x[shift].NSAMPLES ,
+				Input -> Data.x[shift].restype ) ;
+      }
+      
+      size_t idx = 0 ;
+      // loop N samples
+      for( k = 0 ; k < Input -> Data.x[shift].NSAMPLES ; k++ ) {
+	idx = 0 ;
+	for( j = shift ; j < shift + Ndata ; j++ ) {
+	  x[ idx ] = Input -> Data.x[ j ].resampled[k] ;
+	  y[ idx ] = Input -> Data.y[ j ].resampled[k] ;
+	  idx++ ;
+	}
+	pade_laplace( fparams , x , y , Ndata , Input -> Fit.N , p0 ) ;
+	// equate fparams to our resampled data
+	for( j = 0 ; j < 2*Input -> Fit.N ; j++ ) {
+	  poles[j].resampled[k] = fparams[j] ;
+	}
+      }
+      // do the average too
+      idx = 0 ;
+      for( j = shift ; j < shift + Ndata ; j++ ) {
+	x[ idx ] = Input -> Data.x[ j ].avg ;
+	y[ idx ] = Input -> Data.y[ j ].avg ;
+	idx++ ;
+      }
+      pade_laplace( fparams , x , y , Ndata , Input -> Fit.N , p0 ) ;
+      for( j = 0 ; j < 2*Input -> Fit.N ; j++ ) {
+	poles[j].avg = fparams[j] ;
+	compute_err( &poles[j] ) ;
+
+	printf( "[PLAP] %f PARAM_%zu %e %e \n" , p0 , j , poles[j].avg , poles[j].err ) ;
+      }
+      printf( "\n" ) ;
+    }
+
+    shift += Ndata ;
+    for( j = 0 ; j < 2*Input -> Fit.N ; j++ ) {
+      free( poles[j].resampled ) ;
+    }
+    free( poles ) ;
+  }
   return ;
 }
 
 int
 correlator_analysis( struct input_params *Input )
 {
-  size_t i ;
+  size_t i , j , shift = 0 ;
 
 #ifdef MATRIX_PRONY
   printf( "Matrix prony\n" ) ;
 
-  matrix_prony( Input ) ;
+  my_little_prony( Input ) ;
 #endif
+
+  //boot_pade_laplace( Input ) ;
   
   printf( "Effmass\n" ) ;
   
   // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , LOG_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
 
 #ifdef FIT_EFFMASS
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
@@ -107,48 +188,34 @@ correlator_analysis( struct input_params *Input )
   }
   free( effmass ) ;
 
-
-  // compute the fractional error
-  size_t shift = 0 ;
-  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    size_t j ;
-    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      printf( "[FRAC] %e %e \n" , Input -> Data.x[j].avg ,
-	      100 * ( Input -> Data.y[j].err / Input -> Data.y[j].avg ) ) ;
-    }
-    printf( "[FRAC] \n" ) ;
-    shift += Input -> Data.Ndata[i] ;
-  }
-
-  // normalise to 1
-  /*
-  struct resampled div = init_dist( &Input -> Data.y[0] ,
-				    Input -> Data.y[0].NSAMPLES ,
-				    Input -> Data.y[0].restype ) ;
   shift = 0 ;
-  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    size_t j ;
-    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      divide( &(Input -> Data.y[j]) , div ) ;
-    }
-    shift += Input -> Data.Ndata[i] ;
-  }
-  free( div.resampled ) ;
-  */
-
   
   // perform a fit
   double Chi ;
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
+
+  printf( "P2 %f \n" ,
+	  Input -> Traj[0].mom[0]*Input -> Traj[0].mom[0] +
+	  Input -> Traj[0].mom[1]*Input -> Traj[0].mom[1] +
+	  Input -> Traj[0].mom[2]*Input -> Traj[0].mom[2] ) ;
   
   // compute a decay constant
   if( Input -> Fit.Fitdef == PP_AA_WW ||
       Input -> Fit.Fitdef == PP_AA ||
       Input -> Fit.Fitdef == PPAA ) {
 
+    FILE *massfile = fopen( "massfits.dat" , "w" ) ;
+    for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+      write_fitmass_graph( massfile , Fit[0] ,
+			   Input -> Traj[i].Fit_Low ,
+			   Input -> Traj[i].Fit_High ) ;
+    }
+    fclose( massfile ) ;
+
+
     write_flat_dist( &Fit[0] , &Fit[0] , 1 , "Mass.flat" ) ;
     
-    struct resampled dec = decay( Fit , *Input ) ;
+    struct resampled dec = decay( Fit , *Input , 0 , 1 ) ;
 
     write_flat_dist( &dec , &dec , 1 , "Decay.flat" ) ;
 
@@ -163,17 +230,47 @@ correlator_analysis( struct input_params *Input )
     free( dec.resampled ) ;
   }
 
+  // compute a decay constant
+  if( Input -> Fit.Fitdef == COSH ) {
+    struct resampled dec = decay( Fit , *Input , 1 , 0 ) ;
+    free( dec.resampled ) ;
+  }
+    
   // write out a flat file
-  if( Input -> Fit.Fitdef == EXP ) {
+  if( Input -> Fit.Fitdef == EXP ||
+      Input -> Fit.Fitdef == COSH ||
+      Input -> Fit.Fitdef == SINH ) {
     //write_flat_single( &Fit[1] , "Mass.flat" ) ;
     struct resampled mpi2 = init_dist( NULL ,
 				       Fit[1].NSAMPLES ,
 				       Fit[1].restype ) ;
-    equate_constant( &mpi2 , 0.088447949604 ,
+    double psq = 0 ;
+    size_t mu ;
+    for( mu = 0 ; mu < 3 ; mu++ ) {
+      const double ptilde = sin( Input -> Traj[0].mom[mu]*2.*M_PI/
+				 Input -> Traj[0].Dimensions[mu] ) ;
+      psq += ptilde*ptilde ;
+    }
+    equate_constant( &mpi2 , psq ,
 		     Fit[1].NSAMPLES , Fit[1].restype ) ;
     write_flat_dist( &Fit[1] , &mpi2 , 1 , "Mass.flat" ) ;
     free( mpi2.resampled ) ;
+
+    FILE *massfile = fopen( "massfits.dat" , "w" ) ;
+    size_t shift = 0 , j ;
+    for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+      for( j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
+	write_fitmass_graph( massfile , Fit[j+1] ,
+			     Input -> Traj[i].Fit_Low ,
+			     Input -> Traj[i].Fit_High ) ;
+      }
+      shift += Input -> Data.Ndata[i] ;
+    }
+    fclose( massfile ) ;
   }
+
+  subtract( &Fit[3] , Fit[1] ) ;
+  printf( "%f +/- %f \n" , Fit[3].avg , Fit[3].err ) ;
   
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;
   

@@ -66,6 +66,39 @@ dLdp( double *d ,
   return ;
 }
 
+// compute the coefficients using simpson's rule
+static void
+dLdp_simp( double *d ,
+	   const size_t Nders ,
+	   const double *x ,
+	   const double *y ,
+	   const size_t N ,
+	   const double p0 )
+{
+  double epx[ N ] ;
+  size_t i , j ;
+  // initialise the exponential factors and the powers of t
+  for( i = 0 ; i < N ; i++ ) {
+    epx[ i ] = exp( -p0 * x[i] ) * y[i] ;
+  }
+  for( i = 0 ; i < Nders ; i++ ) {
+    // perform the integration
+    d[i] = 0.0 ;
+    for( j = 1 ; j < N/2 ; j++ ) {
+      d[i] += ( epx[ 2*j - 2 ] + 4*epx[ 2*j-1 ] + epx[ 2*j ] ) ;
+    }
+    // update the t-factors
+    for( j = 0 ; j < N ; j++ ) {
+      epx[j] *= -x[j] ;
+    }
+    d[i] /= ( 3. * fac[i] ) ;
+    #ifdef VERBOSE
+    printf( "D[ %zu ] %e %e \n" , i , d[i] , fac[i] ) ;
+    #endif
+  }
+  return ;
+}
+
 // qsort comparison
 static int 
 comp( const void *elem1 , 
@@ -262,7 +295,8 @@ pade_laplace( double *fparams ,
   size_t i ;
 
   // compute the derivatives of the amplitudes
-  dLdp( d , Nders , x , y , Ndata , p0 ) ;
+  //dLdp( d , Nders , x , y , Ndata , p0 ) ;
+  dLdp_simp( d , Nders , x , y , Ndata , p0 ) ;
   
   // get the poles of the pade representation
   int Flag = SUCCESS ;

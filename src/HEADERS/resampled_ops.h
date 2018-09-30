@@ -67,6 +67,10 @@ void
 root( struct resampled *a ) ;
 
 void
+spin_average( struct resampled *a , 
+	      const struct resampled b ) ;
+
+void
 subtract( struct resampled *a , 
 	  const struct resampled b ) ;
 

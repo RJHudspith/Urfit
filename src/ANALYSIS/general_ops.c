@@ -12,7 +12,9 @@ do_op( const struct resampled A ,
        const struct resampled B ,
        void (*f)( struct resampled *a ,
 		  const struct resampled b ) ,
-       const char *s )
+       const char *s ,
+       const double x ,
+       const size_t j )
 {
   struct resampled res = init_dist( &A , A.NSAMPLES , A.restype ) ;
 
@@ -25,16 +27,15 @@ do_op( const struct resampled A ,
 
   // write out a flat file with the moniker
   char *str = malloc( 256 * sizeof( char ) ) ;
-  sprintf( str , "%s.flat" , s ) ;
+  sprintf( str , "%s_%zu.flat" , s , j ) ;
 
   printf( "Flat %s \n" , str ) ;
   //write_flat_single( res , str ) ;
 
   struct resampled mpi2 = init_dist( NULL , A.NSAMPLES , A.restype ) ;
 
-  equate_constant( &mpi2 , 0.088209 , A.NSAMPLES , A.restype ) ;
+  equate_constant( &mpi2 , x , A.NSAMPLES , A.restype ) ;
 
-  mult_constant( &res , 2.19*1000 ) ;
   write_flat_dist( &res , &mpi2 , 1 , str ) ;
 
   free( str ) ;
@@ -58,24 +59,36 @@ gen_ops( struct input_params *Input )
     
     size_t j ;
     for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
+
+      raise( &Input -> Data.y[j] , 2 ) ;
+      raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
+      
       // add
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     add , "Add" ) ;
+	     add , "Add" , Input -> Data.x[j].avg , j ) ;
       
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     subtract , "Sub" ) ;
+	     subtract , "Sub" , Input -> Data.x[j].avg , j ) ;
       
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     mult , "Mult" ) ;
+	     mult , "Mult" , Input -> Data.x[j].avg , j ) ;
 
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     divide , "Div" ) ;
+	     divide , "Div" , Input -> Data.x[j].avg , j ) ;
+      
+      do_op( Input -> Data.y[j] ,
+	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
+	     spin_average , "SpinAve" , Input -> Data.x[j].avg , j ) ;
       
 
+    }
+  }
+  return SUCCESS ;
+}
       /*
       struct resampled res = init_dist( &Input -> Data.y[j] ,
 					Input -> Data.y[j].NSAMPLES ,
@@ -95,7 +108,3 @@ gen_ops( struct input_params *Input )
       mult_constant( &res , -1/12. ) ;
       printf( "%f %f \n" , res.avg , res.err ) ;
       */
-    }
-  }
-  return SUCCESS ;
-}

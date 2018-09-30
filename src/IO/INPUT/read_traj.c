@@ -17,16 +17,21 @@
 #include "read_inputs.h"
 
 // block size for the traj information
-#define Nblock (6)
+#define Nblock (7)
 
 // little enum for getting the map right
 enum { TrajName , TrajStep , TrajStat ,
-       TrajFitr , TrajDims , TrajGsGk } TrajBlock ;
+       TrajFitr , TrajDims , TrajGsGk , TrajMom } TrajBlock ;
 
 // linked list for the dimensions
 struct node {
-  size_t dim ;
+  int dim ;
   struct node *next ;
+} ;
+
+struct node_dbl {
+  double dim ;
+  struct node_dbl *next ;
 } ;
 
 // set the record for each traj file
@@ -40,6 +45,7 @@ set_record( void )
   Record[3] = "TrajFitr" ;
   Record[4] = "TrajDims" ;
   Record[5] = "TrajGsGk" ;
+  Record[6] = "TrajMom" ;
   return Record ;
 }
 
@@ -114,6 +120,28 @@ get_Ndims( size_t *Nd , const char *Value )
   while( ( tok = strtok( NULL , "," ) ) != NULL ) {
     curr = (struct node*)malloc( sizeof( struct node ) ) ;
     curr -> dim = strtol( tok , &endptr , 10 ) ;
+    curr -> next = head ;
+    head = curr ;
+    
+    *Nd = *Nd + 1 ;
+  }
+  return head ;
+}
+
+// get the number of dimensions
+static struct node_dbl*
+get_Moms( size_t *Nd , const char *Value )
+{
+  struct node_dbl *head = NULL , *curr ;
+  *Nd = 1 ;
+  char *tok = strtok( (char*)Value , "," ) , *endptr ;
+  curr = (struct node_dbl*)malloc( sizeof( struct node_dbl ) ) ;
+  curr -> dim = strtod( tok , &endptr ) ;
+  curr -> next = head ;
+  head = curr ;
+  while( ( tok = strtok( NULL , "," ) ) != NULL ) {
+    curr = (struct node_dbl*)malloc( sizeof( struct node_dbl ) ) ;
+    curr -> dim = strtod( tok , &endptr ) ;
     curr -> next = head ;
     head = curr ;
     
@@ -225,7 +253,7 @@ set_trajs( const struct flat_file *Flat ,
     Traj[i].Nd = Ndims ;
     Traj[i].Dimensions = malloc( Traj[i].Nd * sizeof( size_t ) ) ;
     for( j = Traj[i].Nd ; j != 0 ; j-- ) {
-      Traj[i].Dimensions[j-1] = Node -> dim ;
+      Traj[i].Dimensions[j-1] = (size_t)Node -> dim ;
       free( Node ) ;        // free this node
       Node = Node -> next ; // point to the next node
     }
@@ -233,6 +261,15 @@ set_trajs( const struct flat_file *Flat ,
     // set the GSGK
     if( set_GsGk( &Traj[i] , Flat[ Block[i] + TrajGsGk ].Value ) == FAILURE ) {
       return NULL ;
+    }
+
+    // set the momenta linked list is backwards
+    struct node_dbl *ndbl = get_Moms( &Ndims , Flat[ Block[i] + TrajMom ].Value ) ;
+    Traj[i].mom = malloc( 4 * sizeof( double ) ) ;
+    for( j = Ndims ; j != 0 ; j-- ) {
+      Traj[i].mom[j-1] = (double)ndbl -> dim ;
+      free( ndbl ) ;        // free this node
+      ndbl = ndbl -> next ; // point to the next node
     }
   }
   return Traj ;
@@ -280,6 +317,11 @@ get_traj( struct input_params *Input ,
     printf( "(Nd,Dims) ->  ( %zu , " , Input -> Traj[i].Nd ) ;
     for( j = 0 ; j < Input -> Traj[i].Nd ; j++ ) {
       printf( " %zu " , Input -> Traj[i].Dimensions[j] ) ;
+    }
+    printf( ") \n" ) ;
+    printf( "(Mom) ->  ( " ) ;
+    for( j = 0 ; j < 3 ; j++ ) {
+      printf( " %1.15f " , Input -> Traj[i].mom[j] ) ;
     }
     printf( ") \n" ) ;
   }

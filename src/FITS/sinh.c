@@ -1,26 +1,35 @@
 /**
-   exponential Model f = ( A * exp(-lambda * i) - y_i )
+   multiple sinh model
+
+   f = sum_n A < exp( -lambda * x[i] ) - exp( -lambda * ( Lt - x[i] ) ) >
  */
 #include "gens.h"
 
 double
 fsinh( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  return fparams[0] * ( exp( -fparams[1] * X.X ) - 
-			exp( -fparams[1] * ( X.LT - X.X ) ) ) ;
+  size_t i ;
+  register double sum = 0.0 ;
+  for( i = 0 ; i < 2 * X.N ; i+=2 ) {
+    sum += fparams[i] * ( exp( -fparams[i+1] * X.X ) -
+			  exp( -fparams[i+1] * ( X.LT - X.X ) ) ) ;
+  }
+  return sum ;
 }
 
 void
 sinh_f( double *f , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i ; 
+  size_t i , j ; 
   for (i = 0; i < DATA -> n ; i++) {
-    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] } ;
-    f[i] = fparams[ DATA -> map[i].p[0] ] *
-      ( exp( -fparams[ DATA -> map[i].p[1] ] * X.X ) - 
-	exp( -fparams[ DATA -> map[i].p[1] ] * ( X.LT - X.X ) ) )
-      - DATA -> y[i] ;
+    double p[ DATA -> N * 2 ] ;
+    for( j = 0 ; j < DATA -> N * 2 ; j++ ) {
+      p[ j ] = fparams[ DATA -> map[ i ].p[ j ] ] ;
+    }
+    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
+			      DATA -> N , DATA -> M } ;
+    f[i] = fsinh( X , p , DATA -> N * 2 ) - DATA -> y[i] ;
   }
   return ;
 }
@@ -30,14 +39,16 @@ void
 sinh_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i ;
+  size_t i , j ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
+    for( j = 0 ; j < 2*DATA -> N ; j+= 2 ) {
     const double t = DATA -> x[i] ;
-    const double fwd = exp(-fparams[ DATA -> map[i].p[1] ] * t ) ;
-    const double bwd = exp(-fparams[ DATA -> map[i].p[1] ] * ( DATA -> LT[i] - t ) ) ;
-    df[  DATA -> map[i].p[1] ][i] = -fparams[ DATA -> map[i].p[0] ] *
-      ( t * fwd - ( DATA -> LT[i] - t ) * bwd ) ;
-    df[  DATA -> map[i].p[0] ][i] = fwd - bwd ;
+      const double fwd = exp( -fparams[ DATA -> map[i].p[j+1] ] * t ) ;
+      const double bwd = exp( -fparams[ DATA -> map[i].p[j+1] ] * ( DATA -> LT[i] - t ) ) ;
+      df[ DATA -> map[i].p[j+0] ][i] = fwd - bwd ;
+      df[ DATA -> map[i].p[j+1] ][i] = -fparams[ DATA -> map[i].p[j] ] *
+	( t * fwd - ( DATA -> LT[i] - t ) * bwd ) ;
+    }
   }
   return ;
 }

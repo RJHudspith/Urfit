@@ -6,6 +6,7 @@
 
 #include "alpha_D0.h"
 #include "alpha_D0_multi.h"
+#include "alpha_D0_multi_new.h"
 #include "cruel_runnings.h"
 #include "fit_and_plot.h"
 #include "init.h"
@@ -33,31 +34,42 @@ fit_alphas( struct input_params *Input )
 {
   test_running( ) ;
 
-  const double mu = 2.00 ;
+  const double mu = 2.0 ;
 
   if( Input -> Fit.Fitdef == ALPHA_D0_MULTI ) {
-    set_mu_multi( mu ) ;
+    set_mu_multi2( mu ) ;
   } else {
     set_mu( mu ) ;
   }
 
-  // compute delta == ( \Pi( q_1^2 ) - \Pi( q^2 ) ) / ( t1 - t2 )
+  const double ainv[ 3*12 ] = { 3.148 , 3.148 , 3.148 , 3.148 ,
+				3.148 , 3.148 , 3.148 , 3.148 ,
+				3.148 , 3.148 , 3.148 , 3.148 ,
+				2.3833 , 2.3833 , 2.3833 , 2.3833 ,
+				2.3833 , 2.3833 , 2.3833 , 2.3833 ,
+				2.3833 , 2.3833 , 2.3833 , 2.3833 ,
+				1.7848 , 1.7848 , 1.7848 , 1.7848 ,
+				1.7848 , 1.7848 , 1.7848 , 1.7848 ,
+				1.7848 , 1.7848 , 1.7848 , 1.7848 } ;
+
+  // compute delta == ( \Pi( q^2 ) - \Pi( q_1^2 ) ) / ( t - t1 )
   
   // highest
   //const double q1ref[3] = { 2.0*2.0 , 2.1*2.1 , 2.2*2.2 } ;
+  //const double q1ref[3] = { 2.0*2.0 , 2.0*2.0 , 2.0*2.0 } ;
   
   // hi
   //const double q1ref[3] = { 1.9*1.9 , 2.0*2.0 , 2.1*2.1 } ;
   //const double q1ref[3] = { 1.8*1.8 , 1.95*1.95 , 2.1*2.1 } ;
 
   // mid
-  const double q1ref[3] = { 1.8*1.8 , 1.9*1.9 , 2.0*2.0 } ;
+  //const double q1ref[3] = { 1.8*1.8 , 1.9*1.9 , 2.0*2.0 } ;
   
   // low
   //const double q1ref[3] = { 1.7*1.7 , 1.8*1.8 , 1.9*1.9 } ;
 
-  //const double q1ref[3] = { 1.6*1.6 , 1.6*1.6 , 1.6*1.6 } ;
-
+  const double q1ref[3] = { 1.6*1.6 , 1.6*1.6 , 1.6*1.6 } ;
+  //const double q1ref[3] = { 1.7*1.7 , 1.7*1.7 , 1.7*1.7 } ;
 
   size_t i , j , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
@@ -65,17 +77,19 @@ fit_alphas( struct input_params *Input )
     size_t idx = shift ;
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
 
-      if( fabs( q1ref[i%3] - Input -> Data.x[j].avg ) < x ) {
-	x = fabs( q1ref[i%3] - Input -> Data.x[j].avg ) ;
+      //mult_constant( &Input -> Data.x[j] , ainv[i]*ainv[i] ) ;
+		     
+      if( fabs( q1ref[i%3] - Input -> Data.x[j].avg*ainv[i]*ainv[i] ) < x ) {
+	x = fabs( q1ref[i%3] - Input -> Data.x[j].avg*ainv[i]*ainv[i] ) ;
 	idx = j ;
       }
     }
-    printf( "Q1ref %f (CLOSEST) %f \n" , q1ref[i%3] , Input -> Data.x[idx].avg ) ;
+    printf( "Q1ref %f (CLOSEST) %f \n" , q1ref[i%3] , Input -> Data.x[idx].avg*ainv[i]*ainv[i] ) ;
 
     if( Input -> Fit.Fitdef == ALPHA_D0_MULTI ) {
-      set_Q1_multi( Input -> Data.x[idx].avg , i ) ;
+      set_Q1_multi2( Input -> Data.x[idx].avg*ainv[i]*ainv[i] , i ) ;
     } else if( Input -> Fit.Fitdef == ALPHA_D0 ) {
-      set_Q1( Input -> Data.x[idx].avg , i ) ;
+      set_Q1( Input -> Data.x[idx].avg*ainv[i]*ainv[i] , i ) ;
     }
     
     // now we do the subtraction
@@ -83,16 +97,19 @@ fit_alphas( struct input_params *Input )
 				      Input -> Data.y[idx].NSAMPLES ,
 				      Input -> Data.y[idx].restype ) ;
 
+    const double sub = Input -> Data.x[idx].avg ;
+
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
       
       subtract( &Input -> Data.y[j] , tmp ) ;
 
+      double t = 1.0 ;
       if( j != idx ) {
-	divide_constant( &Input -> Data.y[j] ,
-			 log( Input -> Data.x[idx].avg / ( Input -> Data.x[j].avg ) ) ) ;
+	t = log( Input -> Data.x[j].avg / sub ) ;
+	divide_constant( &Input -> Data.y[j] , t ) ;
       }
       
-      mult_constant( &Input -> Data.y[j] , -4 * M_PI * M_PI ) ;
+      mult_constant( &Input -> Data.y[j] , 4 * M_PI * M_PI ) ;
       
       subtract_constant( &Input -> Data.y[j] , 1.0 ) ;
     }
@@ -101,6 +118,21 @@ fit_alphas( struct input_params *Input )
     
     shift += Input -> Data.Ndata[i] ;
   }
+
+  double chisq ;
+  struct resampled *fit = fit_and_plot( *Input , &chisq ) ;
+
+  struct resampled amz = run_distribution_nf3_2MZ( fit[0] , mu , 4 ) ;
+
+  printf( "%f alpha(%f) -> amz :: %f %f \n" ,
+	  chisq , mu , amz.avg , amz.err ) ;
+
+  free_fitparams( fit , Input -> Fit.Nlogic ) ;
+	
+  free( amz.resampled ) ;
+
+  return SUCCESS ;
+}
 
 #ifdef FITRANGES
   // loop lower and upper fit bounds
@@ -241,20 +273,4 @@ fit_alphas( struct input_params *Input )
 	  result[Naccept/2] - result[bottom] ) ;
 
 #else
-
-  double chisq ;
-  struct resampled *fit = fit_and_plot( *Input , &chisq ) ;
-      
-  struct resampled amz = run_distribution_nf3_2MZ( fit[0] , mu , 4 ) ;
-
-  printf( "%f alpha(%f) -> amz :: %f %f \n" ,
-	  chisq , mu , amz.avg , amz.err ) ;
-
-  free_fitparams( fit , Input -> Fit.Nlogic ) ;
-	
-  free( amz.resampled ) ;
-  
 #endif
-
-  return SUCCESS ;
-}

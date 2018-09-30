@@ -55,6 +55,12 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = ALPHA_D0 ;
   } else if( are_equal( Flat[tag].Value , "ALPHA_D0_MULTI" ) ) {
     Input -> Fit.Fitdef = ALPHA_D0_MULTI ;
+  } else if( are_equal( Flat[tag].Value , "ADLERALPHA_D0" ) ) {
+    Input -> Fit.Fitdef = ADLERALPHA_D0 ;
+  } else if( are_equal( Flat[tag].Value , "ADLERALPHA_D0_MULTI" ) ) {
+    Input -> Fit.Fitdef = ADLERALPHA_D0_MULTI ;
+  } else if( are_equal( Flat[tag].Value , "C4C7" ) ) {
+    Input -> Fit.Fitdef = C4C7 ;
   } else if( are_equal( Flat[tag].Value , "CORNELL" ) ) {
     Input -> Fit.Fitdef = CORNELL ;
   } else if( are_equal( Flat[tag].Value , "COSH" ) ) {
@@ -63,6 +69,12 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = EXP ;
   } else if( are_equal( Flat[tag].Value , "EXP_PLUSC" ) ) {
     Input -> Fit.Fitdef = EXP_PLUSC ;
+  } else if( are_equal( Flat[tag].Value , "FVOL1" ) ) {
+    Input -> Fit.Fitdef = FVOL1 ;
+  } else if( are_equal( Flat[tag].Value , "NRQCD_EXP" ) ) {
+    Input -> Fit.Fitdef = NRQCD_EXP ;
+  } else if( are_equal( Flat[tag].Value , "NRQCD_EXP2" ) ) {
+    Input -> Fit.Fitdef = NRQCD_EXP2 ;
   } else if( are_equal( Flat[tag].Value , "NOFIT" ) ) {
     Input -> Fit.Fitdef = NOFIT ;
   } else if( are_equal( Flat[tag].Value , "PADE" ) ) {
@@ -83,13 +95,18 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = PPAA ;
   } else if( are_equal( Flat[tag].Value , "SINH" ) ) {
     Input -> Fit.Fitdef = SINH ;
+  } else if( are_equal( Flat[tag].Value , "SU2_SHITFIT" ) ) {
+    Input -> Fit.Fitdef = SU2_SHITFIT ;
   } else if( are_equal( Flat[tag].Value , "QCORR_BESSEL" ) ) {
     Input -> Fit.Fitdef = QCORR_BESSEL ;
   } else if( are_equal( Flat[tag].Value , "QSLAB" ) ) {
     Input -> Fit.Fitdef = QSLAB ;
   } else if( are_equal( Flat[tag].Value , "QSUSC_SU2" ) ) {
     Input -> Fit.Fitdef = QSUSC_SU2 ;
+  } else if( are_equal( Flat[tag].Value , "UDCB_HEAVY" ) ) {
+    Input -> Fit.Fitdef = UDCB_HEAVY ;
   } else {
+    fprintf( stderr , "[INPUT] Fit %s not recognised\n" , Flat[tag].Value ) ;
     return FAILURE ;
   }
   return SUCCESS ;
@@ -113,6 +130,7 @@ get_fitCorr( struct input_params *Input ,
   } else if( are_equal( Flat[tag].Value , "UNWEIGHTED" ) ) {
     Input -> Fit.Corrfit = UNWEIGHTED ;
   } else {
+    fprintf( stderr , "[INPUT] FitCorr %s not recognised\n" , Flat[tag].Value ) ;
     return FAILURE ;
   }
   return SUCCESS ;
@@ -134,10 +152,11 @@ get_fitMin( struct input_params *Input ,
   } else if( are_equal( Flat[tag].Value , "GA" ) ) {
     Input -> Fit.Minimize = ga_iter ;
   } else if( are_equal( Flat[tag].Value , "GLS" ) ) {
-    if( Input -> Fit.Fitdef == POLY || Input -> Fit.Fitdef == NOFIT ) {
+    if( Input -> Fit.Fitdef == POLY || Input -> Fit.Fitdef == NOFIT ||
+	Input -> Fit.Fitdef == POLES ) {
       Input -> Fit.Minimize = gls_iter ;
     } else {
-      fprintf( stderr , "[INPUTS] GLS only supports POLY type fit\n" ) ;
+      fprintf( stderr , "[INPUTS] GLS only supports POLY/POLES type fit\n" ) ;
       return FAILURE ;
     }
   } else if( are_equal( Flat[tag].Value , "GLS_pade" ) ) {

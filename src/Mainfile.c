@@ -30,6 +30,7 @@ main( const int argc , const char *argv[] )
   // initially read the inputs
   struct input_params Input ;
   if( read_inputs( &Input , argv[2] ) == FAILURE ) {
+    printf( "[INPUT] Input reading failed\n" ) ;
     goto free_failure ;
   }
 

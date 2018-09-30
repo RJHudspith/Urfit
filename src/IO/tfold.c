@@ -23,7 +23,7 @@ static double part( const double complex C ) { return creal( C ) ; }
 double complex*
 map_correlator( const struct traj Traj ,
 		const char *str ,
-		const uint32_t *mompoint ,
+		const int *mompoint ,
 		const size_t Nlt )
 {
   double complex *C = malloc( Nlt * sizeof( double complex ) ) ;

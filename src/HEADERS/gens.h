@@ -36,7 +36,7 @@ typedef enum {
 
 // fit types
 typedef enum {
-  ALPHA_D0 , ALPHA_D0_MULTI , EXP , COSH , EXP_PLUSC , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , PP_AA_WW_R2 , PP_AA_EXP , PPAA , QCORR_BESSEL , QSUSC_SU2 , SINH , POLES , QSLAB , CORNELL
+  ALPHA_D0 , ALPHA_D0_MULTI , ADLERALPHA_D0 , ADLERALPHA_D0_MULTI , EXP , COSH , EXP_PLUSC , NRQCD_EXP , NRQCD_EXP2 , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , PP_AA_WW_R2 , PP_AA_EXP , PPAA , QCORR_BESSEL , QSUSC_SU2 , SINH , POLES , QSLAB , CORNELL , FVOL1 , UDCB_HEAVY , C4C7 , SU2_SHITFIT
 } fittype ;
 
 // time folding types
@@ -53,7 +53,7 @@ typedef enum { Raw , JackKnife , BootStrap } resample_type ;
 // file type we expect to read
 typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File , GLU_Qmoment_File } file_type ;
 
-typedef enum { Adler , Alphas , Beta_crit , Correlator , Exceptional , Fit , General , HVP , KKops , KK_BK , Qcorr , Qsusc , Qslab , Ren_Rats , StaticPotential , TetraGEVP , Wflow } analysis_type ;
+typedef enum { Adler , Alphas , Beta_crit , Correlator , Exceptional , Fit , General , HVP , KKops , KK_BK , Nrqcd , Qcorr , Qsusc , Qslab , Ren_Rats , StaticPotential , TetraGEVP , Wflow } analysis_type ;
 
 // x-data descriptor
 struct x_desc {
@@ -158,10 +158,12 @@ struct fit_descriptor {
   void (*dF) ( double **df , const void *data , const double *fparams ) ;
   void (*d2F) ( double **d2f , const void *data , const double *fparams ) ;
   void (*guesses) ( double *fparams , const struct data_info Data , const struct fit_info Fit ) ;
-  void (*linmat) ( double **U , const void *data , const size_t Nparam , const size_t Nlogic ) ;
+  void (*linmat) ( double **U , const void *data , const size_t N , const size_t M , const size_t Nlogic ) ;
   const struct prior *Prior ;
   size_t Nparam ; // Number of parameters
-  size_t Nlogic ;  // logical Nparameters 
+  size_t Nlogic ;  // logical Nparameters
+  size_t N ;
+  size_t M ;
 } ;
 
 // data structure in the fits
@@ -203,6 +205,7 @@ struct traj {
   fold_type Fold ;
   size_t Increment ;
   size_t Nd ;
+  double *mom ;
 } ;
 
 // simple graph stuff

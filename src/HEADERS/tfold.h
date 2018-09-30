@@ -4,7 +4,7 @@
 double complex *
 map_correlator( struct traj Traj ,
 		const char *str ,
-		const uint32_t *mompoint ,
+		const double *mompoint ,
 		const size_t Nlt ) ;
 
 int

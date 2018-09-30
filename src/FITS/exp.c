@@ -41,10 +41,11 @@ exp_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
   size_t i , j ;
-  for( i = 0 ; i < DATA -> n ; i++ ) {
+  for( i = 0 ; i < DATA -> n ; i++ ) {    
     for( j = 0 ; j < 2*DATA -> N ; j+=2 ) {
       const double t = DATA -> x[i] ;
       const double e = exp( -fparams[ DATA-> map[i].p[j+1] ] * t ) ;
+      
       df[ DATA-> map[i].p[j+0] ][i] = e ;
       df[ DATA-> map[i].p[j+1] ][i] = -t * fparams[ DATA-> map[i].p[j] ] * e ;
     }
@@ -89,28 +90,10 @@ exp_guesses( double *fparams ,
     double x[ N ] , y[ N ] ;
     N = 0 ;
     for( j = shift ; j < shift + Data.Ndata[i] ; j++ ) {
-      if( Data.x[j].avg > Data.LT[j]/2 ) continue ;
+      //if( Data.x[j].avg > Data.LT[j]/2 ) continue ;
       x[ N ] = Data.x[j].avg ;
       y[ N ] = Data.y[j].avg ;
       N++ ;
-    }
-
-    // little sort of the data
-    for( j = 0 ; j < N ; j++ ) {
-      size_t k , best_idx = j ;
-      for( k = j + 1 ; k < N ; k++ ) {
-	if( x[k] < x[best_idx] ) {
-	  best_idx = k ;
-	}
-      }
-      if( best_idx != j ) {
-	double tmpx = x[j] ;
-	x[j] = x[best_idx] ;
-	x[best_idx] = tmpx ;
-	double tmpy = y[j] ;
-	y[j] = y[best_idx] ;
-	y[best_idx] = tmpy ;
-      }
     }
 
     #ifdef VERBOSE
@@ -119,7 +102,8 @@ exp_guesses( double *fparams ,
     }
     #endif
 
-    if( pade_laplace( f , x , y , N , Fit.N ) == FAILURE ) {
+    // pade laplace is bad here because we are already in the plateau region!!!!
+    if( pade_laplace( f , x , y , N , Fit.N , 3 ) == FAILURE ) {
 
       fprintf( stderr , "Jamie : do something about this!\n" ) ;
       break ;

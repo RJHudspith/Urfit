@@ -76,16 +76,18 @@ const static double (*loop[5])( const double t1 , const double t2 , const double
 double
 falpha_D0( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  const double t1 = log( Q1[ Npars ] / ( mu * mu ) ) ;
+  const size_t idx = Npars % 3 ;
+  const double asq = a2[ idx ] ; 
+  const double t1 = log( Q1[ idx ] / ( mu * mu ) ) ;
   const double t2 = log( X.X / ( mu * mu ) ) ;
 
   // program in an a_pi correction?
-  double a_pi = fparams[0] / M_PI * ( 1 + a2[ Npars ] * fparams[3] ) ;
+  double a_pi = fparams[0] / M_PI * ( 1 + asq * fparams[3] ) ;
   double corrections = 0 ;
 
   // momentum corrections
-  corrections += fparams[1] * a2[ Npars ] * ( Q1[ Npars] - X.X ) / ( t1 - t2 ) ;
-  corrections += fparams[2] * a2[ Npars ] * a2[ Npars ] * ( Q1[ Npars] * Q1[ Npars] - X.X * X.X ) / ( t1 - t2 ) ;
+  corrections += fparams[1] * asq * ( Q1[ idx ] - X.X ) / ( t1 - t2 ) ;
+  corrections += fparams[2] * asq * asq * ( Q1[ idx ] * Q1[ idx ] - X.X * X.X ) / ( t1 - t2 ) ;
   
   // delta from D=0 OPE  
   register double PT = 0.0 ;
@@ -131,11 +133,11 @@ alpha_D0_df( double **df , const void *data , const double *fparams )
     const double t2 = log( DATA -> x[i] / ( mu * mu ) ) ;
 
     // cache of results for the fit
-    const double asq = a2[ DATA -> map[i].bnd ] ;
+    const double asq = a2[ DATA -> map[i].bnd%3 ] ;
     const double acr = fparams[ DATA -> map[i].p[3] ] ;
     const double a_pi = fparams[ DATA -> map[i].p[0] ] *  ( 1 + acr * asq ) / M_PI ;
     //const double fd5 = fparams[ DATA -> map[i].p[4] ] ;
-    const double Qref = Q1[ DATA -> map[i].bnd ] ;
+    const double Qref = Q1[ DATA -> map[i].bnd%3 ] ;
 
     // these two depend on the loop order of PT
     size_t loops ;

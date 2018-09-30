@@ -12,7 +12,10 @@ ANALYSIS_FILES=./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/inverse.c ./ANALYSIS/KKops.c ./ANALYSIS/tetra_gevp.c \
 	./ANALYSIS/KK_BK.c ./ANALYSIS/general_ops.c ./ANALYSIS/Ren_rats.c \
 	./ANALYSIS/CPCV.c ./ANALYSIS/Wall_Local.c ./ANALYSIS/Qmoments.c \
-	./ANALYSIS/statpot.c ./ANALYSIS/adler.c
+	./ANALYSIS/statpot.c ./ANALYSIS/adler.c ./ANALYSIS/udcb.c \
+	./ANALYSIS/nrqcd.c ./ANALYSIS/nrqcd_old.c ./ANALYSIS/nrqcd_slope.c \
+	./ANALYSIS/nrqcd_baremass.c ./ANALYSIS/c4c7_analysis.c \
+	./ANALYSIS/su2_shit.c
 
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
@@ -23,7 +26,10 @@ FITS_FILES=./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c ./FITS/pp_aa.c \
 	./FITS/pp_aa_ww.c ./FITS/ppaa.c ./FITS/pp_aa_ww_r2.c \
 	./FITS/Qcorr_bessel.c ./FITS/sinh.c ./FITS/poles.c ./FITS/qslab.c \
-	./FITS/cornell.c ./FITS/pp_aa_exp.c ./FITS/qsusc_su2.c
+	./FITS/cornell.c ./FITS/pp_aa_exp.c ./FITS/qsusc_su2.c \
+	./FITS/adler_alpha_D0.c ./FITS/adler_alpha_D0_multi.c ./FITS/fvol1.c \
+	./FITS/alpha_D0_multi_new.c ./FITS/udcb_heavy.c ./FITS/nrqcd_exp.c \
+	./FITS/nrqcd_exp2.c  ./FITS/c4c7.c ./FITS/su2_shitfit.c
 
 GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 

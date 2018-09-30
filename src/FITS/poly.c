@@ -62,7 +62,8 @@ poly_d2f( double **d2f , const void *data , const double *fparams )
 void
 poly_linmat( double **U ,
 	     const void *data ,
-	     const size_t Nparam ,
+	     const size_t N ,
+	     const size_t M ,
 	     const size_t Nlogic )
 {
   struct data *Data = (struct data*)data ;
@@ -72,7 +73,7 @@ poly_linmat( double **U ,
       U[i][j] = 0.0 ;
     }
     register double x0 = 1 ;
-    for( j = 0 ; j < Nparam ; j++ ) {
+    for( j = 0 ; j < N + 1 ; j++ ) {
       U[i][ Data -> map[i].p[j] ] = x0 ;
       x0 *= Data -> x[i] ;
     }

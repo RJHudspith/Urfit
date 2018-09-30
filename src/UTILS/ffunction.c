@@ -10,25 +10,25 @@ allocate_ffunction( const size_t NPARAMS ,
   struct ffunction f ;
   f.NPARAMS = NPARAMS ;
   f.N = NDATA ;
-  f.fparams = malloc( NPARAMS * sizeof( double ) ) ;
-  f.f = malloc( NDATA * sizeof( double ) ) ;
-  f.df = malloc( NPARAMS * sizeof( double* ) ) ;
-  f.d2f = malloc( NPARAMS * NPARAMS * sizeof( double* ) ) ;
+  f.fparams = calloc( NPARAMS , sizeof( double ) ) ;
+  f.f = calloc( NDATA , sizeof( double ) ) ;
+  f.df = calloc( NPARAMS , sizeof( double* ) ) ;
+  f.d2f = calloc( NPARAMS * NPARAMS , sizeof( double* ) ) ;
   size_t i ;
   for( i = 0 ; i < NPARAMS ; i++ ) {
-    f.df[i] = malloc( NDATA * sizeof( double ) ) ;
+    f.df[i] = calloc( NDATA , sizeof( double ) ) ;
   }
   for( i = 0 ; i < NPARAMS*NPARAMS ; i++ ) {
-    f.d2f[i] = malloc( NDATA * sizeof( double ) ) ;
+    f.d2f[i] = calloc( NDATA , sizeof( double ) ) ;
   }
   // initialise priors
   for( i = 0 ; i < NPARAMS ; i++ ) {
     f.fparams[i] = UNINIT_FLAG ;
   }
   // allocate the linear matrix for the GLS
-  f.U = malloc( NDATA * sizeof( double ) ) ;
+  f.U = calloc( NDATA , sizeof( double ) ) ;
   for( i = 0 ; i < NDATA ; i++ ) {
-    f.U[i] = malloc( NPARAMS * sizeof( double ) ) ;
+    f.U[i] = calloc( NPARAMS , sizeof( double ) ) ;
   }
   return f ;
 }
@@ -79,9 +79,14 @@ free_ffunction( struct ffunction *f ,
     free( f -> U[i] ) ;
   }
   free( f -> U ) ;
-  free( f -> fparams ) ;
-  free( f -> f ) ;
+
+  //free( f -> fparams ) ;
+  
+  //free( f -> f ) ;
+  
   free( f -> df ) ;
+
   free( f -> d2f ) ;
+
   return ;
 }

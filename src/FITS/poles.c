@@ -6,22 +6,19 @@
 
 #include "Nder.h"
 
-//#define NOPOLE
-
 double
 fpoles( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-#ifdef NOPOLE
-  return fparams[0] + X.X * fparams[1] ;
-#else
-
-  switch( Npars ) {
-  case 0 : return  fparams[0] + X.X * ( fparams[3] + X.X * fparams[1] ) ;
-  case 1 : return  fparams[0] + X.X * ( fparams[5] + X.X * fparams[1] ) ;
-  case 2 : return -fparams[0] + X.X * ( fparams[4] + X.X * fparams[2] ) ;
-  case 3 : return -fparams[0] + X.X * ( fparams[6] + X.X * fparams[2] ) ;
+  size_t i ;
+  register double sum = 0.0 ;
+  for( i = 0 ; i < X.N ; i++ ) {
+    sum += fparams[ i ] * pow( X.X , -(int)X.N + (int)i ) ; 
   }
-#endif
+  for( i = 0 ; i < X.M+1 ; i++ ) {
+    sum += fparams[ X.N + i ] * pow( X.X , i ) ;
+  }
+  //return sum ;
+  return fparams[0]/(1+X.X) + fparams[1] + fparams[2]*X.X ;
 }
 
 void
@@ -48,49 +45,18 @@ poles_df( double **df , const void *data , const double *fparams )
   const struct data *DATA = (const struct data*)data ;
   size_t i , j ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
-
     const double X = DATA -> x[i] ;
-    const double XX = X * X ;
-    
-    switch( DATA -> map[i].bnd ) {
-    case 0 :
-      df[0][i] = 1.0 ;
-      df[1][i] = XX ;
-      df[2][i] = 0.0 ;
-      df[3][i] = X ;
-      df[4][i] = 0.0 ;
-      df[5][i] = 0.0 ;
-      df[6][i] = 0.0 ;
-      break ;
-    case 1 :
-      df[0][i] = 1.0 ;
-      df[1][i] = XX ;
-      df[2][i] = 0.0 ;
-      df[3][i] = 0.0 ;
-      df[4][i] = 0.0 ;
-      df[5][i] = X ;
-      df[6][i] = 0.0 ;
-      break ;
-    case 2 :
-      df[0][i] = -1.0 ;
-      df[1][i] = 0.0 ;
-      df[2][i] = XX ;
-      df[3][i] = 0.0 ;
-      df[4][i] = X ;
-      df[5][i] = 0.0 ;
-      df[6][i] = 0.0 ;
-      break ;
-    case 3 :
-      df[0][i] = -1.0 ;
-      df[1][i] = 0.0 ;
-      df[2][i] = XX ;
-      df[3][i] = 0.0 ;
-      df[4][i] = 0.0 ;
-      df[5][i] = 0.0 ;
-      df[6][i] = X ;
-      break ;
+    #if 0
+    for( j = 0 ; j < DATA -> N ; j++ ) {
+      df[ DATA -> map[i].p[j] ][ i ] = pow( X , -(int)(DATA -> N) + (int)j ) ;
     }
-
+    for( j = 0 ; j < DATA -> M+1 ; j++ ) {
+      df[ DATA -> map[i].p[j+DATA->N] ][ i ] = pow( X , j ) ;
+      }
+    #endif
+    df[DATA -> map[i].p[0]][i] = 1/(1+X) ;
+    df[DATA -> map[i].p[1]][i] = 1 ;
+    df[DATA -> map[i].p[2]][i] = X ;
   }
   return ;
 }
@@ -102,21 +68,40 @@ poles_d2f( double **d2f , const void *data , const double *fparams )
   return ;
 }
 
+// compute the linearised matrix for the GLS
+void
+poles_linmat( double **U ,
+	      const void *data ,
+	      const size_t N ,
+	      const size_t M ,
+	      const size_t Nlogic )
+{
+  struct data *Data = (struct data*)data ;
+  size_t i , j ;
+  for( i = 0 ; i < Data -> n ; i++ ) {
+    // set matrix to zero
+    for( j = 0 ; j < Nlogic ; j++ ) {
+      U[i][j] = 0.0 ;
+    }
+    const double x0 = Data -> x[i] ;
+    for( j = 0 ; j < N ; j++ ) {
+      U[i][ Data -> map[i].p[j] ] = pow( x0 , -(int)N+(int)j ) ;
+    }
+    for( j = 0 ; j < M+1 ; j++ ) {
+      U[i][ Data -> map[i].p[j + N] ] = pow( x0 , (int)j ) ;
+    }
+  }
+  return ;
+}
+
 void
 poles_guesses( double *fparams ,
 	       const struct data_info Data ,
 	       const struct fit_info Fit )
 {
-#ifdef NOPOLE
-  fparams[0] = 0.1 ;
-  fparams[1] = 1 ;
-  fparams[2] = 0.1 ;
-#else
-  fparams[0] = 0.008 ;
-  fparams[2] = -0.6 ;
-  fparams[1] = -0.88 ;
-  fparams[3] = -0.1 ;
-  fparams[4] = -0.88 ;
-  fparams[5] = -0.1 ;
-#endif
+  // do something here
+  size_t i ;
+  for( i = 0 ; i < Fit.N + Fit.M + 1 ; i++ ) {
+    fparams[i] = 1.0 ;
+  }
 }

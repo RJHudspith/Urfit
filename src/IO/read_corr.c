@@ -12,7 +12,6 @@
 
 // do we have to byte swap?
 static bool must_swap = false ;
-
 // read 32 bytes
 static int
 FREAD32( void *d , const size_t size , const size_t N , FILE *file )
@@ -42,9 +41,10 @@ read_magic_gammas( FILE *file ,
 		   uint32_t *NGSNK ,
 		   uint32_t *LT ,
 		   uint32_t *mommatch ,
-		   const uint32_t *mompoint )
+		   const double *mompoint )
 {
-  uint32_t magic[ 1 ] = { } , NMOM[ 1 ] , n[ 4 ] ;
+  uint32_t magic[ 1 ] = { } , NMOM[ 1 ] ;
+  int n[ 4 ] ;
   size_t p , flag ;
   
   if( ( flag = fread( magic , sizeof( uint32_t ) , 1 , file ) ) != 1 ) {
@@ -52,9 +52,9 @@ read_magic_gammas( FILE *file ,
     return FAILURE ;
   }
   // check the magic number, tells us the edianness
-  if( magic[0] != 67798233 ) {
+  if( magic[0] != 67678282 ) {
     bswap_32( 1 , magic ) ;
-    if( magic[0] != 67798233 ) {
+    if( magic[0] != 67678282 ) {
       fprintf( stderr , "[IO] Magic number read failure %u \n" , magic[0] ) ;
       return FAILURE ;
     }
@@ -64,21 +64,26 @@ read_magic_gammas( FILE *file ,
   // read the momentum list
   FREAD32( NMOM , sizeof( uint32_t ) , 1 , file ) ;
 
-  *mommatch = 0 ;
+  *mommatch = UNINIT_FLAG ;
   for( p = 0 ; p < NMOM[0] ; p++ ) {
-    FREAD32( n , sizeof( uint32_t ) , 4 , file ) ;
-    if( n[ 0 ] != 4-1 ) {
+    FREAD32( n , sizeof( uint32_t ) , 1 , file ) ;
+    if( n[ 0 ] != 3 ) {
       fprintf( stderr , "[IO] momlist :: %d should be %d \n" , n[ 0 ] , 3 ) ;
       return FAILURE ;
-    };
-    size_t mu , matches = 0 ;
-    for( mu = 1 ; mu < 4 ; mu++ ) {
-      if( n[mu] == mompoint[mu-1] ) matches++ ;
-      if( matches == 3 ) *mommatch = (uint32_t)p ;
     }
-    #ifdef VERBOSE
-    fprintf( stdout , "%u %u %u %u\n" , n[0] , n[1] , n[2] , n[3] ) ;
-    #endif
+    double mom[3] ;
+    FREAD64( mom , sizeof( double ) , 3 , file ) ;
+    
+    size_t mu , matches = 0 ;
+    for( mu = 0 ; mu < 3 ; mu++ ) {
+      if( fabs( mom[mu] - mompoint[mu] ) < 1E-12 ) matches++ ;
+      if( matches == 3 ) {
+	*mommatch = (uint32_t)p ;
+      }
+    }
+    //#ifdef VERBOSE
+    fprintf( stdout , "%d %1.15f %1.15f %1.15f\n" , n[0] , mom[0] , mom[1] , mom[2] ) ;
+    //#endif
   }
 
   FREAD32( NMOM , sizeof( uint32_t ) , 1 , file ) ;
@@ -90,13 +95,23 @@ read_magic_gammas( FILE *file ,
   printf( "%u %u %u %u\n" , *NMOM , *NGSRC , *NGSNK , *LT ) ;
   #endif
 
+  printf( "WHAT %u \n" , *mommatch ) ;
+
+  //*mommatch = 0 ;
+
+  // if we don't have a matching momentum we complain  
+  if( *mommatch == UNINIT_FLAG ) {
+    fprintf( stderr , "[IO] matching momentum for (%f,%f,%f) not found \n" ,
+	     mompoint[0] , mompoint[1] , mompoint[2] ) ;
+    return FAILURE ;
+  }
+
   return SUCCESS ;
 }
 
 // read correlation files
 static int
-pre_allocate( struct input_params *Input ,
-	      const uint32_t *mompoint )
+pre_allocate( struct input_params *Input )
 {
   uint32_t mommatch = 0 ;
   size_t i ;
@@ -114,17 +129,14 @@ pre_allocate( struct input_params *Input ,
       fprintf( stderr , "[IO] cannot open %s \n" , str ) ;
       return FAILURE ;
     }
-    //printf( "file :: %s \n" , str ) ;
 
     // read a file to figure out how long it is
     uint32_t Ngsrc , Ngsnk , LT ;
     if( read_magic_gammas( file , &Ngsrc , &Ngsnk , &LT ,
-			   &mommatch , mompoint ) == FAILURE ) {
+			   &mommatch , Input -> Traj[i].mom ) == FAILURE ) {
       fprintf( stderr , "[IO] magic gammas failure\n" ) ;
       return FAILURE ;
     }
-
-    //printf( "WHAT? %zu %zu %zu \n" , Ngsrc , Ngsnk , LT ) ;
 
     // sanity check LT
     if( (size_t)(2*LT) == Input -> Traj[i].Dimensions[ Input -> Traj[i].Nd - 1 ] ) {
@@ -183,7 +195,7 @@ get_correlator( double complex *C ,
 		const char *str ,
 		const size_t snk ,
 		const size_t src ,
-		const uint32_t *mompoint ,
+		const double *mompoint ,
 		const size_t Nlt )
 {
   uint32_t mommatch = 0 ;
@@ -212,8 +224,8 @@ get_correlator( double complex *C ,
   size_t i ;
 
   // seeking code
-  const size_t goffset = snk + src * (size_t)NGSNK ;
-  const size_t OFFSET = goffset * ( Nlt * sizeof( double complex ) + sizeof( uint32_t ) ) ;
+  const size_t goffset = ( snk + src * (size_t)NGSNK ) + NGSRC*NGSNK*mommatch ;
+  const size_t OFFSET = goffset * ( Nlt * sizeof( double complex ) + sizeof( uint32_t ) ) + mommatch*sizeof(double) ;
   
   if( fseek( file , OFFSET , SEEK_CUR ) != 0 ) {
     fprintf( stderr , "[IO] Fseek failed\n" ) ;
@@ -253,10 +265,7 @@ get_correlator( double complex *C ,
 
 // read in the correlators into our data struct
 int
-read_corr( struct input_params *Input ,
-	   const fold_type fold ,
-	   const size_t src ,
-	   const size_t snk )
+read_corr( struct input_params *Input )
 {
   // sanity check filenames
   size_t i , k , shift = 0 ;
@@ -270,13 +279,8 @@ read_corr( struct input_params *Input ,
       return FAILURE ;
     }
   }
-  
-  // go through the files and allocate x and y
-  uint32_t *mompoint = malloc( 3 * sizeof( uint32_t ) ) ;
-  mompoint[0] = 0 ; mompoint[1] = 0 ; mompoint[2] = 0 ;
-  
-  if( pre_allocate( Input , mompoint ) == FAILURE ) {
-    free( mompoint ) ;
+
+  if( pre_allocate( Input ) == FAILURE ) {
     return FAILURE ;
   }
 
@@ -307,7 +311,7 @@ read_corr( struct input_params *Input ,
       
       // apply the correct summation map from the correlator data
       if( ( C = map_correlator( Input -> Traj[i] , str ,
-				mompoint , Nlt ) ) == NULL ) {
+				Input -> Traj[i].mom , Nlt ) ) == NULL ) {
 	Flag = FAILURE ;
 	break ;
       }
@@ -319,16 +323,12 @@ read_corr( struct input_params *Input ,
 	break ;
       }
 
-      fprintf( stdout , "[IO] measurement %zu done\n" , meas ) ;
-
       free( C ) ;
       meas ++ ;
     }    
     shift += Input -> Data.Ndata[i] ;
   }
-  
-  free( mompoint ) ;
-  				     
+    				     
   return Flag ;
 }
 

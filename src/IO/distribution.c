@@ -134,8 +134,8 @@ init_dists( struct input_params *Input )
       }
 
       // 0.24
-      const double W[ 3 ] = { 0.26 , 0.22 , 0.19 } ;
-      if( cylinder_DF( size[0] , q , size[0] , W[ i/12 ] ) == ADD_TO_LIST ) {
+      const double W[ 3 ] = { 0.24 , 0.24 , 0.24 } ;
+      if( cylinder_DF( size[0] , q , size[0] , 0.24 ) == ADD_TO_LIST ) {
 	sum++ ;
 	inlist[i][j] = true ;
       } else {
@@ -184,6 +184,7 @@ init_dists( struct input_params *Input )
 int
 read_distribution_old( struct input_params *Input )
 {
+  printf( "Fuck you\n" ) ;
   // sanity check filenames
   size_t i , j , k , idx = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
@@ -203,21 +204,6 @@ read_distribution_old( struct input_params *Input )
     fprintf( stderr , "Failed to init Input\n" ) ;
     return FAILURE ;
   }
-
-  //const double ainv[ 3 ] = { 3.148 , 2.3833 , 1.7848 } ;
-  //const double ainv[ 3 ] = { 3.148 , 2.3833 , 1.7848 } ;
-  //const double ainv[ 3 ] = { 2.3833 , 2.3833 , 2.3833 } ;
-  //const double ainv[ 3 ] = { 1.7848 , 1.7848 , 1.7848 } ;
-
-  const double ainv[ 3*12 ] = { 3.148 , 3.148 , 3.148 , 3.148 ,
-				3.148 , 3.148 , 3.148 , 3.148 ,
-				3.148 , 3.148 , 3.148 , 3.148 ,
-				2.3833 , 2.3833 , 2.3833 , 2.3833 ,
-				2.3833 , 2.3833 , 2.3833 , 2.3833 ,
-				2.3833 , 2.3833 , 2.3833 , 2.3833 ,
-				1.7848 , 1.7848 , 1.7848 , 1.7848 ,
-				1.7848 , 1.7848 , 1.7848 , 1.7848 ,
-				1.7848 , 1.7848 , 1.7848 , 1.7848 } ;
 
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
@@ -275,7 +261,7 @@ read_distribution_old( struct input_params *Input )
 
       if( inlist[i][j] == true ) {
 	const double p2 = lattmom( Input -> Traj[i].Dimensions ,
-				   size[0] , mom , 1 ) * ainv[i] * ainv[i] ;
+				   size[0] , mom , 1 ) ;
       
 	// compute the momenta
 	equate_constant( &(Input -> Data.x[idx]) , p2 ,
@@ -312,6 +298,7 @@ read_distribution_old( struct input_params *Input )
 	  Input -> Data.y[idx].resampled[k] = tmp[k] ;
 	}
 	compute_err( &Input -> Data.y[idx] ) ;
+
 	idx++ ;
       }
     }
@@ -321,6 +308,10 @@ read_distribution_old( struct input_params *Input )
 
   // sort and average the rest
   //average_equivalent( Input ) ;
-    
+
+
+  printf( "Fuck you\n" ) ;
+
+  
   return SUCCESS ;
 }

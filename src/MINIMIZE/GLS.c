@@ -7,6 +7,8 @@
 #include "chisq.h"
 #include "svd.h"
 
+// do we solve the GLS with the SVD or the LU decomp?
+// LU decomp is faster but can't deal with singular values
 #define WITH_SVD
 
 // perform a generalised least squares iteration
@@ -39,13 +41,21 @@ gls_iter( void *fdesc ,
   gsl_matrix *alpha = gsl_matrix_alloc( N , N ) ;
   gsl_vector *beta  = gsl_vector_alloc( N ) ;
   gsl_vector *delta = gsl_vector_alloc( N ) ;
-  gsl_permutation *perm = gsl_permutation_alloc( N ) ;
 
+#ifndef WITH_SVD
+  gsl_permutation *perm = gsl_permutation_alloc( N ) ;
+#else
+  gsl_matrix *Q     = gsl_matrix_alloc( N , N ) ;
+  gsl_vector *S     = gsl_vector_alloc( N ) ;
+  gsl_vector *Work  = gsl_vector_alloc( N ) ;
+#endif
+  
   // usual counters
   size_t i , j , k , l ;
+  int Flag = SUCCESS ;
 
   // get the matrix description of our x data
-  Fit -> linmat( Fit -> f.U , data , Fit -> Nparam  , Fit -> Nlogic ) ;
+  Fit -> linmat( Fit -> f.U , data , Fit -> N , Fit -> M , Fit -> Nlogic ) ;
 
 #ifdef VERBOSE
   // tell us what it looks like
@@ -127,35 +137,34 @@ gls_iter( void *fdesc ,
     gsl_vector_set( beta , i , sum ) ;
   }
 
-#ifdef SVD
-  double A[N][N] , Ainv[N][N] ;
-  for( i = 0 ; i < N ; i++ ) {
-    for( j = 0 ; j < N ; j++ ) {
-      A[i][j] = gsl_matrix_get( alpha , i , j ) ;
-    }
-  }
-  
-  svd_inverse( Ainv , A , N , N , 1E-16 , true ) ;
+#ifdef WITH_SVD
 
-  for( i = 0 ; i < N ; i++ ) {
-    register double sum = 0.0 ;
-    for( j = 0 ; j < N ; j++ ) {
-      sum += Ainv[i][j] * gsl_vector_get( beta , i ) ;
-    }
-    Fit -> f.fparams[i] = sum ;
+  if( gsl_linalg_SV_decomp( alpha , Q , S , Work ) != GSL_SUCCESS ) {
+    fprintf( stderr , "[GLS] SVD decomp failed\n" ) ;
+    Flag = FAILURE ;
   }
+  if( Flag != FAILURE ) {
+    if( gsl_linalg_SV_solve( alpha , Q , S , beta , delta ) != GSL_SUCCESS ) {
+      fprintf( stderr , "[GLS] SVD solve failed\n" ) ;
+      Flag = FAILURE ;
+    }
+    for( i = 0 ; i < N ; i++ ) {
+      Fit -> f.fparams[i] = gsl_vector_get( delta , i ) ;
+    }
+  }
+  // else what?
   
 #else
   // solves alpha[p][q] * delta( a[q] ) = beta[p] for delta
-  int signum , Flag = SUCCESS ;
+  int signum ;
   if( gsl_linalg_LU_decomp( alpha , perm , &signum ) != GSL_SUCCESS ) {
-    fprintf( stderr , "[POLY_COEFF] LU decomp failed, rolling back to SVD\n" ) ;
+    fprintf( stderr , "[GLS] LU decomp failed, roll back to SVD?\n" ) ;
     Flag = FAILURE ;
   }
   // if that worked we do the LU solve
   if( Flag != FAILURE ) {
     if( gsl_linalg_LU_solve( alpha , perm , beta , delta ) != GSL_SUCCESS ) {
-      fprintf( stderr , "[POLY_COEFF] LU solve failure \n" ) ;
+      fprintf( stderr , "[GLS] LU solve failure \n" ) ;
       Flag = FAILURE ;
     } else {
       // set the coefficients
@@ -173,8 +182,15 @@ gls_iter( void *fdesc ,
   // free the gsl vectors
   gsl_vector_free( beta ) ;
   gsl_matrix_free( alpha ) ;
-  gsl_permutation_free( perm ) ;
   gsl_vector_free( delta ) ;
+
+#ifndef WITH_SVD
+  gsl_permutation_free( perm ) ;
+#else
+  gsl_matrix_free( Q ) ;
+  gsl_vector_free( S ) ;
+  gsl_vector_free( Work ) ;
+#endif
   
   return Flag ;
 }

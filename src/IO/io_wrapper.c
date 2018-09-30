@@ -20,7 +20,7 @@ io_wrap( struct input_params *Input )
   // IO switch
   switch( Input -> FileType ) {
   case Corr_File :
-    if( read_corr( Input , NOFOLD , 5 , 5 ) == FAILURE ) {
+    if( read_corr( Input ) == FAILURE ) {
       return FAILURE ;
     }
     // set Lt

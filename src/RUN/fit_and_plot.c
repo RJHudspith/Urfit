@@ -76,10 +76,9 @@ fit_and_plot( struct input_params Input ,
   
   Data.Ndata = malloc( Data.Nsim * sizeof( size_t ) ) ;
   Data.Nboots = Input.Data.Nboots ;
-
   Data.x = malloc( Data.Ntot * sizeof( struct resampled ) ) ;
   Data.y = malloc( Data.Ntot * sizeof( struct resampled ) ) ;
-  
+
   size_t k = 0 ;
   for( i = 0 ; i < Data.Nsim ; i++ ) {
     size_t Ndata = 0 ;

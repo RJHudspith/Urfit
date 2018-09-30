@@ -6,6 +6,7 @@ pade_laplace( double *fparams ,
 	      const double *x ,
 	      const double *y ,
 	      const size_t Ndata ,
-	      const size_t Nexps ) ;
+	      const size_t Nexps ,
+	      const double p0 ) ;
 
 #endif

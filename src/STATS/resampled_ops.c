@@ -297,6 +297,21 @@ root( struct resampled *a )
   return ;
 }
 
+// atomic, a = ( a + 3*b ) / 4 for the distribution
+void
+spin_average( struct resampled *a , 
+	      const struct resampled b ) 
+{
+  resampled_checks( "spin_average" , *a , b ) ;
+  size_t i ;
+  for( i = 0 ; i < a -> NSAMPLES ; i++ ) {
+    a -> resampled[i] = ( a -> resampled[i] + 3*b.resampled[i] )/4. ;
+  }
+  a -> avg = ( a -> avg +  3*b.avg )/4. ;
+  compute_err( a ) ;
+  return ;
+}
+
 // atomic, a -= b for the distribution
 void
 subtract( struct resampled *a , 

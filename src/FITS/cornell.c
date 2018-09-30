@@ -21,7 +21,7 @@ fcornell( const struct x_desc X , const double *fparams , const size_t Npars )
   return
     + fparams[0] * ( 1 + mbar[ Npars ] * fparams[1] ) * X.X 
     + fparams[2] * ( 1 + mbar[ Npars ] * fparams[3] )
-    //+ fparams[4] * ( 1 + mbar[ Npars ] * fparams[5] ) / X.X
+    + fparams[4] * ( 1 + mbar[ Npars ] * fparams[5] ) / X.X
     ;
 }
 
@@ -56,8 +56,8 @@ cornell_df( double **df , const void *data , const double *fparams )
     df[1][i] = ( fparams[0] * m ) * r ;
     df[2][i] = ( 1 + m * fparams[3] ) ;
     df[3][i] = ( fparams[2] * m ) ;
-    //df[4][i] = ( 1 + m * fparams[5] ) / r ;
-    //df[5][i] = ( fparams[4] * m ) / r ;
+    df[4][i] = ( 1 + m * fparams[5] ) / r ;
+    df[5][i] = ( fparams[4] * m ) / r ;
   }
   return ;
 }
@@ -78,6 +78,6 @@ cornell_guesses( double *fparams ,
   fparams[1] = 0.1 ;
   fparams[2] = 1.0 ;
   fparams[3] = 1.0 ;
-  //fparams[4] = 0.1 ;
-  //fparams[5] = 0.01 ;
+  fparams[4] = 0.1 ;
+  fparams[5] = 0.01 ;
 }

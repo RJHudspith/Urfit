@@ -9,7 +9,7 @@
 #include "fitfunc.h"
 #include "make_xmgrace.h" // drawing lines
 #include "pmap.h"
-#include "resampled_ops.h"
+#include "resampled_ops.h" // compute err
 #include "stats.h"
 
 struct resampled
@@ -26,6 +26,7 @@ extrap_fitfunc( const struct resampled *f ,
 
   struct x_desc xdesc = { xpos , Data.LT[shift] , Fit.N , Fit.M } ;
   double fparams[ fdesc.Nparam ] ;
+  
   size_t j , p ;
   for( j = 0 ; j < f[0].NSAMPLES ; j++ ) {
     // evaluate the fitfunc
@@ -33,13 +34,14 @@ extrap_fitfunc( const struct resampled *f ,
       fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
     }
     data.resampled[j] = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+    //data.resampled[j] = fdesc.func( xdesc , fparams , shift ) ;
   }
   // and the average
   for( p = 0 ; p < fdesc.Nparam ; p++ ) {
     fparams[ p ] = f[ Fit.map[shift].p[p] ].avg ;
   }
   data.avg = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
-
+  //data.avg = fdesc.func( xdesc , fparams , shift ) ;
   compute_err( &data ) ;
 	
   // free the fitfunction
@@ -60,7 +62,7 @@ plot_fitfunction( const struct resampled *f ,
   double *YMIN = malloc( granularity * sizeof( double ) ) ;
   double *YMAX = malloc( granularity * sizeof( double ) ) ;
 
-  size_t h , i , p ;
+  size_t h , i ;
 
   // loop over the simultaneous parameters
   size_t shift = 0 ;
@@ -77,7 +79,8 @@ plot_fitfunction( const struct resampled *f ,
 	xmax = Data.x[i].err_hi ;
       }
     }
-    //xmin = 0.0 ;
+    //xmin = 0 ;
+    //xmax = -0.9029 ;
 
     const double x_step = ( xmax - xmin ) / ( granularity - 1 ) ;
     for( i = 0 ; i < granularity ; i++ ) {
@@ -107,4 +110,3 @@ plot_fitfunction( const struct resampled *f ,
 
   return SUCCESS ;
 }
-

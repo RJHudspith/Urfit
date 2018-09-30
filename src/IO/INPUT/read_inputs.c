@@ -152,6 +152,7 @@ read_inputs( struct input_params *Input ,
     fprintf( stderr , "[INPUT] FileType tag not found in input file \n" ) ;
     Flag = FAILURE ;
   } else {
+    printf( "In here \n" ) ;
     if( are_equal( Flat[ io_tag ].Value , "Corr_File" ) ) {
       Input -> FileType = Corr_File ;
     } else if( are_equal( Flat[ io_tag ].Value , "Distribution_File" ) ) {
@@ -172,6 +173,7 @@ read_inputs( struct input_params *Input ,
       Flag = FAILURE ;
     }
   }
+  
   // get the filetype tag
   size_t an_tag = 0 ;
   if( ( an_tag = tag_search( Flat , "Analysis" , 0 , Ntags ) ) == Ntags ) {
@@ -194,6 +196,8 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = Wflow ;
     } else if( are_equal( Flat[ an_tag ].Value , "Fit" ) ) {
       Input -> Analysis = Fit ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Nrqcd" ) ) {
+      Input -> Analysis = Nrqcd ;
     } else if( are_equal( Flat[ an_tag ].Value , "Qcorr" ) ) {
       Input -> Analysis = Qcorr ;
     } else if( are_equal( Flat[ an_tag ].Value , "Qsusc" ) ) {
@@ -218,23 +222,26 @@ read_inputs( struct input_params *Input ,
       Flag = FAILURE ;
     }
   }
-
   
   if( get_traj( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
+  printf( "FLAG %d \n" , Flag ) ;
 
   if( get_fit( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
+  printf( "Fit FLAG %d \n" , Flag ) ;
 
   if( get_stats( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
+  printf( "FLAG %d \n" , Flag ) ;
 
   if( get_graph( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
+  printf( "FLAG %d \n" , Flag ) ;
   
   // close and unpack
   unpack_inputs( Flat , Ntags ) ;

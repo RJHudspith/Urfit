@@ -379,7 +379,7 @@ get_safe_masses( const size_t NSTATES ,
 {
   size_t Ntrust = 0 , Niffy = 0 , Nbad = 0 , i ;
   for( i = 0 ; i < NSTATES ; i++ ) {
-    printf( "PRON_%zu %zu  %e %e \n" , i , t , creal( x[i] ) , cimag( x[i] ) ) ;
+    //printf( "PRON_%zu %zu  %e %e \n" , i , t , creal( x[i] ) , cimag( x[i] ) ) ;
     if( creal( x[i] ) < 1.03 ) {
       Nbad++ ;
     } else if( fabs( cimag( x[i] ) ) < 1E-12 ) {
@@ -388,7 +388,7 @@ get_safe_masses( const size_t NSTATES ,
   }
   Niffy = NSTATES - Ntrust - Nbad ;
 
-  printf( "Ntrust %zu , Niffy %zu , Nbad %zu \n" , Ntrust , Niffy , Nbad ) ;
+  //printf( "Ntrust %zu , Niffy %zu , Nbad %zu \n" , Ntrust , Niffy , Nbad ) ;
 
   size_t t_idx = 0 , i_idx = 0 , b_idx = 0 ;
   double etrust[ Ntrust ] , eiffy[ Niffy ] , ebad[ Nbad ] ;
@@ -401,7 +401,7 @@ get_safe_masses( const size_t NSTATES ,
       eiffy[ i_idx ] = fabs( creal( clog( x[i] ) ) ) ; i_idx++ ;
     }
   }
-  printf( "Sols did \n" ) ;
+  //printf( "Sols did \n" ) ;
 
   // sort them
   qsort( etrust , Ntrust , sizeof(double) , comp ) ;
@@ -423,7 +423,7 @@ get_safe_masses( const size_t NSTATES ,
   }
 
   for( i = 0 ; i < NSTATES ; i++ ) {
-    printf( "Masses_%zu %e \n" , i , masses[i][t] ) ;
+    //printf( "Masses_%zu %e \n" , i , masses[i][t] ) ;
   }
   
   return ;
@@ -444,7 +444,7 @@ blackbox( const double *data ,
   size_t t ;
   for( t = 0 ; t < smallt ; t++ ) {
 
-    blackbox1( x , data , NDATA , NSTATES , t , NSTATES+10 ) ;
+    blackbox4( x , data , NDATA , NSTATES , t , NSTATES+10 ) ;
     
     get_safe_masses( NSTATES , NDATA , masses , x , t ) ;
   }

@@ -29,6 +29,9 @@
 // aQ^6 correction
 //#define FIT_AQ6
 
+// aQ^8
+//#define FIT_AQ8
+
 //#define FIT_ACORR_A4
 
 //#define FIT_D5
@@ -56,7 +59,7 @@ const static double a2[ 3*12 ] = { 0.10090915108763919 , 0.10090915108763919 , 0
 				   0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 } ;
 
 // beta parameters
-const double b0 = 2.25 , b1 = 4.0 , b2 = 10.059895833333334 , b3 = 47.228039589777325 ;
+static const double b0 = 2.25 , b1 = 4.0 , b2 = 10.059895833333334 , b3 = 47.228039589777325 ;
 
 void
 set_Q1_multi( const double val , const size_t idx )
@@ -155,13 +158,17 @@ falpha_D0_multi( const struct x_desc X , const double *fparams , const size_t Np
 #endif
 
   // momentum corrections
-  double corrections = fparams[1] * a2[ Npars ] * ( Q1[ Npars] - X.X ) / ( t1 - t2 ) ;
+  double corrections = fparams[1] * a2[ Npars ] * ( X.X - Q1[ Npars ] ) / ( t2 - t1 ) ;
 #ifdef FIT_AQ4
-  corrections += fparams[3] * a2[ Npars ] * a2[ Npars ] * ( Q1[ Npars] * Q1[ Npars] - X.X * X.X ) / ( t1 - t2 ) ;
+  corrections += fparams[3] * a2[ Npars ] * a2[ Npars ] * ( X.X * X.X - Q1[ Npars] * Q1[ Npars] ) / ( t2 - t1 ) ;
 #endif
 
 #ifdef FIT_AQ6
-  corrections += fparams[4] * a2[ Npars ] * a2[ Npars ] * ( Q1[ Npars] * Q1[ Npars] * Q1[ Npars ] - X.X * X.X * X.X ) / ( t1 - t2 ) ;
+  corrections += fparams[4] * a2[ Npars ] * a2[ Npars ] * a2[ Npars ] * ( X.X * X.X * X.X - Q1[ Npars] * Q1[ Npars] * Q1[ Npars ] ) / ( t2 - t1 ) ;
+#endif
+
+#ifdef FIT_AQ8
+  corrections += fparams[5] * a2[ Npars ] * a2[ Npars ] * a2[ Npars ] * a2[ Npars ] * ( X.X * X.X * X.X *X.X -  Q1[ Npars] * Q1[ Npars] * Q1[ Npars ] * Q1[ Npars ] ) / ( t2 - t1 ) ;
 #endif
   
   // delta from D=0 OPE
@@ -204,7 +211,7 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
   size_t i ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
 
-    /*
+    #if 0
     struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
 			DATA -> N , DATA -> M } ;
 
@@ -214,9 +221,10 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
 					   DATA -> map[i].bnd ,
 					   fparams , j , DATA -> Npars ) ;
     }
-    */
+    #endif
     
     //#if 0
+
     // this is the data index
     const size_t mref = DATA -> map[i].bnd ;
 
@@ -267,13 +275,17 @@ alpha_D0_multi_df( double **df , const void *data , const double *fparams )
     #endif
     
     // rotation-preserving corrections
-    df[ DATA -> map[i].p[1] ][i] = asq *  ( Qref - DATA -> x[i] ) / ( t1 - t2 ) ;
+    df[ DATA -> map[i].p[1] ][i] = asq *  ( DATA -> x[i] - Qref ) / ( t2 - t1 ) ;
     #ifdef FIT_AQ4
-    df[ DATA -> map[i].p[3] ][i] = asq * asq * ( Qref * Qref - DATA -> x[i] * DATA -> x[i] ) / ( t1 - t2 ) ;
+    df[ DATA -> map[i].p[3] ][i] = asq * asq * ( DATA -> x[i] * DATA -> x[i] - Qref * Qref ) / ( t2 - t1 ) ;
     #endif
 
     #ifdef FIT_AQ6
-    df[ DATA -> map[i].p[4] ][i] = asq * asq * asq * ( Qref * Qref * Qref - DATA -> x[i] * DATA -> x[i] * DATA -> x[i] ) / ( t1 - t2 ) ;
+    df[ DATA -> map[i].p[4] ][i] = asq * asq * asq * ( DATA -> x[i] * DATA -> x[i] * DATA -> x[i] -  Qref * Qref * Qref ) / ( t2 - t1 ) ;
+    #endif
+
+    #ifdef FIT_AQ8
+    df[ DATA -> map[i].p[5] ][i] = asq * asq * asq * asq * ( DATA -> x[i] * DATA -> x[i] * DATA -> x[i] * DATA -> x[i] - Qref * Qref * Qref * Qref ) / ( t2 - t1 ) ;
     #endif
     
     // derivative of perturbative free parameter d_5
@@ -319,6 +331,10 @@ alpha_D0_multi_guesses( double *fparams ,
 
 #ifdef FIT_AQ6
   fparams[4] = 0.00 ;
+#endif
+
+#ifdef FIT_AQ8
+  fparams[5] = 0.00 ;
 #endif
   
 #ifdef FIT_D5

@@ -17,14 +17,14 @@ Nder( double (*f) ( const struct x_desc X ,
       const size_t Nparams ) 
 {
   double Plus[ Nparams ] , Minus[ Nparams ] ;
-  double h = 1E-4 , TOL = 1.0 , TOLPREV = UNINIT_FLAG , dfidx = UNINIT_FLAG ;
+  double h = 1E-3 , TOL = 1.0 , TOLPREV = UNINIT_FLAG , dfidx = 0 ;
   size_t inc = 0 ;
   
   // copy the temps
   memcpy( Plus  , fparams , Nparams * sizeof( double ) ) ;
   memcpy( Minus , fparams , Nparams * sizeof( double ) ) ;
   
-  while( TOL > 1E-10 ) {
+  while( TOL > 1E-10 && inc < 15 ) {
 
     // set the plus and minus terms
     Plus[ idx ]  = fparams[ idx ] + h ;
@@ -44,14 +44,12 @@ Nder( double (*f) ( const struct x_desc X ,
     fprintf( stdout , "[NDER] TOL -> %e \n" , TOL ) ;
     #endif
 
-    // if solutions grow we leave
+    // if the solution is growing then break
     if( TOL > TOLPREV ) break ;
 
-    h *= 0.5 ;
+    h *= 0.1 ;
     dfidx = trial ;
     TOLPREV = TOL ;
-
-    if( inc > 10 ) break ;
     
     inc++ ;
   }
@@ -60,8 +58,8 @@ Nder( double (*f) ( const struct x_desc X ,
   fprintf( stdout , "Finished :: dfidx %f \n" , dfidx ) ;
   #endif
   
-  if( dfidx == UNINIT_FLAG || TOL > 1E-4 ) {
-    fprintf( stderr , "[NDER] failed to converge :: %e \n" , TOL ) ;
+  if( dfidx == UNINIT_FLAG || TOL > 1E-3 ) {
+    fprintf( stderr , "[NDER] failed to converge :: %zu %e \n" , inc , TOL ) ;
     return sqrt(-1) ;
   }
   

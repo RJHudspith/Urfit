@@ -9,27 +9,30 @@
 // computes the decay constant for a given amplitude from our simultaneous fit
 struct resampled
 decay( const struct resampled *fitparams ,
-       const struct input_params Input )
-{
-  enum { MASS = 0 , PL = 1 , AL = 2 , PW = 3 , AW = 4 }  ;
-    
-  struct resampled result ;
-  result.resampled = malloc( fitparams[0].NSAMPLES * sizeof( double ) ) ;
+       const struct input_params Input ,
+       const size_t Mass_idx  ,
+       const size_t Amp_idx )
+{    
+  struct resampled result = init_dist( &fitparams[ Amp_idx ] ,
+				       fitparams[ Amp_idx ].NSAMPLES ,
+				       fitparams[ Amp_idx ].restype ) ;
 
-  const double vol_fac = 2.0 / ( Input.Traj[0].Dimensions[0] *
+  const double vol_fac = 2.0 ; /* ( Input.Traj[0].Dimensions[0] *
 				 Input.Traj[0].Dimensions[1] *
-				 Input.Traj[0].Dimensions[2] ) ;
+				 Input.Traj[0].Dimensions[2] ) ;*/
 
   // f = 
-  equate( &result , fitparams[ AL ] ) ;
-  mult( &result , fitparams[ AL ] ) ;
+  mult( &result , fitparams[ Amp_idx ] ) ;
+  
   // AL^2
   mult_constant( &result , vol_fac ) ;
-  divide( &result , fitparams[ MASS ] ) ;
+
+  divide( &result , fitparams[ Mass_idx ] ) ;
+  divide( &result , fitparams[ Mass_idx ] ) ;
+  
   root( &result ) ;
 
-  fprintf( stdout , "Decay :: %e +/- %e \n" , result.avg , result.err ) ;
-  //printf( "Decay :: %f +/- %f \n" , result.avg , result.err ) ;
+  fprintf( stdout , "Decay :: %e,%e \n" , result.avg , result.err ) ;
   
   return result ;
 }
