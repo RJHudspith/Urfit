@@ -7,65 +7,152 @@
    A.v = \lambda B.v
    
    where A and B are real matrices
+
+   Uses GSL's eigenvalue sort routines for the eigenvalues
  */
 #include "gens.h"
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_eigen.h>
-/*
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <complex.h>
-#define FAILURE -1
-#define SUCCESS !FAILURE
-*/
+
+#include "stats.h"
+
+struct GEVP_temps {
+  gsl_matrix *a ;
+  gsl_matrix *b ;
+  gsl_eigen_genv_workspace *work ;
+  gsl_vector_complex *alpha ;
+  gsl_vector *beta ;
+  gsl_matrix_complex *evec ;
+  double complex *ev ;
+  double *evec_norm ;
+  size_t N ;
+} ;
+
+static int
+comp_abs_desc( const double complex ev1 ,
+	       const double complex ev2 )
+{
+  return cabs(ev1) < cabs(ev2) ;
+}
+
+static int
+comp_abs_asc( const double complex ev1 ,
+	      const double complex ev2 )
+{
+  return cabs(ev1) > cabs(ev2) ;
+}
+
+static int
+comp_re_desc( const double complex ev1 ,
+	       const double complex ev2 )
+{
+  return creal(ev1) < creal(ev2) ;
+}
+
+static int
+comp_re_asc( const double complex ev1 ,
+	      const double complex ev2 )
+{
+  return creal(ev1) > creal(ev2) ;
+}
+
+// sort by whatever I specify in comp at the moment just eigenvalues
+static void
+insertion_sort( struct GEVP_temps *G ,
+		int (*comp)( const double complex ev1 ,
+			     const double complex ev2 ) )
+{
+  gsl_vector_complex *tevec = gsl_vector_complex_alloc( G -> N ) ;
+  
+  size_t i , j ;
+  for( i = 0 ; i < G -> N ; i++ ) {
+
+    const double complex ev1 = G -> ev[i] ;
+    for( j = 0 ; j < G -> N ; j++ ) {
+      gsl_vector_complex_set( tevec , j ,
+			      gsl_matrix_complex_get( G->evec , j , i ) ) ;
+    }
+    
+    int hole = (int)i - 1 ;
+    while( hole >= 0 && comp( G -> ev[hole] , ev1 ) ) {
+      // copy data
+      G -> ev[hole+1] = G -> ev[hole] ;
+      for( j = 0 ; j < G -> N ; j++ ) {
+        gsl_matrix_complex_set( G->evec , j , hole+1 ,
+				gsl_matrix_complex_get( G->evec , j , hole ) ) ;
+      }
+      hole-- ;
+    }
+    G -> ev[hole+1] = ev1 ;
+    for( j = 0 ; j < G -> N ; j++ ) {
+      gsl_matrix_complex_set( G -> evec , j , i ,
+			      gsl_vector_complex_get( tevec , j ) ) ;
+    }
+  }
+
+  gsl_vector_complex_free( tevec ) ;
+  
+  return ;
+}
 
 // uses GSL to solve a generalised eigenvalue problem
 // returns the real part of the eigenvalues
 // solves A.v = \lambda B.v
 // where A and B are real matrices
 static int
-gevp( gsl_matrix *a ,
-      gsl_matrix *b ,
-      gsl_eigen_genv_workspace *work ,
-      gsl_vector_complex *alpha ,
-      gsl_vector *beta ,
-      gsl_matrix_complex *evec ,
+gevp( struct GEVP_temps *G ,
       const size_t n ,
       const bool before ,
+      const size_t t ,
       const bool write_evalues ) 
 {
-  size_t i , j ;
   int flag = SUCCESS ;
   
   // perform decomposition
-  const int err = gsl_eigen_genv( a , b , alpha , beta , evec , work ) ;
+  const int err = gsl_eigen_genv( G->a , G->b , G->alpha ,
+				  G->beta , G->evec , G->work ) ;
 
   if( err != 0 ) {
-    printf( "%s\n" , gsl_strerror( err ) ) ;
-    printf( "Aborting\n" ) ;
+    fprintf( stderr , "%s\n" , gsl_strerror( err ) ) ;
+    fprintf( stderr , "GEVP Aborting\n" ) ;
     flag = FAILURE ;
   }
 
-  if( before ) {
-    gsl_eigen_genv_sort( alpha , beta , evec , GSL_EIGEN_SORT_ABS_ASC ) ;
-  } else {
-    gsl_eigen_genv_sort( alpha , beta , evec , GSL_EIGEN_SORT_ABS_DESC ) ;
-  }
-    
-  // get the real and imaginary parts
-  for( i = 0 ; i < n ; i++ ) {
-    // if we want them written
-    if( write_evalues == true ) {
-      fprintf( stdout , "EVALUE_%zu %e %e \n" ,
-	       i , ( gsl_vector_complex_get( alpha , i ).dat[0] )
-	       / gsl_vector_get( beta , i ) ,
-	       ( gsl_vector_complex_get( alpha , i ).dat[1] )
-	       / gsl_vector_get( beta , i ) ) ;
-    }
+  // set the ev
+  size_t i ;
+  for( i = 0 ; i < G -> N ; i++ ) {
+    G -> ev[i] = ( gsl_vector_complex_get( G -> alpha , i ).dat[0] 
+		   + I*gsl_vector_complex_get( G -> alpha , i ).dat[1] )
+      / gsl_vector_get( G->beta , i ) ;
   }
 
+  // sort by the real part
+  if( before ) {
+    insertion_sort( G , comp_re_asc ) ;
+  } else {
+    insertion_sort( G , comp_re_desc ) ;
+  }
+  
+  size_t j ;
+  for( j = 0 ; j < G -> N ; j++ ) {
+    if( write_evalues ) {
+      // if we want them written
+      fprintf( stdout , "STATE_%zu %zu evalue %e %e \n" ,
+	       j , t , creal( G -> ev[j]) , cimag( G -> ev[j]) ) ;
+      size_t nevec ;
+      for( nevec = 0 ; nevec < G->N ; nevec++ ) {
+	fprintf( stdout , "STATE_%zu %zu evec %zu %e %e\n" ,
+		 j , t , nevec ,
+		 ( gsl_matrix_complex_get( G -> evec , nevec , j ).dat[0] )
+		 ,
+		 ( gsl_matrix_complex_get( G -> evec , j , nevec ).dat[1] )
+		 ) ;
+      }
+      //
+    }
+  }
+  
   return flag ;
 }
 
@@ -134,46 +221,48 @@ set_ab( gsl_matrix *a , gsl_matrix *b ,
     }
   } else {
     svd_TLS( a , b , C0 , C1 , M , N ) ;
-    /*
-    size_t k ;
-    // square it
-    for( i = 0 ; i < N ; i++ ) {
-      for( j = 0 ; j < N ; j++ ) {
-	gsl_matrix_set( a , i , j , 0.0 ) ;
-	gsl_matrix_set( b , i , j , 0.0 ) ;
-      }
-    }
-    for( i = 0 ; i < N ; i++ ) {
-      for( j = 0 ; j < N ; j++ ) {
-	double l1 = 0.0 , l2 = 0.0 ;
-	for( k = 0 ; k < M ; k++ ) {
-	  l1 += C0[ i + k*N ] * C0[ j + k*N ] ;
-	  l2 += C1[ i + k*N ] * C1[ j + k*N ] ;
-	}
-	gsl_matrix_set( a , i , j , l1 ) ;
-	gsl_matrix_set( b , i , j , l2 ) ;
-
-	//printf( " %f " , gsl_matrix_get( a , i , j ) ) ;
-      }
-      //printf( "\n" ) ;
-    }
-    */
-    //
   }
   return ;
 }
 
+static void
+allocate_G( struct GEVP_temps *G ,
+	    const size_t N )
+{
+  // set the data
+  G -> a = gsl_matrix_alloc( N , N ) ;
+  G -> b = gsl_matrix_alloc( N , N ) ;
+  // allocations for GSL
+  G -> work  = gsl_eigen_genv_alloc( N ) ;
+  G -> alpha = gsl_vector_complex_alloc( N ) ;
+  G -> beta  = gsl_vector_alloc( N ) ;
+  G -> evec  = gsl_matrix_complex_alloc( N , N ) ;
+  G -> evec_norm = malloc( N*sizeof(double) ) ;
+  G -> ev = malloc( N*sizeof( double complex ) ) ;
+  G -> N = N ;
+}
+
+static void
+free_G( struct GEVP_temps *G )
+{
+  gsl_matrix_complex_free( G -> evec ) ;
+  gsl_vector_complex_free( G -> alpha ) ;
+  gsl_vector_free( G -> beta ) ;
+  gsl_eigen_genv_free( G-> work ) ;
+  gsl_matrix_free( G -> a ) ;
+  gsl_matrix_free( G -> b ) ;
+  free( G -> ev ) ;
+  free( G -> evec_norm ) ;
+}
+
 // solve the GEVP
 struct resampled *
-solve_GEVP( struct input_params *Input ,
+solve_GEVP( const struct resampled *y ,
+	    const size_t Ndata ,
 	    const size_t N ,
 	    const size_t M ,
 	    const size_t t0 )
 {
-  if( N*M != Input -> Data.Nsim ) {
-    fprintf( stderr , "[GEVP] N*M != %zu\n" , Input -> Data.Nsim ) ;
-    return NULL ;
-  }
   if( N > M ) {
     fprintf( stderr , "[GEVP] cannot solve when N states "
 	     "are less than M correlators\n" ) ;
@@ -181,99 +270,88 @@ solve_GEVP( struct input_params *Input ,
   }
   
   // initialise the generalised eigenvalues
-  struct resampled *evalues = malloc( Input -> Data.Ndata[0] * N *
+  struct resampled *evalues = malloc( Ndata*N*
 				      sizeof( struct resampled ) ) ;
   size_t i , j , k ;
-  for( j = 0 ; j < Input ->Data.Ndata[0]*N ; j++ ) {
-    evalues[j].resampled = malloc( Input -> Data.y[0].NSAMPLES *
+  for( j = 0 ; j < Ndata*N ; j++ ) {
+    evalues[j].resampled = malloc( y[0].NSAMPLES *
 				   sizeof( double ) ) ;
-    evalues[j].restype = Input -> Data.y[0].restype ;
-    evalues[j].NSAMPLES = Input -> Data.y[0].NSAMPLES ;
+    evalues[j].restype = y[0].restype ;
+    evalues[j].NSAMPLES = y[0].NSAMPLES ;
   }
 
-  // set the data
-  gsl_matrix *a  = gsl_matrix_alloc( N , N ) ;
-  gsl_matrix *b  = gsl_matrix_alloc( N , N ) ;
+  struct GEVP_temps *G = malloc( Ndata*sizeof( struct GEVP_temps ) ) ;
 
-  // allocations for GSL
-  gsl_eigen_genv_workspace *work = gsl_eigen_genv_alloc( N ) ;
-  gsl_vector_complex *alpha  = gsl_vector_complex_alloc( N ) ;
-  gsl_vector *beta  = gsl_vector_alloc( N ) ;
-  gsl_matrix_complex *evec = gsl_matrix_complex_alloc( N , N ) ;
+  double C0[ N*M ] , C1[ N*M ] ;
   
   // ugh loop order is all weird
-  for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
+  for( j = 0 ; j < Ndata ; j++ ) {
+    allocate_G( &G[j] , N );
+  }
 
-    double C0[ Input -> Data.Nsim ] , C1[ Input -> Data.Nsim ] ;
-
-    fprintf( stdout , "[GEVP] solving GEVP %zu \n" , j ) ;
+  // loop resamples
+  for( k = 0 ; k < y[0].NSAMPLES ; k++ ) {
     
-    for( k = 0 ; k < Input -> Data.y[0].NSAMPLES ; k++ ) {
+    for( j = 0 ; j < Ndata ; j++ ) {
 
       // put these in the linearised matrices
       size_t shift = 0 ;
-      for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-	C0[i] = Input -> Data.y[ j  + shift ].resampled[k] ;
-	C1[i] = Input -> Data.y[ t0 + shift ].resampled[k] ;
-	shift += Input -> Data.Ndata[i] ;
+      for( i = 0 ; i < N*M ; i++ ) {
+	C0[i] = y[ j  + shift ].resampled[k] ;
+	C1[i] = y[ t0 + shift ].resampled[k] ;
+	shift += Ndata ;
       }
 
       // set AB by squaring the matrices, possibly
-      set_ab( a , b , C0 , C1 , N , M ) ;
+      set_ab( G[j].a , G[j].b , C0 , C1 , N , M ) ;
       
       // compute eigenvalues
-      if( gevp( a , b , work , alpha , beta , evec ,
-		N , j<t0 , false ) == FAILURE ) {
+      if( gevp( &G[j] , N , j<t0 , j , false ) == FAILURE ) {
 	fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
         return NULL ;
       }
+    }
 
+    for( j = 0 ; j < Ndata ; j++ ) {
       // poke into solution
       for( i = 0 ; i < N ; i++ ) {
-	evalues[j+Input->Data.Ndata[0]*i].resampled[ k ] =
-	  ( gsl_vector_complex_get( alpha , i ).dat[0] )
-	  / gsl_vector_get( beta , i ) ;
-	//evalues[j+Input->Data.Ndata[0]*i].resampled[ k ] *= evalues[j+Input->Data.Ndata[0]*i].resampled[ k ] ;
+	evalues[j+Ndata*i].resampled[ k ] = creal( G[j].ev[i] ) ;
       }
       //
     }
+  }
 
+  for( j = 0 ; j < Ndata ; j++ ) {
     // redo for the average
     size_t shift = 0 ;
-    for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-      C0[i] = Input -> Data.y[ j  + shift ].avg ;
-      C1[i] = Input -> Data.y[ t0 + shift ].avg ;
-      shift += Input -> Data.Ndata[i] ;
+    for( i = 0 ; i < N*M ; i++ ) {
+      C0[i] = y[ j  + shift ].avg ;
+      C1[i] = y[ t0 + shift ].avg ;
+      shift += Ndata ;
     }
 
-    // set AB by squaring the matrices
-    set_ab( a , b , C0 , C1 , N , M ) ;
+    // set AB by squaring the matrices possibly
+    set_ab( G[j].a , G[j].b , C0 , C1 , N , M ) ;
 
     // compute eigenvalues
-    if( gevp( a , b , work , alpha , beta , evec ,
-	      N , j<t0 , true ) == FAILURE ) {
+    if( gevp( &G[j] , N , j<t0 , j , true ) == FAILURE ) {
       fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
       return NULL ;
     }
-
-    // poke into solution
-    for( i = 0 ; i < N ; i++ ) {
-      evalues[j+Input->Data.Ndata[0]*i].avg =
-	( gsl_vector_complex_get( alpha , i ).dat[0] )
-	/ gsl_vector_get( beta , i ) ;
-      //evalues[j+Input->Data.Ndata[0]*i].avg *= evalues[j+Input->Data.Ndata[0]*i].avg ;
-    }
-    //
   }
 
-  gsl_matrix_complex_free( evec ) ;
+  for( j = 0 ; j < Ndata ; j++ ) {
+    // poke into solution
+    for( i = 0 ; i < N ; i++ ) {
+      evalues[j+Ndata*i].avg = creal( G[j].ev[i] ) ;
+      compute_err( &evalues[j+Ndata*i] ) ;
+    }
+  }
   
-  gsl_vector_complex_free( alpha ) ;
-  gsl_vector_free( beta ) ;
-  gsl_eigen_genv_free( work ) ;
-
-  gsl_matrix_free( a ) ;
-  gsl_matrix_free( b ) ;
+  for( j = 0 ; j < Ndata ; j++ ) {
+    free_G( &G[j] ) ;
+  }
+  free( G ) ;
   
   return evalues ;
 }

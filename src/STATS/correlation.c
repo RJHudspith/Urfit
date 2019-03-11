@@ -41,7 +41,7 @@ compute_upper_correlation( double **correlation ,
     break ;
   case UNCORRELATED :
 #pragma omp parallel for private(i)
-    for( i = 0 ; i < NDATA ; i++ ) {     
+    for( i = 0 ; i < NDATA ; i++ ) {
       const register double ave = data[i].avg ;
       register double sum = 0.0 ;
       size_t k ;

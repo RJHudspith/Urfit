@@ -14,7 +14,7 @@
 #include "exp.h"
 
 //#define INDIVIDUAL
-//#define WALL
+#define WALL
 
 enum { PWPL , AWAL , PWAL , AWPL } ;
 

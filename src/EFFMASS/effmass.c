@@ -223,9 +223,9 @@ effective_mass( struct input_params *Input ,
 	  // do nothing
 	  break ;
 	}
-	// 
       }
     }
+
 
     plot_data( Input -> Data.x + shift , effmass + shift ,
 	       Input -> Data.Ndata[i] ) ;

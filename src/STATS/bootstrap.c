@@ -7,8 +7,6 @@
 #include "rng.h"        // for the bootstraps
 #include "summation.h"
 
-//#define BOOTAVG
-
 // qsort comparison function for the bootstrap
 int 
 comp( const void *elem1 , 
@@ -41,6 +39,19 @@ void
 bootstrap_error( struct resampled *replicas )
 {
   if( replicas -> NSAMPLES == 0 ) return ;
+
+  // compute the boot average and subtract the bias so that
+  // it is the same as the true average
+  double err ;
+#if 0
+  const double bias = ( knuth_average( &err , replicas -> resampled ,
+				       replicas -> NSAMPLES )
+			- replicas -> avg ) ;
+  size_t i ;
+  for( i = 0 ; i < replicas -> NSAMPLES ; i++ ) {
+    replicas -> resampled[i] -= bias ;
+  }
+#endif
   
   double *sorted = malloc( replicas -> NSAMPLES * sizeof( double ) ) ;
   memcpy( sorted , replicas -> resampled , sizeof( double ) * ( replicas -> NSAMPLES ) ) ;
@@ -53,15 +64,6 @@ bootstrap_error( struct resampled *replicas )
   const double omitted = 0.5 * ( 100. - confidence ) ;
   const size_t bottom = (size_t)( ( omitted * replicas -> NSAMPLES ) / 100. ) ;
   const size_t top = ( ( replicas -> NSAMPLES ) - 1 - bottom ) ;
-
-#ifdef BOOTAVG
-  size_t i ;
-  register double sum = 0.0 ;
-  for( i = 0 ; i < replicas -> NSAMPLES ; i++ ) {
-    sum += replicas -> resampled[i] ;
-  }
-  replicas -> avg = sum / replicas -> NSAMPLES ;
-#endif
 
   replicas -> err_hi = sorted[ top ] ;
   replicas -> err_lo = sorted[ bottom ] ;
@@ -151,7 +153,7 @@ bootstrap_full( struct input_params *Input )
 	  xsum += x[ *p ] ;
 	  ysum += y[ *p ] ;
 	  p++ ;
-	  }
+	}
 	xstrap[k] = xsum / N ;
 	ystrap[k] = ysum / N ;
       }
@@ -191,7 +193,7 @@ bootstrap_full( struct input_params *Input )
       Input -> Data.x[i].resampled[k] = xstrap[k] ;
       Input -> Data.y[i].resampled[k] = ystrap[k] ;
     }
-    Input -> Data.x[i].restype = Input -> Data.y[i].restype =  BootStrap ;
+    Input -> Data.x[i].restype = Input -> Data.y[i].restype = BootStrap ;
     Input -> Data.x[i].NSAMPLES = Input -> Data.Nboots ;
     Input -> Data.y[i].NSAMPLES = Input -> Data.Nboots ;
       

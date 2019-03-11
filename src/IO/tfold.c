@@ -23,7 +23,7 @@ static double part( const double complex C ) { return creal( C ) ; }
 double complex*
 map_correlator( const struct traj Traj ,
 		const char *str ,
-		const int *mompoint ,
+		const double *mompoint ,
 		const size_t Nlt )
 {
   double complex *C = malloc( Nlt * sizeof( double complex ) ) ;
@@ -111,19 +111,19 @@ time_fold( struct resampled *sample ,
     }
     break ;
   case PLUS_MINUS :
-    sample[0].resampled[meas] = creal( C[0] ) ;
+    sample[0].resampled[meas] = part( C[0] ) ;
     for( t = 1 ; t < L2 ; t++ ) {
       sample[t].resampled[meas] = 0.5 * part( C[t] - C[LT-t] ) ;
     }
     break ;
   case MINUS_PLUS :
-    sample[0].resampled[meas] = -creal( C[0] ) ;
+    sample[0].resampled[meas] = -part( C[0] ) ;
     for( t = 1 ; t < L2 ; t++ ) {
       sample[t].resampled[meas] = -0.5 * part( C[t] - C[LT-t] ) ;
     }
     break ;
   case MINUS_MINUS :
-    sample[0].resampled[meas] = -creal( C[0] ) ;
+    sample[0].resampled[meas] = -part( C[0] ) ;
     for( t = 1 ; t < L2 ; t++ ) {
       sample[t].resampled[meas] = -0.5 * part( C[t] + C[LT-t] ) ;
     }
@@ -136,6 +136,23 @@ time_fold( struct resampled *sample ,
   case NOFOLD_MINUS :
     for( t = 0 ; t < LT ; t++ ) {
       sample[t].resampled[meas] = -part( C[t] ) ;
+    }
+    break ;
+  case TDER :
+    for( t = 0 ; t < LT ; t++ ) {
+      sample[t].resampled[meas] = 0.5*( part( C[(t+LT-1)%LT] + C[(t+1)%LT] ) ) ;
+    }
+    break ;
+  case NOFOLD_SWAPT :
+    sample[0].resampled[meas] = part( C[0] ) ;
+    for( t = 1 ; t < LT ; t++ ) {
+      sample[t].resampled[meas] = ( part( C[LT-t]) ) ;
+    }
+    break ;
+  case NOFOLD_MINUS_SWAPT :
+    sample[0].resampled[meas] = -part( C[0] ) ;
+    for( t = 1 ; t < LT ; t++ ) {
+      sample[t].resampled[meas] = -( part( C[LT-t]) ) ;
     }
     break ;
   }

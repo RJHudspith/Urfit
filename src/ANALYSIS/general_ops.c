@@ -23,7 +23,7 @@ do_op( const struct resampled A ,
 
   f( &res , B ) ;
 
-  fprintf( stdout , "[GEN] %s %e +/- %e \n" , s , res.avg , res.err ) ;
+  fprintf( stdout , "[GEN] %s %e +/- %e \n\n" , s , res.avg , res.err ) ;
 
   // write out a flat file with the moniker
   char *str = malloc( 256 * sizeof( char ) ) ;
@@ -60,29 +60,32 @@ gen_ops( struct input_params *Input )
     size_t j ;
     for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
 
-      raise( &Input -> Data.y[j] , 2 ) ;
-      raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
+      //raise( &Input -> Data.y[j] , 2 ) ;
+      //raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
+
+      const double mpi2 = Input -> Traj[0].Fit_Low ;
+	//Input -> Data.x[j].avg ;
       
       // add
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     add , "Add" , Input -> Data.x[j].avg , j ) ;
+	     add , "Add" , mpi2 , j ) ;
       
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     subtract , "Sub" , Input -> Data.x[j].avg , j ) ;
+	     subtract , "Sub" , mpi2 , j ) ;
       
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     mult , "Mult" , Input -> Data.x[j].avg , j ) ;
+	     mult , "Mult" , mpi2 , j ) ;
 
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     divide , "Div" , Input -> Data.x[j].avg , j ) ;
+	     divide , "Div" , mpi2 , j ) ;
       
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     spin_average , "SpinAve" , Input -> Data.x[j].avg , j ) ;
+	     spin_average , "SpinAve" , mpi2 , j ) ;
       
 
     }

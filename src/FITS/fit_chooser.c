@@ -15,6 +15,7 @@
 #include "exp_plusc.h"
 #include "fvol1.h"
 #include "c4c7.h"
+#include "HALexp.h"
 #include "nrqcd_exp.h"
 #include "nrqcd_exp2.h"
 #include "pade.h"
@@ -29,7 +30,9 @@
 #include "qsusc_su2.h"
 #include "qslab.h"
 #include "sinh.h"
+#include "tanh.h"
 #include "udcb_heavy.h"
+#include "ZV_exp.h"
 
 #include "ffunction.h"
 #include "pmap.h"      // for allocating the pmap
@@ -53,10 +56,13 @@ get_Nparam( const struct fit_info Fit )
  case C4C7 :
    return 3 ;
  case CORNELL : return 6 ;
+ case TANH : return 2 ;
  case COSH :
  case SINH :
  case EXP :
    return 2 * Fit.N ;
+ case HALEXP :
+   return 3 * Fit.N ;
    // these have independent amounts
  case EXP_PLUSC : return 3 ;
  case FVOL1 : return 2 ;
@@ -72,6 +78,7 @@ get_Nparam( const struct fit_info Fit )
  case QSLAB : return 3 ;
  case QSUSC_SU2 : return 3 ;
  case UDCB_HEAVY : return 5 ;
+ case ZV_EXP : return 2 ;
  case NRQCD_EXP : return 2 ;
  case NRQCD_EXP2 : return 5 ;
  case SU2_SHITFIT : return 2 ;
@@ -164,6 +171,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = fvol1_df ;
     fdesc.d2F        = fvol1_d2f ;
     break ;
+  case HALEXP :
+    fdesc.func       = fHALexp ;
+    fdesc.F          = HALexp_f ;
+    fdesc.dF         = HALexp_df ;
+    fdesc.d2F        = HALexp_d2f ;
+    fdesc.guesses    = HALexp_guesses ; 
+    break ;    
   case NRQCD_EXP :
     fdesc.func       = fnrqcd_exp ;
     fdesc.F          = nrqcd_exp_f ;
@@ -243,6 +257,13 @@ init_fit( const struct data_info Data ,
     fdesc.d2F        = sinh_d2f ;
     fdesc.guesses    = exp_guesses ;
     break ;
+  case TANH : 
+    fdesc.func       = ftanh ;
+    fdesc.F          = tanh_f ;
+    fdesc.dF         = tanh_df ;
+    fdesc.d2F        = tanh_d2f ;
+    fdesc.guesses    = exp_guesses ;
+    break ;
   case QCORR_BESSEL :
     fdesc.func       = fQcorr_bessel ;
     fdesc.F          = Qcorr_bessel_f ;
@@ -270,6 +291,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = udcb_heavy_df ;
     fdesc.d2F        = udcb_heavy_d2f ;
     fdesc.guesses    = udcb_heavy_guesses ;
+    break ;
+  case ZV_EXP :
+    fdesc.func       = fZV_exp ;
+    fdesc.F          = ZV_exp_f ;
+    fdesc.dF         = ZV_exp_df ;
+    fdesc.d2F        = ZV_exp_d2f ;
+    fdesc.guesses    = ZV_exp_guesses ;
     break ;
   case SU2_SHITFIT :
     fdesc.func       = fsu2_shitfit ;

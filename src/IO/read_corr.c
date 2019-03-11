@@ -81,9 +81,9 @@ read_magic_gammas( FILE *file ,
 	*mommatch = (uint32_t)p ;
       }
     }
-    //#ifdef VERBOSE
+    #ifdef VERBOSE
     fprintf( stdout , "%d %1.15f %1.15f %1.15f\n" , n[0] , mom[0] , mom[1] , mom[2] ) ;
-    //#endif
+    #endif
   }
 
   FREAD32( NMOM , sizeof( uint32_t ) , 1 , file ) ;
@@ -95,7 +95,7 @@ read_magic_gammas( FILE *file ,
   printf( "%u %u %u %u\n" , *NMOM , *NGSRC , *NGSNK , *LT ) ;
   #endif
 
-  printf( "WHAT %u \n" , *mommatch ) ;
+  //printf( "WHAT %u \n" , *mommatch ) ;
 
   //*mommatch = 0 ;
 
@@ -147,13 +147,22 @@ pre_allocate( struct input_params *Input )
     }
 
     // if we are folding the data this is halved
-    if( Input -> Traj[i].Fold != NOFOLD &&
-	Input -> Traj[i].Fold != NOFOLD_MINUS ) {
-      Input -> Data.Ndata[i] = LT/2 ;
-      Input -> Data.Ntot += LT/2 ;
-    } else {
+    switch( Input -> Traj[i].Fold ) {
+    case NOFOLD :
+    case NOFOLD_MINUS :
+    case TDER :
+    case NOFOLD_SWAPT :
+    case NOFOLD_MINUS_SWAPT :
       Input -> Data.Ndata[i] = LT ;
       Input -> Data.Ntot += LT ;
+      break ;
+    case PLUS_PLUS :
+    case PLUS_MINUS :
+    case MINUS_PLUS :
+    case MINUS_MINUS :
+      Input -> Data.Ndata[i] = LT/2 ;
+      Input -> Data.Ntot += LT/2 ;
+      break ;
     }
     
     fclose( file ) ;
@@ -249,9 +258,6 @@ get_correlator( double complex *C ,
     return FAILURE ;
   }
 
-  
- corr :
-
   // sum into C
   for( i = 0 ; i < LT ; i++ ) {
     C[ i ] += Ctmp[ i ] ;
@@ -293,9 +299,19 @@ read_corr( struct input_params *Input )
 
     // set the temporary correlator
     size_t Nlt = Input -> Data.Ndata[i] ;
-    if( Input -> Traj[i].Fold != NOFOLD &&
-	Input -> Traj[i].Fold != NOFOLD_MINUS ) {
+    switch( Input -> Traj[i].Fold ) {
+    case NOFOLD :
+    case NOFOLD_MINUS :
+    case TDER :
+    case NOFOLD_SWAPT :
+    case NOFOLD_MINUS_SWAPT :
+      break ;
+    case PLUS_PLUS :
+    case PLUS_MINUS :
+    case MINUS_PLUS :
+    case MINUS_MINUS :
       Nlt *= 2 ;
+      break ;
     }
     
     // linearised measurement index

@@ -39,7 +39,6 @@ compute_chisq( const struct ffunction f ,
       *t = *pf * (*pW) * ( *pf ) ;
       t++ , pf++ , pW++ ;
     }
-    chisq = kahan_summation( y , f.N ) ;
     break ;
   case CORRELATED :
     for( i = 0 ; i < f.N ; i++ ) {

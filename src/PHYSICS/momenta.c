@@ -53,15 +53,23 @@ average_equivalent( struct input_params *Input )
     compute_err( &Input -> Data.x[i] ) ;
     compute_err( &Input -> Data.y[i] ) ;
     #ifdef VERBOSE
-    fprintf( stdout , "IN %f %f \n" ,
-	     Input -> Data.x[i].avg ,
-	     Input -> Data.y[i].avg ) ;
+    fprintf( stdout , "IN %e %e | %e %e \n" ,
+	     Input -> Data.x[i].avg , Input -> Data.x[i].err ,
+	     Input -> Data.y[i].avg , Input -> Data.y[i].err ) ;
     #endif
   }
 
   // sort the data
-  if( quick_sort_data( Input ) == FAILURE ) {
+  if( insertion_sort_data( Input ) == FAILURE ) {
     return FAILURE ;
+  }
+  
+  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
+    #ifdef VERBOSE
+    fprintf( stdout , "OUT %e %e \n" ,
+	     Input -> Data.x[i].avg ,
+	     Input -> Data.y[i].avg ) ;
+    #endif
   }
 
   // count number of distinct momenta
@@ -75,8 +83,8 @@ average_equivalent( struct input_params *Input )
 	     ( k < ( shift + Input -> Data.Ndata[i] ) ) ) {
 	#ifdef VERBOSE
 	printf( "%f degenerate with %f (%zu %zu) \n" ,
-		Input -> Data.x[k].err_lo ,
-		Input -> Data.x[j].err_hi ,
+		Input -> Data.x[k].avg ,
+		Input -> Data.x[j].avg ,
 		j , k ) ;
 	#endif
 	k++ ;
@@ -145,11 +153,11 @@ average_equivalent( struct input_params *Input )
     Input -> Data.x[i] = init_dist( &tmpx[i] , tmpx[i].NSAMPLES , tmpx[i].restype ) ;
     Input -> Data.y[i] = init_dist( &tmpy[i] , tmpx[i].NSAMPLES , tmpx[i].restype ) ;
 
-    #ifdef VERBOSE
-    printf( "Averaged %f %f | %f %f \n" ,
+    //#ifdef VERBOSE
+    printf( "Averaged %e %e | %e %e \n" ,
 	    Input -> Data.x[i].avg , Input -> Data.x[i].err ,
 	    Input -> Data.y[i].avg , Input -> Data.y[i].err ) ;
-    #endif
+    //#endif
   }
 
   // finally set the data struct

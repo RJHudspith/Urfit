@@ -135,13 +135,22 @@ pre_allocate( struct input_params *Input ,
     }
 
     // if we are folding the data this is halved
-    if( Input -> Traj[i].Fold != NOFOLD &&
-	Input -> Traj[i].Fold != NOFOLD_MINUS ) {
-      Input -> Data.Ndata[i] = LT/2 ;
-      Input -> Data.Ntot += LT/2 ;
-    } else {
+    switch( Input -> Traj[i].Fold ) {
+    case NOFOLD :
+    case NOFOLD_MINUS :
+    case TDER :
+    case NOFOLD_SWAPT :
+    case NOFOLD_MINUS_SWAPT :
       Input -> Data.Ndata[i] = LT ;
       Input -> Data.Ntot += LT ;
+      break ;
+    case PLUS_PLUS :
+    case PLUS_MINUS :
+    case MINUS_PLUS :
+    case MINUS_MINUS :
+      Input -> Data.Ndata[i] = LT/2 ;
+      Input -> Data.Ntot += LT/2 ;
+      break ;
     }
     
     fclose( file ) ;
@@ -290,9 +299,19 @@ read_corr_multi( struct input_params *Input )
 
     // set the temporary correlator
     size_t Nlt = Input -> Data.Ndata[i] ;
-    if( Input -> Traj[i].Fold != NOFOLD &&
-	Input -> Traj[i].Fold != NOFOLD_MINUS ) {
+    switch( Input -> Traj[i].Fold ) {
+    case NOFOLD :
+    case NOFOLD_MINUS :
+    case TDER :
+    case NOFOLD_SWAPT :
+    case NOFOLD_MINUS_SWAPT :
+      break ;
+    case PLUS_PLUS :
+    case PLUS_MINUS :
+    case MINUS_PLUS :
+    case MINUS_MINUS :
       Nlt *= 2 ;
+      break ;
     }
     
     // linearised measurement index

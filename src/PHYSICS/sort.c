@@ -105,10 +105,11 @@ quick_sort_data( struct input_params *Input )
     shift += Input->Data.Ndata[i] ;
   }
 
-#ifdef VERBOSE
+  #ifdef VERBOSE
   // test
   shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    size_t j ;
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
       fprintf( stdout , "TEST -> %f %f %f %f \n" ,
 	       Input -> Data.x[j].avg ,
@@ -118,7 +119,7 @@ quick_sort_data( struct input_params *Input )
     }
     shift = j ;
   }
-#endif
+  #endif
   
   return SUCCESS ;
 }
@@ -153,9 +154,9 @@ insertion_sort_data( struct input_params *Input )
       }
       equate( &Input -> Data.x[hole+1] , tempx ) ;
       equate( &Input -> Data.y[hole+1] , tempy ) ;
-      //#ifdef VERBOSE
+      #ifdef VERBOSE
       fprintf( stdout , "Sorting :: %zu %zu \n" , j , Input -> Data.Ndata[i] ) ;
-      //#endif
+      #endif
     }
     shift = j ;
     

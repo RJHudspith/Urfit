@@ -297,12 +297,16 @@ adler_analysis( struct input_params *Input )
   printf( "%e %e \n" , Z[1].avg , Z[1].err ) ;
   printf( "%e %e \n" , Z[2].avg , Z[2].err ) ;
 
-  init_rng( 123456 ) ;
+  init_rng( 1234567 ) ;
   
   for( k = 0 ; k < Z[0].NSAMPLES ; k++ ) {
-    Z[0].resampled[k] = 0.9699 ;//+ rng_gaussian( 0.0026/20. ) ;
-    Z[1].resampled[k] = 0.9636 ;//+ rng_gaussian( 0.0034/20. ) ;
-    Z[2].resampled[k] = 0.9553 ;//+ rng_gaussian( 0.0053/20. ) ;
+    Z[0].resampled[k] = 0.9699 ;//+ rng_gaussian( 0.0026 ) ;
+  }
+  for( k = 0 ; k < Z[0].NSAMPLES ; k++ ) {
+    Z[1].resampled[k] = 0.9636 ;//+ rng_gaussian( 0.0034 ) ;
+  }
+  for( k = 0 ; k < Z[0].NSAMPLES ; k++ ) {
+    Z[2].resampled[k] = 0.9553 ;//+ rng_gaussian( 0.0053 ) ;
   }
   raise( &Z[0] , 2 ) ;
   raise( &Z[1] , 2 ) ;
@@ -330,9 +334,21 @@ adler_analysis( struct input_params *Input )
       
       // multiply by 4\pi^2
       mult_constant( &( Input -> Data.y[j] ) , (4.*M_PI*M_PI) ) ;
-      // subtract 1
-      //subtract_constant( &( Input -> Data.y[j] ) , 1.0 ) ;
 
+      // subtract 1
+      subtract_constant( &( Input -> Data.y[j] ) , 1.0 ) ;
+
+      #if 0
+      size_t k ;
+      char str[256] ;
+      sprintf( str , "./BOOTS/bootdist_%zu", j ) ;
+      FILE *dist = fopen( str , "w" ) ;
+      for( k = 0 ; k < Input -> Data.y[j].NSAMPLES ; k++ ) {
+	fprintf( dist , "%e\n" , Input -> Data.y[j].resampled[k] ) ;
+      }
+      fclose( dist ) ;
+      #endif
+      
       // divide by Q^2
       //divide( &( Input -> Data.y[j] ) , Input -> Data.x[j] ) ;
 
@@ -350,7 +366,7 @@ adler_analysis( struct input_params *Input )
 
   printf( "THIS\n" ) ;
 
-  //get_cont( Input ) ;
+  get_cont( Input ) ;
 
   // perform a fit
   double Chi ;

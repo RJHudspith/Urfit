@@ -10,9 +10,6 @@
 
 #include "rng.h"
 
-// iterated bootstrap
-#define BOOT_ITER (8)
-
 // a wrapper for the resampling
 void
 compute_err( struct resampled *replicas )

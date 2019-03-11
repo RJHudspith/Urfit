@@ -51,7 +51,8 @@ init_GLU( struct input_params *Input )
     
     // allocate Nsamples
     const size_t Nsamples = ( Input -> Traj[i].End -
-			      Input -> Traj[i].Begin ) / Input -> Traj[i].Increment ;
+			      Input -> Traj[i].Begin )
+      / Input -> Traj[i].Increment ;
     
     for( j = 0 ; j < Input -> Data.Ndata[i] ; j++ ) {
       Input -> Data.x[ shift ].resampled = malloc( Nsamples * sizeof( double ) ) ;
@@ -154,8 +155,8 @@ read_GLU( struct input_params *Input )
 	Input -> Data.y[ shift + k ].resampled[ idx ] = Cr[k] ;
 
 	#ifdef VERBOSE
-	printf( "[IO] data -> %f %f \n" ,
-		Input -> Data.x[ shift + k ].resampled[ idx ]
+	printf( "[IO] data -> %e %e \n" ,
+		Input -> Data.x[ shift + k ].resampled[ idx ] ,
 		Input -> Data.y[ shift + k ].resampled[ idx ] ) ;
 	#endif
       }
@@ -178,7 +179,8 @@ read_GLU( struct input_params *Input )
 	     Input -> Data.y[i].avg ) ;
     #endif
   }
-  
+
+#if 0
   // sort the data
   printf( "Sorting in IO\n" ) ;
   if( quick_sort_data( Input ) == FAILURE ) {
@@ -191,10 +193,15 @@ read_GLU( struct input_params *Input )
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     size_t j ;
     for( j = shift + 1 ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      add( &Input -> Data.y[j] , Input -> Data.y[j-1] ) ;
+      //add( &Input -> Data.y[j] , Input -> Data.y[j-1] ) ;
+      printf( "TEST %f %f %f\n" ,
+	      Input -> Data.x[j].avg ,
+	      Input -> Data.y[j].avg ,
+	      Input -> Data.y[j].err ) ;
     }
     j = shift ;
   }
+ #endif
 
   printf( "Averaging equivalent\n" ) ;
   average_equivalent( Input ) ;

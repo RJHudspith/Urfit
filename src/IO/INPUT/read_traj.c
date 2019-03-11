@@ -189,6 +189,12 @@ set_GsGk( struct traj *Traj ,
     Traj -> Fold = NOFOLD ;
   } else if( are_equal( tok , "NOFOLD_MINUS" ) ) {
     Traj -> Fold = NOFOLD_MINUS ;
+  } else if( are_equal( tok , "TDER" ) ) {
+    Traj -> Fold = NOFOLD_MINUS ;
+  } else if( are_equal( tok , "NOFOLD_SWAPT" ) ) {
+    Traj -> Fold = NOFOLD_SWAPT ;
+  } else if( are_equal( tok , "NOFOLD_MINUS_SWAPT" ) ) {
+    Traj -> Fold = NOFOLD_MINUS_SWAPT ;
   } else {
     fprintf( stderr , "[INPUT] I don't understand the fold %s\n" ,
 	     tok ) ;

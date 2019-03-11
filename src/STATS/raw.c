@@ -23,7 +23,7 @@ raw_err( struct resampled *replicas )
 	   &(replicas -> err) ,
 	   replicas -> resampled ,
 	   replicas -> NSAMPLES ) ;
-  replicas -> err = sqrt( replicas -> err / ( replicas -> NSAMPLES - 1 ) ) ;
+  replicas -> err = sqrt( replicas -> err / pow( replicas -> NSAMPLES - 1 , 2 ) ) ;
   replicas -> err_hi = replicas -> avg + replicas -> err ;
   replicas -> err_lo = replicas -> avg - replicas -> err ;
   return ;

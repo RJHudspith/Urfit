@@ -71,6 +71,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = EXP_PLUSC ;
   } else if( are_equal( Flat[tag].Value , "FVOL1" ) ) {
     Input -> Fit.Fitdef = FVOL1 ;
+  } else if( are_equal( Flat[tag].Value , "HALEXP" ) ) {
+    Input -> Fit.Fitdef = HALEXP ;
   } else if( are_equal( Flat[tag].Value , "NRQCD_EXP" ) ) {
     Input -> Fit.Fitdef = NRQCD_EXP ;
   } else if( are_equal( Flat[tag].Value , "NRQCD_EXP2" ) ) {
@@ -95,6 +97,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = PPAA ;
   } else if( are_equal( Flat[tag].Value , "SINH" ) ) {
     Input -> Fit.Fitdef = SINH ;
+  } else if( are_equal( Flat[tag].Value , "TANH" ) ) {
+    Input -> Fit.Fitdef = TANH ;
   } else if( are_equal( Flat[tag].Value , "SU2_SHITFIT" ) ) {
     Input -> Fit.Fitdef = SU2_SHITFIT ;
   } else if( are_equal( Flat[tag].Value , "QCORR_BESSEL" ) ) {
@@ -105,6 +109,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = QSUSC_SU2 ;
   } else if( are_equal( Flat[tag].Value , "UDCB_HEAVY" ) ) {
     Input -> Fit.Fitdef = UDCB_HEAVY ;
+  } else if( are_equal( Flat[tag].Value , "ZV_EXP" ) ) {
+    Input -> Fit.Fitdef = ZV_EXP ;
   } else {
     fprintf( stderr , "[INPUT] Fit %s not recognised\n" , Flat[tag].Value ) ;
     return FAILURE ;

@@ -186,10 +186,14 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = Adler ;
     } else if( are_equal( Flat[ an_tag ].Value , "Beta_crit" ) ) {
       Input -> Analysis = Beta_crit ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Binding_Corr" ) ) {
+      Input -> Analysis = Binding_Corr ;
     } else if( are_equal( Flat[ an_tag ].Value , "Correlator" ) ) {
       Input -> Analysis = Correlator ;
     } else if( are_equal( Flat[ an_tag ].Value , "Exceptional" ) ) {
       Input -> Analysis = Exceptional ;
+    } else if( are_equal( Flat[ an_tag ].Value , "HLBL" ) ) {
+      Input -> Analysis = HLBL ;
     } else if( are_equal( Flat[ an_tag ].Value , "HVP" ) ) {
       Input -> Analysis = HVP ;
     } else if( are_equal( Flat[ an_tag ].Value , "Wflow" ) ) {
@@ -198,6 +202,8 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = Fit ;
     } else if( are_equal( Flat[ an_tag ].Value , "Nrqcd" ) ) {
       Input -> Analysis = Nrqcd ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Pof" ) ) {
+      Input -> Analysis = Pof ;
     } else if( are_equal( Flat[ an_tag ].Value , "Qcorr" ) ) {
       Input -> Analysis = Qcorr ;
     } else if( are_equal( Flat[ an_tag ].Value , "Qsusc" ) ) {
@@ -216,6 +222,8 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = TetraGEVP ;
     } else if( are_equal( Flat[ an_tag ].Value , "StaticPotential" ) ) {
       Input -> Analysis = StaticPotential ;
+    } else if( are_equal( Flat[ an_tag ].Value , "ZV" ) ) {
+      Input -> Analysis = ZV ;
     } else {
       fprintf( stderr , "[INPUT] Analysis %s not recognised\n" ,
 	       Flat[ an_tag ].Value ) ;

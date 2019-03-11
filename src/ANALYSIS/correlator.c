@@ -15,7 +15,9 @@
 #include "stats.h"
 #include "write_flat.h"
 
-#define MATRIX_PRONY
+//#define MATRIX_PRONY
+
+//#define FIT_EFFMASS
 
 void 
 my_little_prony( const struct input_params *Input )
@@ -213,6 +215,9 @@ correlator_analysis( struct input_params *Input )
     fclose( massfile ) ;
 
 
+    struct resampled Mass = init_dist( &Fit[0] , Fit[0].NSAMPLES , Fit[0].restype ) ;
+
+
     write_flat_dist( &Fit[0] , &Fit[0] , 1 , "Mass.flat" ) ;
     
     struct resampled dec = decay( Fit , *Input , 0 , 1 ) ;
@@ -226,6 +231,22 @@ correlator_analysis( struct input_params *Input )
     printf( "(M/F)^2 %e %e \n" , Fit[0].avg , Fit[0].err ) ;
 
     write_flat_dist( &Fit[0] , &Fit[0] , 1 , "MovFsq.flat" ) ;
+
+    //////////////// PCAC ? /////////////////////
+    // is d_t A_t^P P^W / 2P^L P^W
+    // which I make
+    //
+    // -m_\pi A^L/(2P^L)
+    equate( &dec , Fit[2] ) ;
+
+    printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
+    divide( &dec , Fit[1] ) ;
+    printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
+    mult( &dec , Mass ) ;
+    printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
+    mult_constant( &dec , -0.5 ) ;
+
+    printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
     
     free( dec.resampled ) ;
   }
@@ -256,11 +277,11 @@ correlator_analysis( struct input_params *Input )
     write_flat_dist( &Fit[1] , &mpi2 , 1 , "Mass.flat" ) ;
     free( mpi2.resampled ) ;
 
-    FILE *massfile = fopen( "massfits.dat" , "w" ) ;
+    FILE *massfile = fopen( "massfits.dat" , "w+a" ) ;
     size_t shift = 0 , j ;
     for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
       for( j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
-	write_fitmass_graph( massfile , Fit[j+1] ,
+	write_fitmass_graph( massfile , Fit[j+1+i*2*Input -> Fit.N] ,
 			     Input -> Traj[i].Fit_Low ,
 			     Input -> Traj[i].Fit_High ) ;
       }
@@ -269,8 +290,10 @@ correlator_analysis( struct input_params *Input )
     fclose( massfile ) ;
   }
 
+  /*
   subtract( &Fit[3] , Fit[1] ) ;
   printf( "%f +/- %f \n" , Fit[3].avg , Fit[3].err ) ;
+  */
   
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;
   

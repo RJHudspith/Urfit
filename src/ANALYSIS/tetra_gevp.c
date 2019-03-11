@@ -8,12 +8,27 @@
 #include "effmass.h"
 #include "fit_and_plot.h"
 #include "gevp.h"
+#include "make_xmgrace.h"
 #include "init.h"
 #include "resampled_ops.h"
 #include "stats.h"
 
+
 //#define FIT_EFFMASS
 //#define COMBINE
+
+static int
+write_fitmass_graph( FILE *file , 
+		     const struct resampled mass ,
+		     const double lo ,
+		     const double hi ,
+		     const int t0 )
+{
+  fprintf( file , "%e %e\n%e %e\n\n" , lo+t0 , mass.err_hi , hi+t0 , mass.err_hi ) ; 
+  fprintf( file , "%e %e\n%e %e\n\n" , lo+t0 , mass.avg , hi+t0 , mass.avg ) ;
+  fprintf( file , "%e %e\n%e %e\n\n" , lo+t0 , mass.err_lo , hi+t0 , mass.err_lo ) ;
+  return SUCCESS ;
+}
 
 static int
 write_evalues( struct resampled *evalues ,
@@ -53,9 +68,9 @@ write_evalues( struct resampled *evalues ,
 int
 tetra_gevp_analysis( struct input_params *Input )
 {
-  const size_t t0 = 2 ;
+  const size_t t0 = 1 ;
   const size_t N = Input -> Fit.N ;
-  const size_t LT = Input -> Traj[0].Dimensions[3] ; ///2 ;
+  const size_t LT = Input -> Data.Ndata[0] ;
   size_t i , j , shift = 0 ; 
 
   printf( "[TET GEVP] In here :: %zu %zu %zu\n" , t0 , N , LT ) ;
@@ -68,19 +83,14 @@ tetra_gevp_analysis( struct input_params *Input )
     printf( "\n C(%zu) \n" , t ) ;
     for( i = 0 ; i < Input -> Fit.M ; i++ ) {
       for( j = 0 ; j < N ; j++ ) {
-	printf( "%e " , Input -> Data.y[ t + LT*( j +  N*i ) ].avg
-		// sqrt( Input -> Data.y[ t + LT*( j + N*j ) ].avg * Input -> Data.y[ t + LT*( i + N*i ) ].avg )
+	printf( "%g " , Input -> Data.y[ t + LT*( j +  N*i ) ].avg
+		/ sqrt( Input -> Data.y[ t + LT*( j + N*j ) ].avg * Input -> Data.y[ t + LT*( i + N*i ) ].avg )
 		) ;
       }
       printf( "\n" ) ;
     }
   }
-
-  // subtract the shift automatically
-  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
-    subtract_constant( &Input -> Data.x[ i ] , (double)t0 ) ;
-  }
-
+  
   printf( "Divide ?\n" ) ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     struct resampled V = init_dist( &Input -> Data.y[i*Input->Data.Ndata[0]] ,
@@ -93,11 +103,18 @@ tetra_gevp_analysis( struct input_params *Input )
     free( V.resampled ) ;
   }
 
+  if( ( Input -> Fit.N*Input-> Fit.M ) != Input -> Data.Nsim ) {
+    fprintf( stderr , "GEVP N,M not equal to Nsim\n" ) ;
+    goto end ;
+  }
+  
   // compute evalues
-  struct resampled *evalues = solve_GEVP( Input ,
+  struct resampled *evalues = solve_GEVP( Input -> Data.y ,
+					  Input -> Data.Ndata[0] ,
 					  Input -> Fit.N ,
 					  Input -> Fit.M ,
 					  t0 ) ;
+  
   if( evalues == NULL ) {
     goto end ;
   }
@@ -133,7 +150,7 @@ tetra_gevp_analysis( struct input_params *Input )
   // compute an effective mass
   struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
 
-  // copy over to Input
+  // subtract the ground state?
   for( j = 0 ; j < Input->Data.Ndata[0] ; j++ ) {
     struct resampled sub = init_dist( &effmass[j] ,
 				      effmass[j].NSAMPLES ,
@@ -158,14 +175,38 @@ tetra_gevp_analysis( struct input_params *Input )
   }
   free( effmass ) ;
 
-  Input -> Data.Nsim = Input -> Fit.N ;
-  Input -> Data.Ntot = Input -> Fit.N * Input->Data.Ndata[0] ;
-  //Input -> Fit.Nlogic = 2 ;
-  Input -> Fit.N = Input -> Fit.M = 1 ;
+  // subtract the shift automatically for the fit?
+  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
+    subtract_constant( &Input -> Data.x[ i ] , (double)t0 ) ;
+  }
 
+  Input -> Data.Nsim = 1 ;
+  Input -> Data.Ntot = Input->Data.Ndata[0] ;
+  Input -> Fit.N = Input -> Fit.M = 1 ;
+  Input -> Fit.Nlogic = 2 ;
+
+  
   // fit the ground state
   double Chi ;
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
+
+  // write out the fit result for reasons
+  if( Input -> Fit.Fitdef == EXP ||
+      Input -> Fit.Fitdef == COSH ) {
+    FILE *massfile = fopen( "massfits.dat" , "w" ) ;
+    size_t j ;
+    for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+      for( j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
+	write_fitmass_graph( massfile , Fit[j+1] ,
+			     Input -> Traj[i].Fit_Low ,
+			     Input -> Traj[i].Fit_High ,
+			     t0 ) ;
+      }
+      shift += Input -> Data.Ndata[i] ;
+    }
+    fclose( massfile ) ;
+  }
+  
   
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;
   

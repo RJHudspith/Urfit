@@ -49,7 +49,7 @@ single_fit( struct resampled *fitparams ,
   // the user in the input file
   if( is_average == true ) {
     if( Fit.Guesses_Initialised == false ) {
-      fdesc.guesses( fdesc.f.fparams , Data , Fit ) ;
+     /fdesc.guesses( fdesc.f.fparams , Data , Fit ) ;
     } else {
       for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
 	fdesc.f.fparams[j] = Fit.Guess[j] ;
@@ -107,7 +107,7 @@ perform_bootfit( const struct data_info Data ,
   // initialise the fit
   struct fit_descriptor fdesc = init_fit( Data , Fit ) ;
   fdesc.Prior = (const struct prior*)Fit.Prior ;
-  
+
   // allocate the fitparams
   struct resampled *fitparams = malloc( fdesc.Nlogic * sizeof( struct resampled ) ) ; 
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
@@ -121,7 +121,7 @@ perform_bootfit( const struct data_info Data ,
 				      Data.y[0].restype ) ;
 
   if( fitparams == NULL ) goto memfree ;
-
+  
   // do the average first
   single_fit( fitparams , &chisq , fdesc , Data , Fit , 0 , true ) ;
 

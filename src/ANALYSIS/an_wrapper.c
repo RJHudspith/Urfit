@@ -12,6 +12,7 @@
 #include "fit_and_plot.h"
 #include "exceptional.h"
 #include "general_ops.h"
+#include "HLBL.h"
 #include "hvp_pade.h"
 #include "inverse.h"
 #include "KKops.h"
@@ -26,10 +27,12 @@
 #include "sun_flow.h"
 #include "tetra_gevp.h"
 #include "Wall_Local.h"
+#include "ZV.h"
 
 #include "nrqcd_baremass.h"
 #include "c4c7_analysis.h"
 #include "su2_shit.h"
+#include "pof.h"
 
 int
 an_wrapper( struct input_params *Input )
@@ -42,14 +45,17 @@ an_wrapper( struct input_params *Input )
     return fit_alphas( Input ) ;
   case Beta_crit :
     return beta_crit( Input ) ;
+  case Binding_Corr :
+    return binding_corr_analysis( Input ) ;
   case Correlator :
     return correlator_analysis( Input ) ;
   case Exceptional :
     return fit_inverse( Input ) ;
   case General :
     return gen_ops( Input ) ;
+  case HLBL :
+    return HLBL_analysis( Input ) ;
   case HVP :
-    //return fit_hvp( Input ) ;
     return fit_hvp( Input ) ;
   case KKops :
     return fit_ratios( Input ) ;
@@ -59,6 +65,8 @@ an_wrapper( struct input_params *Input )
     return nrqcd_analysis( Input ) ;
     //return nrqcd_old_analysis( Input ) ;
     //return nrqcd_slope_analysis( Input ) ;
+  case Pof :
+    return pof_analysis( Input ) ;
   case Qcorr :
     //return fit_Qcorr( Input ) ;
     return Qmoments( Input ) ;
@@ -74,10 +82,13 @@ an_wrapper( struct input_params *Input )
     return tetra_gevp_analysis( Input ) ;
   case Wflow :
     return sun_wflow_analysis( Input ) ;
+  case ZV :
+    return ZV_analysis( Input ) ;
   case Fit :
-    //return nrqcd_baremass_analysis( Input ) ;
+    return nrqcd_baremass_analysis( Input ) ;
     //return c4c7_analysis( Input ) ;
-    return su2_shit( Input ) ;
+    //return su2_shit( Input ) ;
+    //return HAL_analysis( Input ) ;
   default :
     if( fit_and_plot( *Input , &chi ) == NULL ) {
       return FAILURE ;
