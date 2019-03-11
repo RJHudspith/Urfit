@@ -34,22 +34,23 @@ const static double m[ 3*12 ] = { 2.0 , 2.0 , 2.0 , 2.25 , 2.25 , 2.25 , 2.5 , 2
 				  2.0 , 2.0 , 2.0 , 2.25 , 2.25 , 2.25 , 2.5 , 2.5 , 2.5 , 2.75 , 2.75 , 2.75 ,
 				  2.0 , 2.0 , 2.0 , 2.25 , 2.25 , 2.25 , 2.5 , 2.5 , 2.5 , 2.75 , 2.75 , 2.75 } ;
 
-const static double a2[ 3*12 ] = { 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
-				   0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
-				   0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
-				   0.17605265301057807 , 0.17605265301057807 , 0.17605265301057807 , 0.17605265301057807 ,
-				   0.17605265301057807 , 0.17605265301057807 , 0.17605265301057807 , 0.17605265301057807 ,
-				   0.17605265301057807 , 0.17605265301057807 , 0.17605265301057807 , 0.17605265301057807 ,
-				   0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 ,
-				   0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 ,
-				   0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 } ;
-
 static double mu = 2.0 ;
 
 static double Q1[ 3*12 ] = { 0 } ;
 
 // beta parameters
-static const double b0 = 2.25 , b1 = 4.0 , b2 = 10.059895833333334 , b3 = 47.228039589777325 ;
+#if LOOPS > 1
+static const double b0 = 2.25 ;
+#if LOOPS > 2
+static const double b1 = 4.0 ;
+#if LOOPS > 3
+static const double b2 = 10.059895833333334 ;
+#if LOOPS > 4
+static const double b3 = 47.228039589777325 ;
+#endif
+#endif
+#endif
+#endif
 
 void
 set_Q1_multi2( const double val , const size_t idx )
@@ -113,25 +114,6 @@ rescale_alpha( const double a_pim , const double m , const double mup )
   return a_pim * ( 1 + a_pim * ( -b0 * t + a_pim * ( ( b0*b0*t*t - b1 * t ) + a_pim * ( ( -b0*b0*b0*t*t*t + 5/2.*b0*b1*t*t - b2 *t ) + a_pim * ( b0*b0*b0*b0*t*t*t*t - 13/3.*b0*b0*b1*t*t*t + (3*b1*b1+6*b0*b2)/2.*t*t - b3*t ) ) ) ) ) ;
 #endif
 }
-
-// derivative wrt to alpha(\mu) of \alpha(m)
-static double
-rescale_alpha_der( const double a_pim , const double m , const double mup )
-{
-  const double t = log( mup*mup/(m*m) ) ;
-#if LOOPS==1
-  return ( 1 ) / M_PI ;
-#elif LOOPS==2
-  return ( 1 + a_pim * ( -2 * b0 * t ) ) / M_PI ;
-#elif LOOPS==3
-  return ( 1 + a_pim * ( -2 * b0 * t + a_pim * ( 3 * ( b0*b0*t*t - b1 * t ) ) ) ) / M_PI ;
-#elif LOOPS==4
-  return ( 1 + a_pim * ( -2 * b0 * t + a_pim * ( 3 * ( b0*b0*t*t - b1 * t ) + a_pim * ( 4 * ( -b0*b0*b0*t*t*t + 5/2.*b0*b1*t*t - b2 *t ) ) ) ) ) / M_PI ;
-#elif LOOPS==5
-  return ( 1 + a_pim * ( -2 * b0 * t + a_pim * ( 3 * ( b0*b0*t*t - b1 * t ) + a_pim * ( 4 * ( -b0*b0*b0*t*t*t + 5/2.*b0*b1*t*t - b2 *t ) + a_pim * 5 * ( b0*b0*b0*b0*t*t*t*t - 13/3.*b0*b0*b1*t*t*t + (3*b1*b1+6*b0*b2)/2.*t*t - b3*t ) ) ) ) ) / M_PI ;
-#endif
-}
-
 
 double
 falpha_D0_multi2( const struct x_desc X , const double *fparams , const size_t Npars )

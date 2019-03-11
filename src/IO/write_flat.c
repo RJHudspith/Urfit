@@ -48,7 +48,7 @@ write_flat_dist( const struct resampled *y ,
   // write out a flat file with the resamples?
   printf( "Writing a flat file to %s \n" , name ) ;
   
-  size_t j , k , shift = 0 ;
+  size_t j , k ;
 
   FILE *outfile = fopen( name , "w" ) ;
   
@@ -75,9 +75,9 @@ write_flat_single( const struct resampled *y ,
 		   const char *name )
 {
   // write out a flat file with the resamples?
-  printf( "Writing a flat file to %s \n" , name ) ;
+  fprintf( stdout , "Writing a flat file to %s \n" , name ) ;
   
-  size_t j , k , shift = 0 ;
+  size_t k ;
 
   FILE *outfile = fopen( name , "w" ) ;
   

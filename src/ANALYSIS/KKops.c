@@ -15,10 +15,8 @@
 
 int
 fit_ratios( struct input_params *Input )
-{
-  //if( Input -> Data.Nsim != 2 ) return FAILURE ;
-  
-  size_t i , j , shift = Input -> Data.Ndata[0] ;
+{  
+  size_t i , j ;
   const size_t LT = Input -> Traj[0].Dimensions[3] ;
   const size_t SRC = Input -> Traj[0].Dimensions[0] ;
 
@@ -46,31 +44,30 @@ fit_ratios( struct input_params *Input )
 		       Input -> Data.y[j+LT/2+LT].restype ) ;
     }
   }
-     #ifdef SYMMETRIZE2
-     for( j = 1 ; j < LT/2 ; j++ ) {
-       if( j > SRC/2 ) {
-	 equate_constant( &Input -> Data.y[j] , 0.0 ,
-			  Input -> Data.y[j].NSAMPLES ,
-			  Input -> Data.y[j].restype ) ;
-       } else {
-	 add( &Input -> Data.y[j] , Input -> Data.y[(SRC-j)] ) ;
-	 divide_constant( &Input -> Data.y[j] , 2.0 ) ;
-       }
-       
-
-       if( Input -> Data.Nsim == 4 ) {
-	 if( j > SRC/2 ) {
-	   equate_constant( &Input -> Data.y[j+LT] , 0.0 ,
-			    Input -> Data.y[j+LT].NSAMPLES ,
-			    Input -> Data.y[j+LT].restype ) ;
-	 } else {
-	   add( &Input -> Data.y[j+LT] , Input -> Data.y[(SRC-j)+LT] ) ;
-	   divide_constant( &Input -> Data.y[j+LT] , 2.0 ) ;
-	 }
-       }
-     }
-     #endif
+#ifdef SYMMETRIZE2
+  for( j = 1 ; j < LT/2 ; j++ ) {
+    if( j > SRC/2 ) {
+      equate_constant( &Input -> Data.y[j] , 0.0 ,
+		       Input -> Data.y[j].NSAMPLES ,
+		       Input -> Data.y[j].restype ) ;
+    } else {
+      add( &Input -> Data.y[j] , Input -> Data.y[(SRC-j)] ) ;
+      divide_constant( &Input -> Data.y[j] , 2.0 ) ;
+    }
+    
+    if( Input -> Data.Nsim == 4 ) {
+      if( j > SRC/2 ) {
+	equate_constant( &Input -> Data.y[j+LT] , 0.0 ,
+			 Input -> Data.y[j+LT].NSAMPLES ,
+			 Input -> Data.y[j+LT].restype ) ;
+      } else {
+	add( &Input -> Data.y[j+LT] , Input -> Data.y[(SRC-j)+LT] ) ;
+	divide_constant( &Input -> Data.y[j+LT] , 2.0 ) ;
+      }
+    }
+  }
   #endif
+#endif
 
   Input -> Data.Nsim = Input -> Data.Nsim/2 ;
   Input -> Data.Ntot = Input -> Data.Ntot/2 ;

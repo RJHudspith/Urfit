@@ -4,6 +4,7 @@
  */
 #include "gens.h"
 
+#include "init.h"
 #include "fit_and_plot.h"
 #include "plot_fitfunc.h"
 #include "resampled_ops.h"
@@ -37,9 +38,6 @@ nrqcd_baremass_analysis( struct input_params *Input )
 
   struct resampled res = init_dist( NULL , Input -> Data.y[0].NSAMPLES ,
 				    Input -> Data.y[0].restype ) ;
-  struct resampled savg = init_dist( &fit[1] ,
-				     Input -> Data.y[0].NSAMPLES ,
-				     Input -> Data.y[0].restype ) ;
 
   equate_constant( &res , Meta ,
 		   Input -> Data.y[0].NSAMPLES ,
@@ -51,7 +49,6 @@ nrqcd_baremass_analysis( struct input_params *Input )
   fprintf( stdout , "Pred %f +/- %f \n" , res.avg , res.err ) ; 
 
   free( res.resampled ) ;
-
 
   free_fitparams( fit , Input -> Fit.Nlogic ) ;
   

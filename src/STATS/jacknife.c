@@ -43,7 +43,6 @@ jackknife_full( struct input_params *Input )
 
       const size_t Ntot = Input -> Data.x[j].NSAMPLES <= Input -> Data.Nboots ?
 	Input -> Data.Nboots : Input -> Data.x[j].NSAMPLES ;
-      const size_t Nspill = Input -> Data.x[j].NSAMPLES ;
       
       const size_t N = Input -> Data.x[j].NSAMPLES ;
       const double NORM = 1.0 / ( N - 1.0 ) ;

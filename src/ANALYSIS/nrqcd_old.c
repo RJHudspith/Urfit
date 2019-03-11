@@ -7,6 +7,7 @@
 #include "effmass.h"
 #include "fit_and_plot.h"
 #include "init.h" // free_fitparams
+#include "resampled_ops.h"
 
 // just a linear fit
 int

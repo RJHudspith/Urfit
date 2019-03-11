@@ -3,6 +3,7 @@
    @brief matrix-prony method for computing the effective mass
 
    From the paper what lattice theorists can learn from fMRI by Fleming
+   ... apparently the answer is "not all that much" ....
  */
 #include <complex.h>
 
@@ -15,9 +16,16 @@
 
 #include "gens.h"
 
+//#define BB1
+//#define BB2
+//#define BB3
+//#define BB4
+
+#ifdef BB1
+
 // standard Prony's method
 static void
-blackbox1( double complex *x ,
+blackboxT( double complex *x ,
 	   const double *data ,
 	   const size_t Ndata ,
 	   const size_t Nstates ,
@@ -84,15 +92,16 @@ blackbox1( double complex *x ,
 
   return ;
 }
+#elif (defined BB2)
 
-// standard Prony's method
+// standard Prony's method some small variation from the above
 static void
-blackbox1p5( double complex *x ,
-	     const double *data ,
-	     const size_t Ndata ,
-	     const size_t Nstates ,
-	     const size_t t ,
-	     const size_t Nt )
+blackboxT( double complex *x ,
+	   const double *data ,
+	   const size_t Ndata ,
+	   const size_t Nstates ,
+	   const size_t t ,
+	   const size_t Nt )
 {
   size_t i , j ;
 
@@ -126,9 +135,7 @@ blackbox1p5( double complex *x ,
   
   gsl_linalg_SV_solve( alpha , Q , S , beta , delta ) ;
 
-  //printf( "States \n" ) ;
   double coeffs[ Nt+1 ] ;
-
   for( i = 0 ; i < Nt ; i++ ) {
     coeffs[ i ] = gsl_vector_get( delta , i ) ;
   }
@@ -143,7 +150,6 @@ blackbox1p5( double complex *x ,
   //
   for( i = 0 ; i < Nstates ; i++ ) {
     x[ i ] = ( z[ 2*(Nt-Nstates+i) ] + I * z[ 2*(Nt-Nstates+i)+1 ] ) ;
-    //printf( "%zu %e \n" , i , creal( -clog( z[ 2*i ] ) ) ) ;
   }
 
   gsl_poly_complex_workspace_free( w ) ;
@@ -160,9 +166,11 @@ blackbox1p5( double complex *x ,
   return ;
 }
 
+#elif (defined BB3)
+
 // TLS variant
 static void
-blackbox3( double complex *x ,
+blackboxT( double complex *x ,
 	   const double *data ,
 	   const size_t Ndata ,
 	   const size_t Nstates ,
@@ -224,10 +232,11 @@ blackbox3( double complex *x ,
 
   return ;
 }
+#else
 
 // HTLS variant
 static void
-blackbox4( double complex *x ,
+blackboxT( double complex *x ,
 	   const double *data ,
 	   const size_t Ndata ,
 	   const size_t Nstates ,
@@ -329,6 +338,7 @@ blackbox4( double complex *x ,
 
   return ;
 }
+#endif
 
 // qsort comparison
 static int 
@@ -342,21 +352,9 @@ comp( const void *elem1 ,
   return 0 ;
 }
 
-// qsort comparison
-static int 
-comp_sort( const void *elem1 , 
-	   const void *elem2 ) 
-{
-  const double complex f = *( (double complex*)elem1 ) ;
-  const double complex s = *( (double complex*)elem2 ) ;
-  if( fabs(cimag(f)) > fabs(cimag(s)) ) return  1 ;
-  if( fabs(cimag(f)) < fabs(cimag(s)) ) return -1 ;
-  return 0 ;
-}
-
 /*
-  So the data is very badly behaved, always
-  what we want to do is have some data we trust and 
+  So the data is very badly behaved, always.
+  What we want to do is have some data we trust and 
   some that we are unsure of
 
   worst offenders ( Nbad ) : solutions which are negative
@@ -379,7 +377,6 @@ get_safe_masses( const size_t NSTATES ,
 {
   size_t Ntrust = 0 , Niffy = 0 , Nbad = 0 , i ;
   for( i = 0 ; i < NSTATES ; i++ ) {
-    //printf( "PRON_%zu %zu  %e %e \n" , i , t , creal( x[i] ) , cimag( x[i] ) ) ;
     if( creal( x[i] ) < 1.03 ) {
       Nbad++ ;
     } else if( fabs( cimag( x[i] ) ) < 1E-12 ) {
@@ -387,8 +384,6 @@ get_safe_masses( const size_t NSTATES ,
     }
   }
   Niffy = NSTATES - Ntrust - Nbad ;
-
-  //printf( "Ntrust %zu , Niffy %zu , Nbad %zu \n" , Ntrust , Niffy , Nbad ) ;
 
   size_t t_idx = 0 , i_idx = 0 , b_idx = 0 ;
   double etrust[ Ntrust ] , eiffy[ Niffy ] , ebad[ Nbad ] ;
@@ -401,7 +396,6 @@ get_safe_masses( const size_t NSTATES ,
       eiffy[ i_idx ] = fabs( creal( clog( x[i] ) ) ) ; i_idx++ ;
     }
   }
-  //printf( "Sols did \n" ) ;
 
   // sort them
   qsort( etrust , Ntrust , sizeof(double) , comp ) ;
@@ -420,10 +414,6 @@ get_safe_masses( const size_t NSTATES ,
   for( i = 0 ; i < Nbad ; i++ ) {
     masses[idx][t] = ebad[i] ;
     idx++ ;
-  }
-
-  for( i = 0 ; i < NSTATES ; i++ ) {
-    //printf( "Masses_%zu %e \n" , i , masses[i][t] ) ;
   }
   
   return ;
@@ -444,7 +434,7 @@ blackbox( const double *data ,
   size_t t ;
   for( t = 0 ; t < smallt ; t++ ) {
 
-    blackbox4( x , data , NDATA , NSTATES , t , NSTATES+10 ) ;
+    blackboxT( x , data , NDATA , NSTATES , t , NSTATES+10 ) ;
     
     get_safe_masses( NSTATES , NDATA , masses , x , t ) ;
   }

@@ -21,16 +21,28 @@
 
 static double mu = 2.0 ;
 
+/*
 static const double a2[ 9 ] = { 0.04949440885942718 , 0.04949440885942718 , 0.04949440885942718 ,
 				0.07684254741528086 , 0.07684254741528086 , 0.07684254741528086 ,
 				0.16601189178800163 , 0.16601189178800163 , 0.16601189178800163 } ;
-
+*/
 const static double m[ 9 ] = { 2.9 , 3 , 3.1 ,
 			       2.9 , 3 , 3.1 ,
 			       2.9 , 3 , 3.1 } ;
 
 // beta parameters
-static const double b0 = 2.25 , b1 = 4.0 , b2 = 10.059895833333334 , b3 = 47.228039589777325 ;
+#if LOOPS > 1
+static const double b0 = 2.25 ;
+#if LOOPS > 2
+static const double b1 = 4.0 ;
+#if LOOPS > 3
+static const double b2 = 10.059895833333334 ;
+#if LOOPS > 4
+static const double b3 = 47.228039589777325 ;
+#endif
+#endif
+#endif
+#endif
 
 const static double
 lp1( const double t , const double d5 ) {
@@ -74,24 +86,6 @@ rescale_alpha( const double a_pim , const double m , const double mup )
   return a_pim * ( 1 + a_pim * ( -b0 * t + a_pim * ( ( b0*b0*t*t - b1 * t ) + a_pim * ( ( -b0*b0*b0*t*t*t + 5/2.*b0*b1*t*t - b2 *t ) ) ) ) ) ;
 #elif LOOPS==5
   return a_pim * ( 1 + a_pim * ( -b0 * t + a_pim * ( ( b0*b0*t*t - b1 * t ) + a_pim * ( ( -b0*b0*b0*t*t*t + 5/2.*b0*b1*t*t - b2 *t ) + a_pim * ( b0*b0*b0*b0*t*t*t*t - 13/3.*b0*b0*b1*t*t*t + (3*b1*b1+6*b0*b2)/2.*t*t - b3*t ) ) ) ) ) ;
-#endif
-}
-
-// derivative wrt to alpha(\mu) of \alpha(m)
-static double
-rescale_alpha_der( const double a_pim , const double m , const double mup )
-{
-  const double t = log( mup*mup/(m*m) ) ;
-#if LOOPS==1
-  return ( 1 ) / M_PI ;
-#elif LOOPS==2
-  return ( 1 + a_pim * ( -2 * b0 * t ) ) / M_PI ;
-#elif LOOPS==3
-  return ( 1 + a_pim * ( -2 * b0 * t + a_pim * ( 3 * ( b0*b0*t*t - b1 * t ) ) ) ) / M_PI ;
-#elif LOOPS==4
-  return ( 1 + a_pim * ( -2 * b0 * t + a_pim * ( 3 * ( b0*b0*t*t - b1 * t ) + a_pim * ( 4 * ( -b0*b0*b0*t*t*t + 5/2.*b0*b1*t*t - b2 *t ) ) ) ) ) / M_PI ;
-#elif LOOPS==5
-  return ( 1 + a_pim * ( -2 * b0 * t + a_pim * ( 3 * ( b0*b0*t*t - b1 * t ) + a_pim * ( 4 * ( -b0*b0*b0*t*t*t + 5/2.*b0*b1*t*t - b2 *t ) + a_pim * 5 * ( b0*b0*b0*b0*t*t*t*t - 13/3.*b0*b0*b1*t*t*t + (3*b1*b1+6*b0*b2)/2.*t*t - b3*t ) ) ) ) ) / M_PI ;
 #endif
 }
 
@@ -168,78 +162,6 @@ adleralpha_D0_multi_df( double **df , const void *data , const double *fparams )
 					   DATA -> map[i].bnd ,
 					   fparams , j , DATA -> Npars ) ;
     }
-
-#if 0
-
-    // this is the data index
-    const size_t mref = DATA -> map[i].bnd ;
-
-    const double t = log( DATA -> x[i] / ( m[ mref ] * m[ mref ] ) ) ;
-
-    // cache of results for the fit
-    const double asq = a2[ mref ] ;
-
-    const double a_pi = rescale_alpha( fparams[ DATA -> map[i].p[0] ] / M_PI , mu , m[ mref ] ) ;
-
-    // these two depend on the loop order of PT
-    size_t loops ;
-    register double dalpha = 0.0 ;
-    for( loops = LOOPS ; loops > 1 ; loops-- ) {
-      dalpha = a_pi * ( loops * loop[ loops-1 ](t,D5) + dalpha ) ;
-    }
-    dalpha += 1.0 ;
-    
-    // alpha_s and its correction terms
-    df[ DATA -> map[i].p[0] ][i] = rescale_alpha_der( fparams[ DATA -> map[i].p[0] ] / M_PI , mu , m[ mref ] ) * dalpha ;
-    
-    // rotation-preserving corrections
-    df[ DATA -> map[i].p[1] ][i] = asq *  ( DATA -> x[i] ) ;
-
-    df[ DATA -> map[i].p[2] ][i] = asq ;
-    
-    df[ DATA -> map[i].p[3] ][i] = asq * asq * ( DATA -> x[i] * DATA -> x[i] ) ;
-
-    // set dalpha to zero
-    dalpha = 0.0 ;
-    for( loops = LOOPS ; loops > 0 ; loops-- ) {
-      dalpha = a_pi * ( loops * loop[ loops-1 ](t,D5) + dalpha ) ;
-    }
-    df[ 4 + mref/3 ][i] = 2 * fparams[4 + mref/3 ] * dalpha ;
-
-    /*
-    // this is the data index
-    const size_t mref = DATA -> map[i].bnd ;
-
-    const double t = log( DATA -> x[i] / ( m[ mref ] * m[ mref ] ) ) ;
-
-    // cache of results for the fit
-    const double asq = a2[ mref ] ;
-
-    const double acr = fparams[ DATA -> map[i].p[2] ] ;
-    const double a_pi = rescale_alpha( fparams[ DATA -> map[i].p[0] ] / M_PI , mu , m[ mref ] ) * ( 1 + acr * asq ) ;
-
-    // these two depend on the loop order of PT
-    size_t loops ;
-    register double dalpha = 0.0 , dacorr = 0.0 ;
-    for( loops = LOOPS ; loops > 1 ; loops-- ) {
-      dalpha = a_pi * ( loops * loop[ loops-1 ](t,D5) + dalpha ) ;
-    }
-    dalpha += 1.0 ;
-    
-    dacorr = rescale_alpha( fparams[ DATA -> map[i].p[0] ] / M_PI , mu , m[ mref ] ) * asq * dalpha ;
-
-    dalpha *= ( 1 + acr * asq ) ;
-
-    // alpha_s and it's correction terms
-    df[ DATA -> map[i].p[0] ][i] = dalpha ;
-
-    df[ DATA -> map[i].p[2] ][i] = dacorr ;
-    
-    // rotation-preserving corrections
-    df[ DATA -> map[i].p[1] ][i] = asq *  ( DATA -> x[i] ) ;
-    df[ DATA -> map[i].p[3] ][i] = asq * asq * ( DATA -> x[i] * DATA -> x[i] ) ;
-    */
-#endif
   }
   
   return ;

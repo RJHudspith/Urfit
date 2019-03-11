@@ -164,7 +164,7 @@ boot_pade_laplace( const struct input_params *Input )
 int
 correlator_analysis( struct input_params *Input )
 {
-  size_t i , j , shift = 0 ;
+  size_t i , shift = 0 ;
 
 #ifdef MATRIX_PRONY
   printf( "Matrix prony\n" ) ;

@@ -40,14 +40,12 @@ resample_data( struct input_params *Input )
     compute_err( &Input -> Data.x[i] ) ;
     compute_err( &Input -> Data.y[i] ) ;
     if( Input -> Data.x[i].restype != Input -> Data.Restype ||
-	Input -> Data.x[i].restype != Input -> Data.Restype )
-      {
-	must_resample = true ;
-      }
+	Input -> Data.x[i].restype != Input -> Data.Restype ) {
+      must_resample = true ;
+    }
   }
   
   // bootstrap it
-  size_t Nboots = 0 ;
   if( must_resample == true ) {
     switch( Input -> Data.Restype ) {
     case BootStrap :

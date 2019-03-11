@@ -10,6 +10,7 @@
 #include "gens.h"
 
 #include "fit_and_plot.h"
+#include "init.h"
 #include "plot_fitfunc.h"
 #include "resampled_ops.h"
 
@@ -37,7 +38,7 @@ ZV_analysis( struct input_params *Input )
   double Chi ;
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
 
-  //free_fitparams( Fit , Input -> Fit.Nlogic ) ;
+  free_fitparams( Fit , Input -> Fit.Nlogic ) ;
 
   return SUCCESS ;
 }

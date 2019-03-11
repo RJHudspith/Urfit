@@ -37,28 +37,13 @@ tanh_df( double **df , const void *data , const double *fparams )
   const struct data *DATA = (const struct data*)data ;
   size_t i , j ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
-
     struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
 			DATA -> N , DATA -> M } ;
-
-    size_t j ;
     for( j = 0 ; j < DATA -> Npars ; j++ ) {
       df[ DATA -> map[i].p[j] ][i] = Nder( ftanh , X ,
 					   DATA -> map[i].bnd ,
 					   fparams , j , DATA -> Npars ) ;
     }
-    
-    /*
-    const double t = DATA -> x[i] ;
-    const double T = DATA -> LT[i] ;
-    const double m = fparams[ DATA -> map[i].p[1] ] ;
-    const double A = fparams[ DATA -> map[i].p[0] ] ;
-    const double fwd = exp( -m * t ) ;
-    const double bwd = exp( -m * ( DATA -> LT[i] - t ) ) ;
-    const double csh = fwd+bwd ;
-    df[0][i] = ( fwd-bwd )*fparams[ DATA-> map[i].p[1] ] / csh ;
-    df[1][i] = ( 2*m*exp(T*m)*(T-2*t) - fwd*fwd + bwd*bwd ) / (csh*csh ) ;
-    */
   }
   return ;
 }

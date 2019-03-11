@@ -4,12 +4,13 @@
 #include "init.h"
 #include "momenta.h"
 #include "resampled_ops.h"
+#include "write_flat.h"
 
 // topological moments of Q^2
 int
 Qmoments( struct input_params *Input )
 {
-  size_t i , j ;
+  size_t j ;
 
   for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
     printf( "[QMOM] QMOM_%zu %f %f \n" , j ,

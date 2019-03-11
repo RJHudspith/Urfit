@@ -7,6 +7,7 @@
 #include "adler.h"
 #include "alphas.h"
 #include "beta_crit.h"
+#include "binding_corr.h"
 #include "correlator.h"
 #include "CPCV.h"
 #include "fit_and_plot.h"

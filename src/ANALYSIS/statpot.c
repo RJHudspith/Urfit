@@ -4,7 +4,12 @@
  */
 #include "gens.h"
 
+#include "init.h"
 #include "fit_and_plot.h"
+#include "resampled_ops.h"
+
+//#define MUL_R
+//#define MUL_R2
 
 int
 statpot_analysis( struct input_params *Input )
@@ -15,8 +20,12 @@ statpot_analysis( struct input_params *Input )
       // sqrt the x
       root( &( Input -> Data.x[j] ) ) ;
       // mult V(r) by x so that we can fit a polynomial
-      //mult( &( Input -> Data.y[j] ) , Input -> Data.x[j] ) ;
-      //mult( &( Input -> Data.y[j] ) , Input -> Data.x[j] ) ;
+      #ifdef MUL_R
+      mult( &( Input -> Data.y[j] ) , Input -> Data.x[j] ) ;
+      #elif (defined MUL_R2)
+      mult( &( Input -> Data.y[j] ) , Input -> Data.x[j] ) ;
+      mult( &( Input -> Data.y[j] ) , Input -> Data.x[j] ) ;
+      #endif
     }
     shift += Input -> Data.Ndata[i] ;
   }
@@ -27,7 +36,7 @@ statpot_analysis( struct input_params *Input )
 
   root( &Fit[0] ) ;
 
-  printf( "a\sqrt{sigma} = %f %f \n" , Fit[0].avg , Fit[0].err ) ;
+  fprintf( stdout , "a sqrt{sigma} = %f %f \n" , Fit[0].avg , Fit[0].err ) ;
 
   // write out a flat file
   FILE *file = fopen( "sigma.flat" , "w" ) ;

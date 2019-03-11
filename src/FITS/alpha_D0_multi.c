@@ -59,7 +59,18 @@ const static double a2[ 3*12 ] = { 0.10090915108763919 , 0.10090915108763919 , 0
 				   0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 , 0.31392137319354574 } ;
 
 // beta parameters
-static const double b0 = 2.25 , b1 = 4.0 , b2 = 10.059895833333334 , b3 = 47.228039589777325 ;
+#if (LOOPS>1)
+static const double b0 = 2.25 ;
+#if (LOOPS>2)
+static const double b1 = 4.0 ;
+#if (LOOPS>3)
+static const double b2 = 10.059895833333334 ;
+#if (LOOPS>4)
+static const double b3 = 47.228039589777325 ;
+#endif
+#endif
+#endif
+#endif
 
 void
 set_Q1_multi( const double val , const size_t idx )

@@ -124,7 +124,7 @@ insertion_sort_GA( struct genes *G )
   return ;
 }
 
-//#ifdef VERBOSE
+#ifdef verbose
 // print out the whole population
 static void
 print_population( struct genes *G )
@@ -138,7 +138,7 @@ print_population( struct genes *G )
   }
   return ;
 }
-//#endif
+#endif
 
 // computes the width of the distribution
 static void
@@ -180,14 +180,13 @@ tournament_selection( const struct genes *G ,
   return idx_best ;
 }
 
-// perform normalisation
+#ifdef NORMALISE_POP
 static void
 normalise_pop( struct genes *G )
 {
   size_t i ;
   register double Nsum = 0.0 ;
   for( i = 0 ; i < NGEN ; i++ ) {
-    //printf( "%zu %e \n" , i , G[i].chisq ) ;
     Nsum += G[i].chisq ;
   }
   for( i = 0 ; i < NGEN ; i++ ) {
@@ -195,11 +194,10 @@ normalise_pop( struct genes *G )
   }
   for( i = 1 ; i < NGEN ; i++ ) {
     G[i].chisq += G[i-1].chisq ;
-    //printf( "%zu %e\n" , i , G[i].chisq ) ;
   }
-  //printf( "CHECK %f \n" , G[NGEN-1].chisq ) ;
   return ;
 }
+#endif
 
 // perform a minimisation using a genetic algorithm, parameters are 
 // at the top to be played around with. Does not use any derivative 
@@ -284,14 +282,16 @@ ga_iter( void *fdesc ,
   }
 
   // normalise it
-  //normalise_pop( G ) ;
+  #ifdef NORMALISE_POP
+  normalise_pop( G ) ;
+  #endif
 
   // sort by chisq
   insertion_sort_GA( G ) ;
   
-  //#ifdef VERBOSE
-  //print_population( G ) ;
-  //#endif
+  #ifdef verbose
+  print_population( G ) ;
+  #endif
   
   // iterate the algorithm
   double chisq_diff = 10 ;

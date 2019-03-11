@@ -44,19 +44,14 @@ ZV_exp_d2f( double **d2f , const void *data , const double *fparams )
 }
 
 void
-ZV_exp_guesses( double *fparams , const size_t Nlogic )
+ZV_exp_guesses( double *fparams ,
+		const struct data_info Data ,
+		const struct fit_info Fit )
 {
-  size_t i , all_flagged = 0 ;
-  for( i = 0 ; i < Nlogic ; i++ ) {
-    if( fparams[i] == UNINIT_FLAG ) {
-      all_flagged++ ;
-    }
-  }
-
-  // perform a guess, otherwise assume someone has set them
-  if( all_flagged == Nlogic ) {
-    fparams[0] = 1.0 ; fparams[1] = 200.0 ; 
-    fparams[2] = 1.0 ; fparams[3] = 1.0 ;
+  // just set them to one
+  size_t i ;
+  for( i = 0 ; i < Fit.Nlogic ; i++ ) {
+    fparams[0] = 1.0 ;
   }
   
   return ;

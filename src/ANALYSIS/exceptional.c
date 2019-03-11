@@ -43,7 +43,6 @@ fit_exceptional( struct input_params *Input )
     }
     shift = j ;
   }
-  //exit(1) ;
 
   double chisq ;
   struct resampled *fit = fit_and_plot( *Input , &chisq ) ;
@@ -61,7 +60,7 @@ fit_exceptional( struct input_params *Input )
   FILE *outfile1 = fopen( "Zinv.dat" , "w" ) ;
   
   fprintf( outfile1 , "%d\n" , fit[0].restype ) ;
-  fprintf( outfile1 , "%zu\n" , 1 ) ;
+  fprintf( outfile1 , "%d\n" , 1 ) ;
   
   // write out a flat file
   fprintf( outfile1 , "%zu\n" , fit[0].NSAMPLES ) ;
@@ -82,7 +81,7 @@ fit_exceptional( struct input_params *Input )
   if( Input -> Fit.Fitdef == POLES ) {
     FILE *outfile2 = fopen( "Zinv2.dat" , "w" ) ;
     fprintf( outfile2 , "%d\n" , fit[0].restype ) ;
-    fprintf( outfile2 , "%zu\n" , 1 ) ;
+    fprintf( outfile2 , "%d\n" , 1 ) ;
     fprintf( outfile2 , "%zu\n" , fit[0].NSAMPLES ) ;
     for( i = 0 ; i < fit[0].NSAMPLES ; i++ ) {
       fprintf( outfile2 , "%1.12e %1.12e\n" , 0.0 , fit[6].resampled[i] ) ;

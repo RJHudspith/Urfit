@@ -17,6 +17,8 @@
 
 #include "stats.h"
 
+// #define ABS_EVALUES
+
 struct GEVP_temps {
   gsl_matrix *a ;
   gsl_matrix *b ;
@@ -29,33 +31,39 @@ struct GEVP_temps {
   size_t N ;
 } ;
 
+#ifdef ABS_EVALUES
+
 static int
-comp_abs_desc( const double complex ev1 ,
-	       const double complex ev2 )
+comp_desc( const double complex ev1 ,
+	   const double complex ev2 )
 {
   return cabs(ev1) < cabs(ev2) ;
 }
 
 static int
-comp_abs_asc( const double complex ev1 ,
-	      const double complex ev2 )
+comp_asc( const double complex ev1 ,
+	  const double complex ev2 )
 {
   return cabs(ev1) > cabs(ev2) ;
 }
 
+#else
+
 static int
-comp_re_desc( const double complex ev1 ,
-	       const double complex ev2 )
+comp_desc( const double complex ev1 ,
+	   const double complex ev2 )
 {
   return creal(ev1) < creal(ev2) ;
 }
 
 static int
-comp_re_asc( const double complex ev1 ,
-	      const double complex ev2 )
+comp_asc( const double complex ev1 ,
+	  const double complex ev2 )
 {
   return creal(ev1) > creal(ev2) ;
 }
+
+#endif
 
 // sort by whatever I specify in comp at the moment just eigenvalues
 static void
@@ -129,9 +137,9 @@ gevp( struct GEVP_temps *G ,
 
   // sort by the real part
   if( before ) {
-    insertion_sort( G , comp_re_asc ) ;
+    insertion_sort( G , comp_asc ) ;
   } else {
-    insertion_sort( G , comp_re_desc ) ;
+    insertion_sort( G , comp_desc ) ;
   }
   
   size_t j ;

@@ -34,7 +34,7 @@ void
 qslab_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i , j ;
+  size_t i ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
 
     const double x = DATA -> x[i] ;

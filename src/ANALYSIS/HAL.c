@@ -2,6 +2,7 @@
 
 #include "effmass.h"
 #include "fit_and_plot.h"
+#include "init.h"
 #include "plot_fitfunc.h"
 #include "resampled_ops.h"
 

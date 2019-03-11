@@ -4,6 +4,7 @@
  */
 #include "gens.h"
 
+#include "init.h"
 #include "fit_and_plot.h"
 #include "resampled_ops.h"
 
@@ -18,10 +19,6 @@ udcb_analysis( struct input_params *Input )
   size_t i ;
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     mult_constant( &(Input -> Data.y[i]) , -1.0 ) ;
-    #ifdef INVERSE
-    //raise( &Input -> Data.x[i] , -1 ) ;
-    #endif
-    //subtract_constant( &(Input -> Data.y[i]) , -200*exp( -sqrt(Input -> Data.x[i].avg )*14.6 ) ) ;
   }
   
   double Chi ;
@@ -33,10 +30,6 @@ udcb_analysis( struct input_params *Input )
     Input -> Fit.map = parammap( Input -> Data , Input -> Fit ) ;
   }
 
-  /*
-  double ex[ 4 ] = { 1.5503875968992247 , 1.5503875968992247 ,
-		     1.014428248210378 , 1.014428248210378 } ;
-  */
   double ex[ 4 ] = { 3.077 , 3.077 , 3.077 , 3.077  } ;
   size_t shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {

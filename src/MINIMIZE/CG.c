@@ -92,7 +92,7 @@ cg_iter( void *fdesc ,
 			      *Fit , data , W , i ,
 			      alpha[i] ) ;
     Fit -> f.fparams[i] += alpha[i] * s[i] ;
-    printf( "SD fparam %zu %e \n" , i , Fit -> f.fparams[i] , alpha[i] ) ;
+    printf( "SD fparam %zu %e %e\n" , i , Fit -> f.fparams[i] , alpha[i] ) ;
   }
 
   double chisq_diff = 10 , chiprev = 123456789 ,

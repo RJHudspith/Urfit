@@ -30,7 +30,7 @@ io_wrap( struct input_params *Input )
     return SUCCESS ;
   case Distribution_File :
     if( read_distribution_old( Input ) == FAILURE ) {
-      printf( "Dist failed\n" ) ;
+      fprintf( stderr , "[IO] Dist reading failed\n" ) ;
       return FAILURE ;
     }
     return SUCCESS ;

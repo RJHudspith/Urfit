@@ -16,7 +16,7 @@
 int
 fit_bags( struct input_params *Input )
 {  
-  size_t i , j , shift = Input -> Data.Ndata[0] ;
+  size_t i , j ;
   const size_t LT = Input -> Traj[0].Dimensions[3] ;
   const size_t SRC = Input -> Traj[0].Dimensions[0] ;
 

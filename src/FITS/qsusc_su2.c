@@ -37,15 +37,10 @@ void
 qsusc_su2_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i , j ;
+  size_t i  ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
-
-
     const double x = DATA -> x[i] ;
     const double LT = DATA -> LT[i] ;
-    const size_t bnd = DATA -> map[i].bnd ;
-
-    //return ( fparams[0] * ( X.X - fparams[1] ) ) * ( 1 + fparams[2] / X.LT ) ;
     df[DATA -> map[i].p[0]][i] = ( x - fparams[DATA -> map[i].p[1]] ) * ( 1 + fparams[DATA -> map[i].p[2]] / LT ) ;
     df[DATA -> map[i].p[1]][i] = -fparams[DATA -> map[i].p[0]] * ( 1 + fparams[DATA -> map[i].p[2]] / LT ) ;
     df[DATA -> map[i].p[2]][i] = ( fparams[DATA -> map[i].p[0]] * ( x - fparams[DATA -> map[i].p[1]] ) ) / LT ;

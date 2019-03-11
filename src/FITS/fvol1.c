@@ -36,15 +36,12 @@ void
 fvol1_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i , j ;
+  size_t i ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
-
     const double X = DATA -> x[i] ;
     const double expfac = exp( -fparams[ DATA -> map[i].p[0] ] * X ) ;
     df[0][i] = 1.0 - X * fparams[ DATA -> map[i].p[1] ] * expfac ;
     df[1][i] = expfac ;
-    //df[1][i] = X ;
-    //df[2][i] = exp( -sqrt( X ) * 14.6 ) ;
   }
   return ;
 }

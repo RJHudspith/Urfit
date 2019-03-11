@@ -18,12 +18,7 @@ static const double c7map[ 12 ] = { 1 , 1 , 1 ,
 double
 fc4c7( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  return fparams[0] +
-    X.X*X.X*(fparams[1]) 
-    + c7map[Npars]*(fparams[2]
-		    //+ c7map[Npars]*fparams[4]
-    )
-    ;
+  return fparams[0] + X.X*X.X*(fparams[1])  + c7map[Npars]*(fparams[2] ) ;
 }
 
 void
@@ -48,15 +43,13 @@ void
 c4c7_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i , j ;  
+  size_t i ;  
   for( i = 0 ; i < DATA -> n ; i++ ) {    
     const double c4 = DATA -> x[i] ;
     const double c7 = c7map[i] ;
     df[ DATA -> map[ i ].p[0] ][i] = 1 ;
     df[ DATA -> map[ i ].p[1] ][i] = c4*c4 ;
-    //df[ DATA -> map[ i ].p[2] ][i] = c4*c4 ;
     df[ DATA -> map[ i ].p[2] ][i] = c7 ;
-    //df[ DATA -> map[ i ].p[4] ][i] = c7*c7 ;
   }
   return ;
 }
@@ -77,5 +70,4 @@ c4c7_guesses( double *fparams ,
   fparams[1] = 0.04 ;
   fparams[2] = 0. ;
   fparams[3] = -0.03 ;
-  //fparams[4] = 0. ;
 }

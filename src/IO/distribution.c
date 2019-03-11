@@ -134,7 +134,7 @@ init_dists( struct input_params *Input )
       }
 
       // 0.24
-      const double W[ 3 ] = { 0.24 , 0.24 , 0.24 } ;
+      //const double W[ 3 ] = { 0.24 , 0.24 , 0.24 } ;
       if( cylinder_DF( size[0] , q , size[0] , 0.24 ) == ADD_TO_LIST ) {
 	sum++ ;
 	inlist[i][j] = true ;

@@ -4,7 +4,10 @@
  */
 #include "gens.h"
 
+#include "effmass.h"
 #include "fit_and_plot.h"
+#include "init.h"
+#include "resampled_ops.h"
 
 int
 CVCP_analysis( struct input_params *Input )
@@ -41,6 +44,8 @@ CVCP_analysis( struct input_params *Input )
   // perform a fit
   double Chi ;
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
+
+  free_fitparams( Fit , Input -> Fit.Nlogic ) ;
 
   Input -> Data.Ntot = Ntot_prev ;
   Input -> Data.Nsim = Nsim_prev ;

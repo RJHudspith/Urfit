@@ -5,6 +5,7 @@
 #include "gens.h"
 
 #include "GLU_bswap.h"
+#include "stats.h"
 
 static int
 init_GLU_tcorr( struct input_params *Input )

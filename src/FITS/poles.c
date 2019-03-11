@@ -43,17 +43,9 @@ void
 poles_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i , j ;
+  size_t i ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
     const double X = DATA -> x[i] ;
-    #if 0
-    for( j = 0 ; j < DATA -> N ; j++ ) {
-      df[ DATA -> map[i].p[j] ][ i ] = pow( X , -(int)(DATA -> N) + (int)j ) ;
-    }
-    for( j = 0 ; j < DATA -> M+1 ; j++ ) {
-      df[ DATA -> map[i].p[j+DATA->N] ][ i ] = pow( X , j ) ;
-      }
-    #endif
     df[DATA -> map[i].p[0]][i] = 1/(1+X) ;
     df[DATA -> map[i].p[1]][i] = 1 ;
     df[DATA -> map[i].p[2]][i] = X ;

@@ -14,6 +14,8 @@ void
 ZV_exp_d2f( double **d2f , const void *data , const double *fparams ) ;
 
 void
-ZV_exp_guesses( double *fparams , const size_t Nlogic ) ;
+ZV_exp_guesses( double *fparams ,
+		const struct data_info Data ,
+		const struct fit_info Fit ) ;
 
 #endif

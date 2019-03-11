@@ -12,6 +12,7 @@
 #include "pade_coefficients.h"
 
 //#define VERBOSE
+//#define TRAP_DLDP
 
 // LUT for the factorial
 static const double fac[169] = { 1.000000e+00 , 1.000000e+00 , 2.000000e+00 , 6.000000e+00 , 2.400000e+01 , 1.200000e+02 , 7.200000e+02 , 5.040000e+03 , 4.032000e+04 , 
@@ -36,7 +37,8 @@ static const double fac[169] = { 1.000000e+00 , 1.000000e+00 , 2.000000e+00 , 6.
 2.006344e+269 , 3.089770e+271 , 4.789143e+273 , 7.471063e+275 , 1.172957e+278 , 1.853272e+280 , 2.946702e+282 , 4.714724e+284 , 
 7.590705e+286 , 1.229694e+289 , 2.004402e+291 , 3.287219e+293 , 5.423911e+295 , 9.003692e+297 , 1.503617e+300 , 2.526076e+302 };
 
-// compute the coefficients
+#ifdef TRAP_DLDP
+// compute the coefficients using the trapezoid rule
 static void
 dLdp( double *d ,
       const size_t Nders ,
@@ -65,7 +67,7 @@ dLdp( double *d ,
   }
   return ;
 }
-
+#else
 // compute the coefficients using simpson's rule
 static void
 dLdp_simp( double *d ,
@@ -98,6 +100,7 @@ dLdp_simp( double *d ,
   }
   return ;
 }
+#endif
 
 // qsort comparison
 static int 

@@ -1,9 +1,12 @@
+/**
+   @file pof.c
+   @brief compute the pencil of functions of a correlator (see hep-lat 1404.4029)
+ */
 #include "gens.h"
 
-#include "resampled_ops.h"
-#include "gevp.h"
 #include "effmass.h"
-
+#include "gevp.h"
+#include "resampled_ops.h"
 
 // pencil of functions looks like
 // C(t)   C(t+1)   .. C(t+N)
@@ -28,7 +31,7 @@ pof_analysis( struct input_params *Input )
 			      Input -> Data.y[tp].NSAMPLES ,
 			      Input -> Data.y[tp].restype ) ;
 
-	printf( "y[%d][%d][%d] = %f\n" , m , n , t , y[ idx ].avg ) ;
+	printf( "y[%zu][%zu][%zu] = %f\n" , m , n , t , y[ idx ].avg ) ;
 	idx++ ;
       }
     }

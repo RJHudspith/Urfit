@@ -1,13 +1,13 @@
 #include "gens.h"
 
 #include "fit_and_plot.h"
+#include "init.h"
+#include "resampled_ops.h"
 
 // just a linear fit
 int
 nrqcd_slope_analysis( struct input_params *Input )
-{
-  size_t i ;
-  
+{ 
   double chi = 0.0 ;
   struct resampled *fit = fit_and_plot( *Input , &chi ) ;
 

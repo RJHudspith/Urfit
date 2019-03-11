@@ -7,6 +7,9 @@
 #include "rng.h"        // for the bootstraps
 #include "summation.h"
 
+// perhaps do a naive bias correction -> I don't trust this!!
+//#define BCORRECT
+
 // qsort comparison function for the bootstrap
 int 
 comp( const void *elem1 , 
@@ -42,8 +45,8 @@ bootstrap_error( struct resampled *replicas )
 
   // compute the boot average and subtract the bias so that
   // it is the same as the true average
+#ifdef BCORRECT
   double err ;
-#if 0
   const double bias = ( knuth_average( &err , replicas -> resampled ,
 				       replicas -> NSAMPLES )
 			- replicas -> avg ) ;

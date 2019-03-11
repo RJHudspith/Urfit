@@ -13,7 +13,7 @@
 int
 fit_inverse( struct input_params *Input )
 {
-  size_t i , j , shift = 0 ;
+  size_t i , j ;
 
   if( Input -> Data.Nsim != 25 ) {
     printf( "Nsim not as expected %zu \n" , Input -> Data.Nsim ) ;

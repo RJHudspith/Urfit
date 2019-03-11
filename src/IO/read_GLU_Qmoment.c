@@ -1,5 +1,6 @@
 #include "gens.h"
 #include "GLU_bswap.h"
+#include "resampled_ops.h"
 
 // read 32 bytes
 static int
@@ -70,7 +71,7 @@ pre_allocate( struct input_params *Input )
   
   size_t shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    size_t j , t = 0 ;
+    size_t j ;
     const size_t Nmeas = ( Input -> Traj[i].End - Input -> Traj[i].Begin ) \
       / Input -> Traj[i].Increment ;
     
