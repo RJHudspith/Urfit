@@ -61,8 +61,6 @@ read_flat_double( struct input_params *Input ,
     return FAILURE ;
   }
 
-  printf( "In here fuck you!!" ) ;
-
   // read the sample type
   size_t Restype , Ndata , Nsamples ;
   read_initial( file , &Restype , &Ndata ) ;
@@ -91,10 +89,6 @@ read_flat_double( struct input_params *Input ,
 	      &Input -> Data.x[ shift + i ].avg ,
 	      &Input -> Data.y[ shift + i ].avg ) ;
     }
-    //#ifdef VERBOSE
-    printf( "AVERAGE read %e %e \n" , Input -> Data.x[ shift + i ].avg ,
-	    Input -> Data.y[ shift + i ].avg ) ;
-    //#endif
     compute_err( &Input -> Data.x[ shift + i ] ) ;
     compute_err( &Input -> Data.y[ shift + i ] ) ;
 

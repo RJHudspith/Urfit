@@ -48,13 +48,15 @@ single_fit( struct resampled *fitparams ,
   // guesses are either generated in the fit function or by
   // the user in the input file
   if( is_average == true ) {
+    /*
     if( Fit.Guesses_Initialised == false ) {
       fdesc.guesses( fdesc.f.fparams , Data , Fit ) ;
     } else {
+    */
       for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
 	fdesc.f.fparams[j] = Fit.Guess[j] ;
       }
-    }
+      //}
   } else {
     for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
       fdesc.f.fparams[j] = fitparams[j].avg ;

@@ -8,4 +8,14 @@ Nint( const struct resampled *dataX ,
       const size_t Ndata ,
       const bool is_trap ) ;
 
+// numerically integrate using the fit parameters
+struct resampled
+Nint_fit( struct resampled *f ,
+	  const struct data_info Data ,
+	  const struct fit_info Fit ,
+	  const double upp ,
+	  const double low ,
+	  const double eps ,
+	  const size_t shift ) ;
+
 #endif

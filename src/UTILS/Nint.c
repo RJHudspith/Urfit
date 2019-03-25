@@ -4,23 +4,46 @@
  */
 #include "gens.h"
 
+#include "fit_chooser.h"
+#include "ffunction.h"
 #include "resampled_ops.h"
 #include "stats.h"
 
 // simpson evaluation
-static inline double
-simp_eval( double (*f)( const double ) , const double x , const double h )
+static double
+simp_eval( const double *fparams ,
+	   const struct data_info Data ,
+	   const struct fit_info Fit ,
+	   struct fit_descriptor fdesc ,
+	   const double x ,
+	   const double h ,
+	   const size_t shift )
 {
-  return h * ( f( x ) + 4. * f( x + h/2. ) + f( x + h ) ) ;
+  struct x_desc xdesc = { x , Data.LT[shift] , Fit.N , Fit.M } ;
+
+  double sum = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+
+  xdesc.X = x+h/2. ;
+  
+  sum += 4*fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+
+  xdesc.X = x+h ; 
+  sum += fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+
+  return h*sum ;
 }
 
 // driver for the adaptive simpson's
 // usual two half-step approach to estimate the error
 static double
-adaptive_simpsons( double (*f)( const double ) ,
+adaptive_simpsons( const double *fparams ,
+		   const struct data_info Data ,
+		   const struct fit_info Fit ,
+		   struct fit_descriptor fdesc ,
  		   const double low , 
 		   const double upp ,
-		   const double eps )
+		   const double eps ,
+		   const size_t shift )
 {
   const double inveps = 1.0 / eps ; 
   register double fx , fxph_4 , fxph_2 , fxp3h_4 , fxph ; // some evaluations I use a lot
@@ -28,31 +51,43 @@ adaptive_simpsons( double (*f)( const double ) ,
   double h = ( upp - low ) / 100. ; // initial guess
   double x = low ;
   const size_t max_steps = 150 ;
-  while( x < upp ) {
+  while( x < upp ) {    
     register double step = 0.0 , step2 = 0.0 ;
+    struct x_desc xdesc = { x , Data.LT[shift] , Fit.N , Fit.M } ;
+    
     int nsteps = 0 ;
     while( nsteps < max_steps ) {
 
-      fx      = f( x ) ;
-      fxph_4  = f( x + h/4. ) ;
-      fxph_2  = f( x + h/2. ) ;
-      fxp3h_4 = f( x + 3 * h/4. ) ;
-      fxph    = f( x + h ) ;
+      xdesc.X = x ;
+      fx      = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+
+      xdesc.X = x+h/4. ;
+      fxph_4  = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+
+      xdesc.X = x+h/2. ;
+      fxph_2  = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+
+      xdesc.X = x+3*h/4. ;
+      fxp3h_4 = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+
+      xdesc.X = x+h ;
+      fxph    = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
 
       step  = h * ( fx + 4. * fxph_2 + fxph ) ;
       step2 = h * ( fx + 4. * ( fxph_4 + fxp3h_4 ) + 2. * fxph_2 + fxph ) / 2.0 ;
  
       diff = fabs( step - step2 ) * inveps ;
- 
+      
       // break if the diff is within tolerance
       if( diff < 1.0 ) 
 	break ;
 
       // if we run into too much trouble we return a NAN
       if( nsteps == max_steps-1 ) {
-	printf( "[ADS] ill convergence met\n" ) ;
-	printf( "[ADS] %e \n" , diff ) ;
-	return ( sum + simp_eval( f , x , upp-x ) ) / 6.0 ;
+	fprintf( stderr , "[ADS] ill convergence met\n" ) ;
+	fprintf( stderr , "[ADS] %e \n" , diff ) ;
+	return ( sum + simp_eval( fparams , Data , Fit ,
+				  fdesc , x , upp-x , shift ) ) / 6. ;
       }
 
       h *= 0.9 * pow( diff , -0.25 ) ; 
@@ -60,10 +95,13 @@ adaptive_simpsons( double (*f)( const double ) ,
     }
     sum = sum + ( step2 + ( step2 - step ) / 15. ) ;
     x += h ;
-    h *= 0.9 * pow( diff , -0.2 ) ;
+    if( diff > 1E-15 ) {
+      h *= 0.9 * pow( diff , -0.2 ) ;
+    }
   }
   // small correction exactly to "x"
-  return ( sum + simp_eval( f , x , upp-x ) ) / 6. ;
+  return ( sum + simp_eval( fparams , Data , Fit ,
+			    fdesc , x , upp-x , shift ) ) / 6. ;
 }
 
 static double
@@ -210,6 +248,49 @@ Nint( const struct resampled *dataX ,
   Int.avg = integrator( yloc , xloc , Ndata ) ;
 
   compute_err( &Int ) ;
+  
+  return Int ;
+}
+
+// placeholder for numerically integrating a fit
+struct resampled
+Nint_fit( struct resampled *f ,
+	  const struct data_info Data ,
+	  const struct fit_info Fit ,
+	  const double upp ,
+	  const double low ,
+	  const double eps ,
+	  const size_t shift )
+{
+  struct resampled Int = init_dist( NULL ,
+				    f[0].NSAMPLES ,
+				    f[0].restype ) ;
+  struct fit_descriptor fdesc = init_fit( Data , Fit ) ;
+
+  // could be done in parallel
+  size_t j , p ;
+  for( j = 0 ; j < f[0].NSAMPLES ; j++ ) {
+    double fparams[ fdesc.Nparam ] ;
+    for( p = 0 ; p < fdesc.Nparam ; p++ ) {
+      fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
+    }
+    Int.resampled[j] = adaptive_simpsons( fparams , Data , Fit ,
+					  fdesc , low , upp , eps ,
+					  shift ) ;
+  }
+  // do the average
+  double fparams[ fdesc.Nparam ] ;
+  for( p = 0 ; p < fdesc.Nparam ; p++ ) {
+    fparams[ p ] = f[ Fit.map[shift].p[p] ].avg ;
+  }
+  Int.avg = adaptive_simpsons( fparams , Data , Fit ,
+			       fdesc , low , upp , eps ,
+			       shift ) ;
+
+  fprintf( stdout , "\n[INT] Integrated fit parameters\n" ) ;
+  fprintf( stdout , "[INT] Integration range %e -> %e\n" ,
+	   low , upp ) ;
+  fprintf( stdout , "[INT] Integral %e %e\n\n" , Int.avg , Int.err ) ;
   
   return Int ;
 }

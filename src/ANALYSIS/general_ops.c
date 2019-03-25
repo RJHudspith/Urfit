@@ -18,7 +18,8 @@ do_op( const struct resampled A ,
 {
   struct resampled res = init_dist( &A , A.NSAMPLES , A.restype ) ;
 
-  fprintf( stdout , "[GEN] A %e %e :: B %e %e \n" ,
+  fprintf( stdout , "\n--------------------------------\n"
+	   "[GEN] A %e %e :: B %e %e \n" ,
 	   A.avg , A.err , B.avg , B.err ) ;
 
   f( &res , B ) ;
@@ -60,11 +61,7 @@ gen_ops( struct input_params *Input )
     size_t j ;
     for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
 
-      //raise( &Input -> Data.y[j] , 2 ) ;
-      //raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
-
       const double mpi2 = Input -> Traj[0].Fit_Low ;
-	//Input -> Data.x[j].avg ;
       
       // add
       do_op( Input -> Data.y[j] ,
@@ -92,22 +89,3 @@ gen_ops( struct input_params *Input )
   }
   return SUCCESS ;
 }
-      /*
-      struct resampled res = init_dist( &Input -> Data.y[j] ,
-					Input -> Data.y[j].NSAMPLES ,
-					Input -> Data.y[j].restype ) ;
-      struct resampled res2 = init_dist( &Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-					 Input -> Data.y[j].NSAMPLES ,
-					 Input -> Data.y[j].restype ) ;
-
-      printf( "%f %f \n" , res.avg , res.err ) ;
-      printf( "%f %f \n" , res2.avg , res2.err ) ;
-
-      mult( &res2 , Input -> Data.y[j+Input -> Data.Ndata[0]] ) ;
-      
-      rapby( &res , res2 , -3. ) ;
-      printf( "%f %f \n" , res.avg , res.err ) ;
-      divide( &res , Input -> Data.y[j+Input -> Data.Ndata[0]] ) ;
-      mult_constant( &res , -1/12. ) ;
-      printf( "%f %f \n" , res.avg , res.err ) ;
-      */

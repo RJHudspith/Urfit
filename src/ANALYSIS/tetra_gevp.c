@@ -68,7 +68,7 @@ write_evalues( struct resampled *evalues ,
 int
 tetra_gevp_analysis( struct input_params *Input )
 {
-  const size_t t0 = 1 ;
+  const size_t t0 = 3 ;
   const size_t N = Input -> Fit.N ;
   const size_t LT = Input -> Data.Ndata[0] ;
   size_t i , j , shift = 0 ; 
@@ -165,7 +165,8 @@ tetra_gevp_analysis( struct input_params *Input )
   for( i = 1 ; i < Input -> Fit.N ; i++ ) {
     for( j = 0 ; j < Input->Data.Ndata[0] ; j++ ) {
       printf( "Subbed %e %e %e \n" , Input -> Data.x[j].avg ,
-	       effmass[j+i*Input->Data.Ndata[i]].avg , effmass[j+i*Input->Data.Ndata[i]].err ) ;
+	      effmass[j+i*Input->Data.Ndata[i]].avg ,
+	      effmass[j+i*Input->Data.Ndata[i]].err ) ;
     }
     printf( "\n" ) ;
   }

@@ -14,9 +14,8 @@ HLBL_analysis( struct input_params *Input )
 {
   const double ammap[7] = { 0.375 , 0.25 , 0.1875 , 0.125 , 0.09375 , 0.083333 , 0.0625 } ;
   
-  const double m_muon = 1. ; //0.1056583745 ; // muon mass in GEV
   const double alpha_QED = 1.0/137.035999 ;
-  const double prefac = m_muon/3.*pow(4*M_PI*alpha_QED,3) ; //*2*M_PI*M_PI ;
+  const double prefac = pow(4*M_PI*alpha_QED,3)/3 ;
   
   size_t i , j , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
@@ -24,14 +23,11 @@ HLBL_analysis( struct input_params *Input )
     // multiply by |x|^3*prefac
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
 
+      // x is y^3 when comparing to note
       root( &Input -> Data.x[j] ) ;
 
-      //printf( "Ybef %e %e\n" , Input -> Data.y[j].avg , Input -> Data.y[j].err ) ;
-      mult_constant( &Input -> Data.y[j] , prefac*pow( Input -> Data.x[j].avg , 3 ) ) ;
-
-      //printf( "Yaft %e %e\n" , Input -> Data.y[j].avg , Input -> Data.y[j].err ) ;
-
-      mult_constant( &Input -> Data.y[j] , ammap[i] ) ;
+      mult_constant( &Input -> Data.y[j] ,
+		     ammap[i]*prefac*pow( Input -> Data.x[j].avg , 3 ) ) ;
     }
 
     fprintf( stdout , "\nPerforming integrals\n" ) ; 
@@ -47,7 +43,7 @@ HLBL_analysis( struct input_params *Input )
     }
 
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      mult_constant( &Input -> Data.x[j] , ammap[i] ) ;
+      //mult_constant( &Input -> Data.x[j] , ammap[i] ) ;
     }
     
     shift += Input -> Data.Ndata[i] ;
@@ -56,7 +52,7 @@ HLBL_analysis( struct input_params *Input )
 
   // perform a fit
   double Chi ;
-  struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
+  struct resampled *Fit = fit_and_plot_and_Nint( *Input , &Chi ) ;
 
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;  
   
