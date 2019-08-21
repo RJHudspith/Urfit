@@ -286,7 +286,7 @@ Nint_fit( struct resampled *f ,
   Int.avg = adaptive_simpsons( fparams , Data , Fit ,
 			       fdesc , low , upp , eps ,
 			       shift ) ;
-
+  compute_err( &Int ) ;
   fprintf( stdout , "\n[INT] Integrated fit parameters\n" ) ;
   fprintf( stdout , "[INT] Integration range %e -> %e\n" ,
 	   low , upp ) ;

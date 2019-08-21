@@ -8,6 +8,9 @@
 #include "fitfunc.h"
 #include "svd.h"
 
+// Cholesky decomp should be much faster
+#define CHOLESKY
+
 // computes the upper section
 static void
 compute_upper_correlation( double **correlation , 
@@ -180,12 +183,31 @@ inverse_correlation( struct data_info *Data ,
     write_corrmatrix( (const double**)C , Data -> Ntot , Fit.Corrfit ) ;
 
     // compute the inverse by svd
+#ifdef CHOLESKY
+    gsl_matrix *A = gsl_matrix_calloc( Data -> Ntot ,
+				       Data -> Ntot ) ;
+    for( i = 0 ; i < Data -> Ntot ; i++ ) {
+      size_t j ;
+      for( j = 0 ; j < Data -> Ntot ; j++ ) {
+        gsl_matrix_set( A , i , j , C[i][j] ) ;
+      }
+    }    
+    gsl_linalg_cholesky_decomp( A ) ;
+    gsl_linalg_cholesky_invert( A ) ;
+    for( i = 0 ; i < Data -> Ntot ; i++ ) {
+      size_t j ;
+      for( j = 0 ; j < Data -> Ntot ; j++ ) {
+	Data -> Cov.W[i][j] = gsl_matrix_get( A , i , j ) ;
+      }
+    }
+#else
     if( svd_inverse( Data -> Cov.W , (const double**)C ,
 		     Data -> Ntot , Data -> Ntot ,
 		     Data -> Cov.Eigenvalue_Tol ,
 		     Data -> Cov.Column_Balanced ) == FAILURE ) {
       flag = FAILURE ;
     }
+#endif
 
     write_corrmatrix( (const double**)Data -> Cov.W ,
 		      Data -> Ntot , Fit.Corrfit ) ;

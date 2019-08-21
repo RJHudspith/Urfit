@@ -13,8 +13,12 @@
 static double part( const double complex C ) { return creal( C ) ; }
 #elif (defined IMAG)
 static double part( const double complex C ) { return cimag( C ) ; }
-#elif (defined ABS)
+#elif (defined CABS)
 static double part( const double complex C ) { return cabs( C ) ; }
+#elif (defined RABS)
+static double part( const double complex C ) { return fabs( creal( C ) ) ; }
+#elif (defined IABS)
+static double part( const double complex C ) { return fabs( cimag( C ) ) ; }
 #else
 static double part( const double complex C ) { return creal( C ) ; }
 #endif

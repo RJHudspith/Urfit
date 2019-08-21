@@ -126,9 +126,10 @@ read_GLU( struct input_params *Input )
 	bswap_32( Nd[0] , r ) ;
         #endif
 	Input -> Data.x[shift+k].resampled[idx] = 0.0 ;
-        for( l = 0 ; l < Nd[0] ; l++ ) {
+        for( l = 0 ; l < Nd[0] ; l++ ) {	  
 	  Input -> Data.x[shift+k].resampled[idx] += r[l]*r[l] ;
 	}
+	//printf( "MOM %d %d %d %d\n" , r[0] , r[1] , r[2] , r[3] ) ;
       }
 
       uint32_t Newrlist[ 1 ] ;

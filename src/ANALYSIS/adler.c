@@ -262,7 +262,7 @@ adler_analysis( struct input_params *Input )
 			     3.607440054844607 , 3.607440054844607 , 3.607440054844607 ,
 			     2.454315559701493 , 2.454315559701493 , 2.454315559701493 } ;
   */
-
+  
   const size_t ZMAP[ 9 ] = { 0 , 0 , 0 , 
 			     1 , 1 , 1 ,
 			     2 , 2 , 2 } ;
@@ -273,8 +273,8 @@ adler_analysis( struct input_params *Input )
 
   set_mu_adleralpha( mu ) ;
   
-  //const double ainv[ 3 ] = { 4.494919612756264 , 3.607440054844607 , 2.454315559701493 } ;
-  //const double ainv[ 3 ] = { 2.454315559701493 } ;
+  const double ainv[ 3 ] = { 4.494919612756264 , 3.607440054844607 , 2.454315559701493 } ;
+
   const size_t ZMAP[ 3 ] = { 0 , 1 , 2 } ;
 #endif
   
@@ -286,7 +286,7 @@ adler_analysis( struct input_params *Input )
   Z[2] = init_dist( NULL , Input -> Data.x[0].NSAMPLES , Input -> Data.x[0].restype ) ;
 
   size_t k ;
-  Z[0].avg = 0.9699 ;
+  Z[0].avg = 0.70912 ;
   Z[1].avg = 0.9636 ;
   Z[2].avg = 0.9553 ;
 
@@ -297,13 +297,13 @@ adler_analysis( struct input_params *Input )
   init_rng( 1234567 ) ;
   
   for( k = 0 ; k < Z[0].NSAMPLES ; k++ ) {
-    Z[0].resampled[k] = 0.9699 ;//+ rng_gaussian( 0.0026 ) ;
+    Z[0].resampled[k] = Z[0].avg ;//+ rng_gaussian( 0.0026 ) ;
   }
   for( k = 0 ; k < Z[0].NSAMPLES ; k++ ) {
-    Z[1].resampled[k] = 0.9636 ;//+ rng_gaussian( 0.0034 ) ;
+    Z[1].resampled[k] = Z[1].avg ;//+ rng_gaussian( 0.0034 ) ;
   }
   for( k = 0 ; k < Z[0].NSAMPLES ; k++ ) {
-    Z[2].resampled[k] = 0.9553 ;//+ rng_gaussian( 0.0053 ) ;
+    Z[2].resampled[k] = Z[2].avg ;//+ rng_gaussian( 0.0053 ) ;
   }
   raise( &Z[0] , 2 ) ;
   raise( &Z[1] , 2 ) ;
@@ -319,6 +319,10 @@ adler_analysis( struct input_params *Input )
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
+
+      // multiply x by a^2
+      root( &( Input -> Data.x[j] ) ) ;
+      mult_constant( &( Input -> Data.x[j] ) , 2.204 ) ; 
       
       // mult by Z_V^2
       mult( &( Input -> Data.y[j] ) , Z[ ZMAP[i] ] ) ;

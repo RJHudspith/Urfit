@@ -155,11 +155,10 @@ insertion_sort_data( struct input_params *Input )
       equate( &Input -> Data.x[hole+1] , tempx ) ;
       equate( &Input -> Data.y[hole+1] , tempy ) ;
       #ifdef VERBOSE
-      fprintf( stdout , "Sorting :: %zu %zu \n" , j , Input -> Data.Ndata[i] ) ;
+      fprintf( stdout , "Sorting :: %zu %d %zu \n" , j , hole , Input -> Data.Ndata[i] ) ;
       #endif
     }
-    shift = j ;
-    
+    shift = j ;    
     free( tempx.resampled ) ;
     free( tempy.resampled ) ;
   }

@@ -13,6 +13,8 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
+#include <gsl/gsl_cdf.h> // pvalue
+
 // perform a single bootstrap fit to our data
 static int
 single_fit( struct resampled *fitparams ,
@@ -48,15 +50,13 @@ single_fit( struct resampled *fitparams ,
   // guesses are either generated in the fit function or by
   // the user in the input file
   if( is_average == true ) {
-    /*
     if( Fit.Guesses_Initialised == false ) {
       fdesc.guesses( fdesc.f.fparams , Data , Fit ) ;
     } else {
-    */
       for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
 	fdesc.f.fparams[j] = Fit.Guess[j] ;
       }
-      //}
+    }
   } else {
     for( j = 0 ; j < fdesc.Nlogic ; j++ ) {
       fdesc.f.fparams[j] = fitparams[j].avg ;
@@ -146,10 +146,11 @@ perform_bootfit( const struct data_info Data ,
   }
   
   // divide out the number of degrees of freedom
-  if( ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) != 0 ) {
-    divide_constant( &chisq , ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ) ;
+  const size_t Dof = ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ;
+  if( Dof != 0 ) {
+    divide_constant( &chisq , Dof ) ;
     fprintf( stdout , "[ CHISQ/dof ] %e %e (Ndof) %zu\n" ,
-	     chisq.avg , chisq.err , ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ) ;
+	     chisq.avg , chisq.err , Dof ) ;
   }
   
   // set the chi value
@@ -167,6 +168,10 @@ perform_bootfit( const struct data_info Data ,
 	     i , fitparams[i].avg , fitparams[i].err ) ;
   }
 
+  // following we could compute a p-value
+  // http://www.physics.utah.edu/~detar/phys6720/handouts/curve_fit/curve_fit/node4.html  
+  fprintf( stdout , "[FIT] pvalue %f\n" , 1-gsl_cdf_chisq_P( Dof*(*Chi) , Dof ) ) ;
+  
  memfree :
 
   // free the chisq

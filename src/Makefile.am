@@ -16,7 +16,7 @@ ANALYSIS_FILES=./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/nrqcd.c ./ANALYSIS/nrqcd_old.c ./ANALYSIS/nrqcd_slope.c \
 	./ANALYSIS/nrqcd_baremass.c ./ANALYSIS/c4c7_analysis.c \
 	./ANALYSIS/su2_shit.c ./ANALYSIS/binding_corr.c ./ANALYSIS/HAL.c \
-	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c
+	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c ./ANALYSIS/sol.c
 
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
@@ -24,7 +24,7 @@ INIT_FILES=./INIT/fake.c ./INIT/init.c
 
 FITS_FILES=./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/cosh.c ./FITS/exp_plusc.c ./FITS/exp.c ./FITS/Nder.c \
-	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c ./FITS/pp_aa.c \
+	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c ./FITS/Pexp.c ./FITS/pp_aa.c \
 	./FITS/pp_aa_ww.c ./FITS/ppaa.c ./FITS/pp_aa_ww_r2.c \
 	./FITS/Qcorr_bessel.c ./FITS/sinh.c ./FITS/poles.c ./FITS/qslab.c \
 	./FITS/cornell.c ./FITS/pp_aa_exp.c ./FITS/qsusc_su2.c \
@@ -55,7 +55,7 @@ RUN_FILES=./RUN/bootfit.c ./RUN/fit_and_plot.c ./RUN/gls_bootfit.c
 
 STATS_FILES=./STATS/bootstrap.c ./STATS/jacknife.c ./STATS/stats.c \
 	./STATS/resampled_ops.c ./STATS/correlation.c ./STATS/autocorr.c \
-	./STATS/raw.c ./STATS/bin.c
+	./STATS/raw.c ./STATS/bin.c ./STATS/reweight.c
 
 UTILS_FILES=./UTILS/chisq.c ./UTILS/crc32c.c ./UTILS/ffunction.c \
 	./UTILS/gen_ders.c ./UTILS/histogram.c ./UTILS/Nint.c \

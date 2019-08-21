@@ -5,6 +5,8 @@
 #include "init.h" // free_fitparams
 #include "nrqcd_exp2.h" // set_psq_nrqcd2()
 
+#include "resampled_ops.h"
+
 // just a linear fit
 int
 nrqcd_analysis( struct input_params *Input )
@@ -38,9 +40,29 @@ nrqcd_analysis( struct input_params *Input )
   double chi = 0.0 ;
   struct resampled *fit = fit_and_plot( *Input , &chi ) ;
 
+  // write out the mass fits
+  FILE *file = fopen( "massfits.dat" , "w" ) ;
+  struct resampled temp = init_dist( NULL , fit[0].NSAMPLES , fit[0].restype ) ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    equate( &temp , fit[2] ) ;
+    mult_constant( &temp , 2 ) ; 
+    raise( &temp , -1 ) ;
+    mult_constant( &temp , p2[i] ) ;
+    add( &temp , fit[1] ) ;
+
+    fprintf( file , "%f %f\n" , Input->Traj[i].Fit_Low , temp.err_hi ) ;
+    fprintf( file , "%f %f\n\n" , Input->Traj[i].Fit_High , temp.err_hi ) ;
+    fprintf( file , "%f %f\n" , Input->Traj[i].Fit_Low , temp.avg ) ;
+    fprintf( file , "%f %f\n\n" , Input->Traj[i].Fit_High , temp.avg ) ;
+    fprintf( file , "%f %f\n" , Input->Traj[i].Fit_Low , temp.err_lo ) ;
+    fprintf( file , "%f %f\n\n" , Input->Traj[i].Fit_High , temp.err_lo ) ;    
+  }
+
+  fclose( file ) ;
+
   // write out a flat file of the kinetic mass
   char str[ 256 ] ;
-  const double bare_mass = 9.0 ;
+  const double bare_mass = 1.89 ;
   if( Input -> Traj[0].Gs == Vi ) {
     sprintf( str , "Upsilon_%g.flat" , bare_mass ) ;
   } else {

@@ -17,7 +17,7 @@
 
 #include "stats.h"
 
-// #define ABS_EVALUES
+//#define ABS_EVALUES
 
 struct GEVP_temps {
   gsl_matrix *a ;
@@ -94,7 +94,7 @@ insertion_sort( struct GEVP_temps *G ,
     }
     G -> ev[hole+1] = ev1 ;
     for( j = 0 ; j < G -> N ; j++ ) {
-      gsl_matrix_complex_set( G -> evec , j , i ,
+      gsl_matrix_complex_set( G -> evec , j , hole+1 ,
 			      gsl_vector_complex_get( tevec , j ) ) ;
     }
   }
@@ -133,6 +133,9 @@ gevp( struct GEVP_temps *G ,
     G -> ev[i] = ( gsl_vector_complex_get( G -> alpha , i ).dat[0] 
 		   + I*gsl_vector_complex_get( G -> alpha , i ).dat[1] )
       / gsl_vector_get( G->beta , i ) ;
+    if( creal( G -> ev[i] ) < 0.0 ) {
+      G -> ev[i] = 1E-16 ;
+    }
   }
 
   // sort by the real part
@@ -345,8 +348,54 @@ solve_GEVP( const struct resampled *y ,
     if( gevp( &G[j] , N , j<t0 , j , true ) == FAILURE ) {
       fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
       return NULL ;
-    }
+    }    
   }
+
+  // check diagonalisation with V^\dag C(t) V
+  double complex D[N][N] ;
+  for( j = 0 ; j < Ndata ; j++ ) {
+
+    size_t shift = 0 ;
+    for( i = 0 ; i < N*M ; i++ ) {
+      C0[i] = y[ j  + shift ].avg ;
+      C1[i] = y[ t0  + shift ].avg ;
+      shift += Ndata ;
+    }
+    
+    size_t a , b , c , d ;
+    for( a = 0 ; a < N ; a++ ) {
+      for( d = 0 ; d < N ; d++ ) {
+
+	register double complex Sum1 = 0. , Sum2 = 0. ;
+	for( b = 0 ; b < N ; b++ ) {
+
+	  gsl_complex A = gsl_matrix_complex_get( G[t0+3].evec , b , a ) ;
+	  double complex AC = A.dat[0] - I*A.dat[1] ;
+
+	  //printf( "AC %e %e\n" , creal( AC ) , cimag( AC ) ) ;
+	  
+	  for( c = 0 ; c < N ; c++ ) {
+	    
+	    gsl_complex B = gsl_matrix_complex_get( G[t0+3].evec , c , d ) ;
+	    double complex BC = B.dat[0] + I*B.dat[1] ;
+
+	    // printf( "C0 %e %e\n" , creal( C0[c+N*b] ) , cimag( C0[c+N*b] ) ) ;
+
+	    Sum1 += AC * C0[ c + N*b ] * BC ;
+	    Sum2 += AC * C1[ c + N*b ] * BC ;
+
+	    //printf( "BC %e %e\n" , creal( BC ) , cimag( BC ) ) ;
+	  }
+	}
+	D[a][d] = Sum1 ;
+	printf( " %e %e\n" , creal( Sum1 ) , creal( Sum2 ) ) ; 
+      }
+      printf( "\n" ) ;
+    }
+    printf( "\n" ) ;
+  }
+  //exit(1) ;
+  
 
   for( j = 0 ; j < Ndata ; j++ ) {
     // poke into solution

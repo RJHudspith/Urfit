@@ -13,7 +13,7 @@ int
 nrqcd_baremass_analysis( struct input_params *Input )
 {
   size_t i , j , shift = 0 ;
-  const double ainv = 2.206 ; //2.194 ;
+  const double ainv = 2.194 ; //2.287 ; //2.206 ; //2.194 ;
 
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {

@@ -177,13 +177,23 @@ correlator_analysis( struct input_params *Input )
   printf( "Effmass\n" ) ;
   
   // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , ACOSH_EFFMASS ) ;
 
 #ifdef FIT_EFFMASS
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     equate( &Input -> Data.y[i] , effmass[i] ) ;
   }
 #endif
+
+  size_t j ; //, shift = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
+      if( i == 0 ) break ;
+
+      divide_constant( &Input -> Data.y[j] , 8*8*8 ) ;
+    }
+    shift += Input -> Data.Ndata[i] ;
+  }
 
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     free( effmass[i].resampled ) ;
@@ -215,12 +225,14 @@ correlator_analysis( struct input_params *Input )
     fclose( massfile ) ;
 
 
-    struct resampled Mass = init_dist( &Fit[0] , Fit[0].NSAMPLES , Fit[0].restype ) ;
+    struct resampled Mass = init_dist( &Fit[0] ,
+				       Fit[0].NSAMPLES ,
+				       Fit[0].restype ) ;
 
 
     write_flat_dist( &Fit[0] , &Fit[0] , 1 , "Mass.flat" ) ;
     
-    struct resampled dec = decay( Fit , *Input , 0 , 1 ) ;
+    struct resampled dec = decay( Fit , *Input , 0 , 2 ) ;
 
     write_flat_dist( &dec , &dec , 1 , "Decay.flat" ) ;
 
@@ -236,7 +248,7 @@ correlator_analysis( struct input_params *Input )
     // is d_t A_t^P P^W / 2P^L P^W
     // which I make
     //
-    // -m_\pi A^L/(2P^L)
+    // m_\pi/2 | A^L/P^L |
     equate( &dec , Fit[2] ) ;
 
     printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
@@ -244,7 +256,7 @@ correlator_analysis( struct input_params *Input )
     printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
     mult( &dec , Mass ) ;
     printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
-    mult_constant( &dec , -0.5 ) ;
+    mult_constant( &dec , 0.5 ) ;
 
     printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
     
@@ -265,20 +277,27 @@ correlator_analysis( struct input_params *Input )
     struct resampled mpi2 = init_dist( NULL ,
 				       Fit[1].NSAMPLES ,
 				       Fit[1].restype ) ;
-    double psq = 0 ;
-    size_t mu ;
-    for( mu = 0 ; mu < 3 ; mu++ ) {
-      const double ptilde = sin( Input -> Traj[0].mom[mu]*2.*M_PI/
-				 Input -> Traj[0].Dimensions[mu] ) ;
-      psq += ptilde*ptilde ;
+
+    size_t shift = 0 , j ;
+    for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+      for( j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
+	double psq = 0 ;
+	size_t mu ;
+	for( mu = 0 ; mu < 3 ; mu++ ) {
+	  const double ptilde = sin( Input -> Traj[0].mom[mu]*2.*M_PI/
+				     Input -> Traj[0].Dimensions[mu] ) ;
+	  psq += ptilde*ptilde ;
+	}
+	equate_constant( &mpi2 , psq ,
+			 Fit[1].NSAMPLES , Fit[1].restype ) ;
+	char str[256] ;
+	sprintf( str , "Mass_%zu.flat" , j+i*2*Input->Fit.N ) ;
+	write_flat_dist( &Fit[j+1+i*2*Input -> Fit.N] , &mpi2 , 1 , str ) ;
+      }
     }
-    equate_constant( &mpi2 , psq ,
-		     Fit[1].NSAMPLES , Fit[1].restype ) ;
-    write_flat_dist( &Fit[1] , &mpi2 , 1 , "Mass.flat" ) ;
     free( mpi2.resampled ) ;
 
     FILE *massfile = fopen( "massfits.dat" , "w+a" ) ;
-    size_t shift = 0 , j ;
     for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
       for( j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
 	write_fitmass_graph( massfile , Fit[j+1+i*2*Input -> Fit.N] ,
@@ -288,12 +307,44 @@ correlator_analysis( struct input_params *Input )
       shift += Input -> Data.Ndata[i] ;
     }
     fclose( massfile ) ;
+
+    struct resampled Omega = init_dist( NULL ,
+					Fit[0].NSAMPLES ,
+					Fit[0].restype ) ;
+
+    equate_constant( &Omega , 1.67245 , Fit[0].NSAMPLES , Fit[0].restype ) ;
+    divide( &Omega , Fit[1] ) ;
+    fprintf( stdout , "ainverse %f %f\n" , Omega.avg , Omega.err ) ; 
+    
+    free( Omega.resampled ) ;
   }
 
   /*
   subtract( &Fit[3] , Fit[1] ) ;
   printf( "%f +/- %f \n" , Fit[3].avg , Fit[3].err ) ;
   */
+
+    // write out a flat file
+  if( Input -> Fit.Fitdef == PEXP ) {
+    struct resampled mpi2 = init_dist( NULL ,
+				       Fit[1].NSAMPLES ,
+				       Fit[1].restype ) ;
+    FILE *massfile = fopen( "massfits.dat" , "w+a" ) ;
+    size_t i , j ;
+    for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+      for( j = 0 ; j < 2 ; j++ ) {
+	write_fitmass_graph( massfile , Fit[j*2] ,
+			     Input -> Traj[i].Fit_Low ,
+			     Input -> Traj[i].Fit_High ) ;
+	char str[256] ;
+	sprintf( str , "Mass_%zu.flat" , j*2 ) ;
+	write_flat_dist( &Fit[j*2] , &mpi2 , 1 , str ) ;
+      }
+      shift += Input -> Data.Ndata[i] ;
+    }
+    fclose( massfile ) ;
+    free( mpi2.resampled ) ;
+  }
   
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;
   

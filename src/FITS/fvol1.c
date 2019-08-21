@@ -1,17 +1,18 @@
 /**
    @file fvol1.c
-   @brief finite volume fit m_pi + A * e^{-m_pi X}
+   @brief finite volume fit y = A + B*X + e^{-\sqrt{X}*L }
  */
 #include "gens.h"
 
 #include "Nder.h"
 
-size_t L[3] = { 32 , 48 , 64 } ;
+size_t L[3] = { 48 , 48 , 48 } ;
 
 double
 ffvol1( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  return fparams[0] + fparams[1] * exp( -fparams[0] * X.X ) ;
+  const double MPIL = sqrt(X.X)*48 ;
+  return fparams[0] + fparams[1]*(X.X) + fparams[2]*exp( -MPIL ) ; ///sqrt(MPIL) ;
 }
 
 void
@@ -36,12 +37,15 @@ void
 fvol1_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i ;
+  size_t i , j ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
-    const double X = DATA -> x[i] ;
-    const double expfac = exp( -fparams[ DATA -> map[i].p[0] ] * X ) ;
-    df[0][i] = 1.0 - X * fparams[ DATA -> map[i].p[1] ] * expfac ;
-    df[1][i] = expfac ;
+    struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
+			DATA -> N , DATA -> M } ;
+    for( j = 0 ; j < DATA -> Npars ; j++ ) {
+      df[ DATA -> map[i].p[j] ][i] = Nder( ffvol1 , X ,
+					   DATA -> map[i].bnd ,
+					   fparams , j , DATA -> Npars ) ;
+    }
   }
   return ;
 }
@@ -60,6 +64,6 @@ fvol1_guesses( double *fparams ,
 {
   fparams[0] = 0.05 ;
   fparams[1] = 1 ;
-  //fparams[2] = -400 ;
+  fparams[2] = -400 ;
   return ;
 }

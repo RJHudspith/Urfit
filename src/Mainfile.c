@@ -44,6 +44,11 @@ main( const int argc , const char *argv[] )
     goto free_failure ;
   }
 
+  // reweight the data
+  if( reweight_data( &Input ) == FAILURE ) {
+    goto free_failure ;
+  }
+
   // have a look at the time series if we have FFTW3
 #ifdef VIEW_AUTOCORR
   #ifdef HAVE_FFTW3_H
@@ -52,23 +57,11 @@ main( const int argc , const char *argv[] )
   }
   #endif
 #endif
-
-  /*
-  if( write_flat_file( Input , "Pseudo_LL_EM" ) == FAILURE ) {
-    goto free_failure ;
-  }
-  */
-
+  
   // resample the data we have read in
   if( resample_data( &Input ) == FAILURE ) {
     goto free_failure ;
   }
-
-  /*
-  if( write_flat_file( Input , "VVTitTit_EM_lc.flat" ) == FAILURE ) {
-    goto free_failure ;
-  }
-  */
 
   // need to set this after data has been read ...
   if( an_wrapper( &Input ) == FAILURE ) {

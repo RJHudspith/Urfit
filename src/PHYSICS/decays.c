@@ -17,22 +17,17 @@ decay( const struct resampled *fitparams ,
 				       fitparams[ Amp_idx ].NSAMPLES ,
 				       fitparams[ Amp_idx ].restype ) ;
 
-  const double vol_fac = 2.0 ; /* ( Input.Traj[0].Dimensions[0] *
-				 Input.Traj[0].Dimensions[1] *
-				 Input.Traj[0].Dimensions[2] ) ;*/
+  const double vol_fac = 2./( Input.Traj[0].Dimensions[0] *
+			      Input.Traj[0].Dimensions[1] *
+			      Input.Traj[0].Dimensions[2] ) ;
 
-  // f = 
+  // f = sqrt{ 2/V*(A^L)^2/m_\pi }
   mult( &result , fitparams[ Amp_idx ] ) ;
-  
-  // AL^2
   mult_constant( &result , vol_fac ) ;
-
   divide( &result , fitparams[ Mass_idx ] ) ;
-  divide( &result , fitparams[ Mass_idx ] ) ;
-  
   root( &result ) ;
 
-  fprintf( stdout , "Decay :: %e,%e \n" , result.avg , result.err ) ;
+  fprintf( stdout , "Decay/Z_A :: %e,%e \n" , result.avg , result.err ) ;
   
   return result ;
 }

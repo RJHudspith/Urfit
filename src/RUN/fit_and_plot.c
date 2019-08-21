@@ -15,7 +15,6 @@
 #include "stats.h"
 
 #include "Nint.h"
-
 #include "GLS.h"
 
 //

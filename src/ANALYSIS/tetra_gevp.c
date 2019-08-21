@@ -13,6 +13,8 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
+static const int t0 = 2 ;
+
 
 //#define FIT_EFFMASS
 //#define COMBINE
@@ -68,7 +70,7 @@ write_evalues( struct resampled *evalues ,
 int
 tetra_gevp_analysis( struct input_params *Input )
 {
-  const size_t t0 = 3 ;
+  //const size_t t0 = 2 ;
   const size_t N = Input -> Fit.N ;
   const size_t LT = Input -> Data.Ndata[0] ;
   size_t i , j , shift = 0 ; 
@@ -84,7 +86,7 @@ tetra_gevp_analysis( struct input_params *Input )
     for( i = 0 ; i < Input -> Fit.M ; i++ ) {
       for( j = 0 ; j < N ; j++ ) {
 	printf( "%g " , Input -> Data.y[ t + LT*( j +  N*i ) ].avg
-		/ sqrt( Input -> Data.y[ t + LT*( j + N*j ) ].avg * Input -> Data.y[ t + LT*( i + N*i ) ].avg )
+		/sqrt( Input -> Data.y[ t + LT*( j + N*j ) ].avg * Input -> Data.y[ t + LT*( i + N*i ) ].avg )
 		) ;
       }
       printf( "\n" ) ;

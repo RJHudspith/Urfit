@@ -24,6 +24,7 @@
 #include "pp_aa_exp.h"
 #include "pp_aa_ww.h"
 #include "pp_aa_ww_r2.h"
+#include "Pexp.h"
 #include "ppaa.h"
 #include "poles.h"
 #include "Qcorr_bessel.h"
@@ -65,11 +66,12 @@ get_Nparam( const struct fit_info Fit )
    return 3 * Fit.N ;
    // these have independent amounts
  case EXP_PLUSC : return 3 ;
- case FVOL1 : return 2 ;
+ case FVOL1 : return 3 ;
  case PADE : return Fit.N + Fit.M ;
  case POLES : return Fit.N + Fit.M + 1 ;
  case POLY : return Fit.N + 1 ;
  case PPAA : return 3*Fit.N ;
+ case PEXP : return 1+2*Fit.N ;
  case PP_AA : return 5 ;
  case PP_AA_EXP : return 5 ;
  case PP_AA_WW : return 5 ;
@@ -198,6 +200,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = pade_df ;
     fdesc.d2F        = pade_d2f ;
     fdesc.guesses    = pade_guesses ;
+    break ;
+  case PEXP :
+    fdesc.func       = fPexp ;
+    fdesc.F          = Pexp_f ;
+    fdesc.dF         = Pexp_df ;
+    fdesc.d2F        = Pexp_d2f ;
+    fdesc.guesses    = exp_guesses ; 
     break ;
   case POLY :
     fdesc.func       = fpoly ;

@@ -34,6 +34,7 @@
 #include "c4c7_analysis.h"
 #include "su2_shit.h"
 #include "pof.h"
+#include "sol.h"
 
 int
 an_wrapper( struct input_params *Input )
@@ -86,10 +87,11 @@ an_wrapper( struct input_params *Input )
   case ZV :
     return ZV_analysis( Input ) ;
   case Fit :
-    return nrqcd_baremass_analysis( Input ) ;
+    //return nrqcd_baremass_analysis( Input ) ;
     //return c4c7_analysis( Input ) ;
     //return su2_shit( Input ) ;
     //return HAL_analysis( Input ) ;
+    //return sol_analysis( Input ) ;
   default :
     if( fit_and_plot( *Input , &chi ) == NULL ) {
       return FAILURE ;

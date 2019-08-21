@@ -8,7 +8,10 @@
    TrajStep = Begin,Increment,End
    TrajStat = Bin
    TrajFitr = Fit_Low,Fit_High
-   TrajDims = %d,%d,%d,%d...
+   TrajDims = %d,%d,%d,%d
+   TrajGsGK = Gamma1,Gamma_2,Tfold
+   TrajMom = 0.,0.,0.
+   TrajRW = %s
  */
 #include "gens.h"
 
@@ -17,11 +20,11 @@
 #include "read_inputs.h"
 
 // block size for the traj information
-#define Nblock (7)
+#define Nblock (8)
 
 // little enum for getting the map right
 enum { TrajName , TrajStep , TrajStat ,
-       TrajFitr , TrajDims , TrajGsGk , TrajMom } TrajBlock ;
+       TrajFitr , TrajDims , TrajGsGk , TrajMom , TrajRW } TrajBlock ;
 
 // linked list for the dimensions
 struct node {
@@ -46,6 +49,7 @@ set_record( void )
   Record[4] = "TrajDims" ;
   Record[5] = "TrajGsGk" ;
   Record[6] = "TrajMom" ;
+  Record[7] = "TrajRW" ;
   return Record ;
 }
 
@@ -277,6 +281,15 @@ set_trajs( const struct flat_file *Flat ,
       free( ndbl ) ;        // free this node
       ndbl = ndbl -> next ; // point to the next node
     }
+
+    // set the RW name
+    tok = Flat[ Block[i] + TrajRW ].Value ;
+    if( are_equal( tok , "NULL" ) ) {
+      Traj[i].RW = NULL ;
+    } else {
+      Traj[i].RW = malloc( strlen( tok ) * sizeof( char ) ) ;
+      sprintf( Traj[i].RW , "%s" , tok ) ;
+    }
   }
   return Traj ;
 }
@@ -319,6 +332,7 @@ get_traj( struct input_params *Input ,
     printf( "(Binning) -> %zu \n" , Input -> Traj[i].Bin ) ;
     printf( "(FileX) -> %s \n" , Input -> Traj[i].FileX ) ;
     printf( "(FileY) -> %s \n" , Input -> Traj[i].FileY ) ;
+    printf( "(RW) -> %s \n" , Input -> Traj[i].RW ) ;
     size_t j ;
     printf( "(Nd,Dims) ->  ( %zu , " , Input -> Traj[i].Nd ) ;
     for( j = 0 ; j < Input -> Traj[i].Nd ; j++ ) {

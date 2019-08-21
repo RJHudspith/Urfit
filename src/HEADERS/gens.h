@@ -36,7 +36,7 @@ typedef enum {
 
 // fit types
 typedef enum {
-  ALPHA_D0 , ALPHA_D0_MULTI , ADLERALPHA_D0 , ADLERALPHA_D0_MULTI , HALEXP , EXP , COSH , EXP_PLUSC , NRQCD_EXP , NRQCD_EXP2 , NOFIT , PADE , POLY , PP_AA , PP_AA_WW , PP_AA_WW_R2 , PP_AA_EXP , PPAA , QCORR_BESSEL , QSUSC_SU2 , SINH , TANH , POLES , QSLAB , CORNELL , FVOL1 , UDCB_HEAVY , C4C7 , SU2_SHITFIT , ZV_EXP
+  ALPHA_D0 , ALPHA_D0_MULTI , ADLERALPHA_D0 , ADLERALPHA_D0_MULTI , HALEXP , EXP , COSH , EXP_PLUSC , NRQCD_EXP , NRQCD_EXP2 , NOFIT , PADE , PEXP , POLY , PP_AA , PP_AA_WW , PP_AA_WW_R2 , PP_AA_EXP , PPAA , QCORR_BESSEL , QSUSC_SU2 , SINH , TANH , POLES , QSLAB , CORNELL , FVOL1 , UDCB_HEAVY , C4C7 , SU2_SHITFIT , ZV_EXP
 } fittype ;
 
 // time folding types
@@ -197,7 +197,7 @@ struct traj {
   size_t End ;
   char *FileX ;
   char *FileY ;
-  //size_t Filename_Length ;
+  char *RW ;
   double Fit_High ;
   double Fit_Low ;
   size_t Gs ;

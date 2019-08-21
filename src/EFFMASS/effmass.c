@@ -224,6 +224,8 @@ effective_mass( struct input_params *Input ,
 	  break ;
 	}
       }
+
+      //mult_constant( &effmass[j] , 2 ) ;
     }
 
 

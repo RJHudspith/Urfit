@@ -72,6 +72,8 @@ read_flat_double( struct input_params *Input ,
   for( i = 0 ; i < Ndata ; i++ ) {
     // should be another NSAMPLES here
     fscanf( file , "%zu" , &Nsamples ) ;
+
+    printf( "Here NSAMPLES %zu\n" , Nsamples ) ;
     
     for( j = 0 ; j < Nsamples ; j++ ) {
       fscanf( file , "%lf %lf\n" ,
@@ -97,7 +99,7 @@ read_flat_double( struct input_params *Input ,
   }
 
   fclose(file) ;
-  
+
   return SUCCESS ;
 }
 

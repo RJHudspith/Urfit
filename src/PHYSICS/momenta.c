@@ -8,6 +8,8 @@
 #include "stats.h"
 #include "sort.h"
 
+//#define VERBOSE
+
 // compute a lattice momentum from fourier modes n
 double
 lattmom( const size_t *Dimensions ,
@@ -153,11 +155,11 @@ average_equivalent( struct input_params *Input )
     Input -> Data.x[i] = init_dist( &tmpx[i] , tmpx[i].NSAMPLES , tmpx[i].restype ) ;
     Input -> Data.y[i] = init_dist( &tmpy[i] , tmpx[i].NSAMPLES , tmpx[i].restype ) ;
 
-    //#ifdef VERBOSE
+    #ifdef VERBOSE
     printf( "Averaged %e %e | %e %e \n" ,
 	    Input -> Data.x[i].avg , Input -> Data.x[i].err ,
 	    Input -> Data.y[i].avg , Input -> Data.y[i].err ) ;
-    //#endif
+    #endif
   }
 
   // finally set the data struct

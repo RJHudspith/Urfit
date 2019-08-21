@@ -81,6 +81,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = NOFIT ;
   } else if( are_equal( Flat[tag].Value , "PADE" ) ) {
     Input -> Fit.Fitdef = PADE ;
+  } else if( are_equal( Flat[tag].Value , "PEXP" ) ) {
+    Input -> Fit.Fitdef = PEXP ;
   } else if( are_equal( Flat[tag].Value , "POLY" ) ) {
     Input -> Fit.Fitdef = POLY ;
   } else if( are_equal( Flat[tag].Value , "POLES" ) ) {
