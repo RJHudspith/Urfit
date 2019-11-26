@@ -14,7 +14,7 @@
 #include "stats.h"
 
 static const int t0 = 2 ;
-
+static const int td = t0+2 ;
 
 //#define FIT_EFFMASS
 //#define COMBINE
@@ -70,12 +70,11 @@ write_evalues( struct resampled *evalues ,
 int
 tetra_gevp_analysis( struct input_params *Input )
 {
-  //const size_t t0 = 2 ;
   const size_t N = Input -> Fit.N ;
   const size_t LT = Input -> Data.Ndata[0] ;
   size_t i , j , shift = 0 ; 
 
-  printf( "[TET GEVP] In here :: %zu %zu %zu\n" , t0 , N , LT ) ;
+  printf( "[TET GEVP] In here :: %zu %zu %zu %zu\n" , t0 , td , N , LT ) ;
   
   // make a correlator matrix
   // C_ij / sqrt( C_ii * C_jj )
@@ -115,7 +114,7 @@ tetra_gevp_analysis( struct input_params *Input )
 					  Input -> Data.Ndata[0] ,
 					  Input -> Fit.N ,
 					  Input -> Fit.M ,
-					  t0 ) ;
+					  t0 , td ) ;
   
   if( evalues == NULL ) {
     goto end ;
@@ -188,8 +187,7 @@ tetra_gevp_analysis( struct input_params *Input )
   Input -> Fit.N = Input -> Fit.M = 1 ;
   Input -> Fit.Nlogic = 2 ;
 
-  
-  // fit the ground state
+  // fit the ground state ?
   double Chi ;
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
 

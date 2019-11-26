@@ -6,6 +6,8 @@
 
 #include "resampled_ops.h"
 
+//#define VERBOSE
+
 // median of three values
 static double
 median_of_three( const double A1 ,
@@ -71,7 +73,7 @@ quicksort( struct input_params *Input ,
   const double v = median_of_three( Input -> Data.x[lo].avg ,
 				    Input -> Data.x[(lo+hi)/2].avg ,
 				    Input -> Data.x[hi].avg ) ;
-
+  
   while( i <= gt ) {
     if( Input -> Data.x[i].avg < v ) {
       swap( Input , tempx , tempy , lt++ , i++ ) ;
@@ -81,6 +83,9 @@ quicksort( struct input_params *Input ,
       i++ ;
     }
   }
+
+  if( (lt) < 1 ) lt = gt ;
+
   quicksort( Input , tempx , tempy , lo , lt-1 ) ;
   quicksort( Input , tempx , tempy , gt+1 , hi ) ;
   
@@ -144,9 +149,8 @@ insertion_sort_data( struct input_params *Input )
       double x = Input -> Data.x[ j ].avg ;
       equate( &tempx , Input -> Data.x[j] ) ;
       equate( &tempy , Input -> Data.y[j] ) ;
-      
       int hole = (int)j - 1 ;
-      while( hole >= shift && Input -> Data.x[hole].avg > x ) {
+      while( hole >= shift && Input -> Data.x[hole].avg > x ) {	
 	// copy data
 	equate( &Input -> Data.x[hole+1] , Input -> Data.x[hole] ) ;
 	equate( &Input -> Data.y[hole+1] , Input -> Data.y[hole] ) ;

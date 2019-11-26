@@ -42,7 +42,7 @@ pof_analysis( struct input_params *Input )
 					  Input -> Data.Ndata[0] ,
 					  Input -> Fit.N ,
 					  Input -> Fit.M ,
-					  t0 ) ;
+					  t0 , t0+1 ) ;
 
   // set input to the first evalue
   size_t i ;

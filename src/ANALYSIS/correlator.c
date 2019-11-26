@@ -177,23 +177,13 @@ correlator_analysis( struct input_params *Input )
   printf( "Effmass\n" ) ;
   
   // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ACOSH_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
 
 #ifdef FIT_EFFMASS
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     equate( &Input -> Data.y[i] , effmass[i] ) ;
   }
 #endif
-
-  size_t j ; //, shift = 0 ;
-  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      if( i == 0 ) break ;
-
-      divide_constant( &Input -> Data.y[j] , 8*8*8 ) ;
-    }
-    shift += Input -> Data.Ndata[i] ;
-  }
 
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     free( effmass[i].resampled ) ;

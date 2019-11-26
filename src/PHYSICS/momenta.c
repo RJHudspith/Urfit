@@ -10,6 +10,8 @@
 
 //#define VERBOSE
 
+//#define INSERTION
+
 // compute a lattice momentum from fourier modes n
 double
 lattmom( const size_t *Dimensions ,
@@ -61,10 +63,19 @@ average_equivalent( struct input_params *Input )
     #endif
   }
 
+  printf( "SOrting\n" ) ;
+
+#ifdef INSERTION
   // sort the data
   if( insertion_sort_data( Input ) == FAILURE ) {
     return FAILURE ;
   }
+#else
+  // sort the data
+  if( quick_sort_data( Input ) == FAILURE ) {
+    return FAILURE ;
+  }
+#endif
   
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     #ifdef VERBOSE
@@ -127,6 +138,9 @@ average_equivalent( struct input_params *Input )
 	add( &tmpy[idx] , Input -> Data.y[j+k] ) ;
 	k++ ;
       }
+      fprintf( stdout , "Average on x = %e has %zu self-averages\n" ,
+	       Input -> Data.x[j].avg , k ) ;
+
       mult_constant( &tmpx[idx] , 1/(double)k ) ;
       mult_constant( &tmpy[idx] , 1/(double)k ) ;
       

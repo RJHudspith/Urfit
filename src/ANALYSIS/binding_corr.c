@@ -52,7 +52,7 @@ binding_corr_analysis( struct input_params *Input )
 					  LT ,
 					  Input -> Fit.N ,
 					  Input -> Fit.M ,
-					  t0 ) ;
+					  t0 , t0+1 ) ;
 
   for( i = 0 ; i < Input -> Fit.N ; i++ ) {
     for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {

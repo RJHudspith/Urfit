@@ -19,6 +19,8 @@
 
 //#define ABS_EVALUES
 
+#define OPTIMISED_CORRELATOR
+
 struct GEVP_temps {
   gsl_matrix *a ;
   gsl_matrix *b ;
@@ -104,6 +106,49 @@ insertion_sort( struct GEVP_temps *G ,
   return ;
 }
 
+// compute the "optimised correlator" from the eigenvectors
+static void
+optimised_correlator( struct GEVP_temps *G ,
+		      struct resampled *y ,
+		      const size_t k ,
+		      const bool is_avg ,
+		      const size_t N ,
+		      const size_t M ,
+		      const size_t Ndata ,
+		      const size_t td )
+{
+  // check diagonalisation with V^\dag C(t) V
+  double complex D[N][N] ;
+  double C0[ N*M ] ;
+  size_t i , j , a , b , c , d ;
+  for( j = 0 ; j < Ndata ; j++ ) {    
+    // put these in the linearised matrices
+    size_t shift = 0 ;
+    for( i = 0 ; i < N*M ; i++ ) {
+      if( is_avg == true ) {
+	C0[i] = y[ j  + shift ].avg ;
+      } else {
+	C0[i] = y[ j  + shift ].resampled[k] ;
+      }
+      shift += Ndata ;
+    }
+    for( a = 0 ; a < N ; a++ ) {
+      register double complex Sum1 = 0. ;
+      for( b = 0 ; b < N ; b++ ) {
+	const gsl_complex A = gsl_matrix_complex_get( G[td].evec , b , a ) ;
+	const double complex AC = A.dat[0] - I*A.dat[1] ;
+	for( c = 0 ; c < N ; c++ ) {
+	  const gsl_complex B = gsl_matrix_complex_get( G[td].evec , c , a ) ;
+	  const double complex BC = B.dat[0] + I*B.dat[1] ;
+	  Sum1 += AC * BC * C0[ c + N*b ] ;
+	}
+      }
+      G[j].ev[a] = creal( Sum1 ) ;
+    }
+  }
+  return ;
+}
+
 // uses GSL to solve a generalised eigenvalue problem
 // returns the real part of the eigenvalues
 // solves A.v = \lambda B.v
@@ -127,6 +172,7 @@ gevp( struct GEVP_temps *G ,
     flag = FAILURE ;
   }
 
+#ifndef OPTIMISED_CORRELATOR
   // set the ev
   size_t i ;
   for( i = 0 ; i < G -> N ; i++ ) {
@@ -163,7 +209,8 @@ gevp( struct GEVP_temps *G ,
       //
     }
   }
-  
+#endif
+
   return flag ;
 }
 
@@ -272,7 +319,8 @@ solve_GEVP( const struct resampled *y ,
 	    const size_t Ndata ,
 	    const size_t N ,
 	    const size_t M ,
-	    const size_t t0 )
+	    const size_t t0 ,
+	    const size_t td )
 {
   if( N > M ) {
     fprintf( stderr , "[GEVP] cannot solve when N states "
@@ -323,6 +371,10 @@ solve_GEVP( const struct resampled *y ,
       }
     }
 
+    #ifdef OPTIMISED_CORRELATOR
+    optimised_correlator( G , y , k , false , N , M , Ndata , td ) ;
+    #endif
+    
     for( j = 0 ; j < Ndata ; j++ ) {
       // poke into solution
       for( i = 0 ; i < N ; i++ ) {
@@ -348,55 +400,13 @@ solve_GEVP( const struct resampled *y ,
     if( gevp( &G[j] , N , j<t0 , j , true ) == FAILURE ) {
       fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
       return NULL ;
-    }    
+    }
   }
 
-  // check diagonalisation with V^\dag C(t) V
-  double complex D[N][N] ;
-  for( j = 0 ; j < Ndata ; j++ ) {
-
-    size_t shift = 0 ;
-    for( i = 0 ; i < N*M ; i++ ) {
-      C0[i] = y[ j  + shift ].avg ;
-      C1[i] = y[ t0  + shift ].avg ;
-      shift += Ndata ;
-    }
-    
-    size_t a , b , c , d ;
-    for( a = 0 ; a < N ; a++ ) {
-      for( d = 0 ; d < N ; d++ ) {
-
-	register double complex Sum1 = 0. , Sum2 = 0. ;
-	for( b = 0 ; b < N ; b++ ) {
-
-	  gsl_complex A = gsl_matrix_complex_get( G[t0+3].evec , b , a ) ;
-	  double complex AC = A.dat[0] - I*A.dat[1] ;
-
-	  //printf( "AC %e %e\n" , creal( AC ) , cimag( AC ) ) ;
-	  
-	  for( c = 0 ; c < N ; c++ ) {
-	    
-	    gsl_complex B = gsl_matrix_complex_get( G[t0+3].evec , c , d ) ;
-	    double complex BC = B.dat[0] + I*B.dat[1] ;
-
-	    // printf( "C0 %e %e\n" , creal( C0[c+N*b] ) , cimag( C0[c+N*b] ) ) ;
-
-	    Sum1 += AC * C0[ c + N*b ] * BC ;
-	    Sum2 += AC * C1[ c + N*b ] * BC ;
-
-	    //printf( "BC %e %e\n" , creal( BC ) , cimag( BC ) ) ;
-	  }
-	}
-	D[a][d] = Sum1 ;
-	printf( " %e %e\n" , creal( Sum1 ) , creal( Sum2 ) ) ; 
-      }
-      printf( "\n" ) ;
-    }
-    printf( "\n" ) ;
-  }
-  //exit(1) ;
+  #ifdef OPTIMISED_CORRELATOR
+optimised_correlator( G , y , 0 , true , N , M , Ndata , td ) ;
+  #endif
   
-
   for( j = 0 ; j < Ndata ; j++ ) {
     // poke into solution
     for( i = 0 ; i < N ; i++ ) {
