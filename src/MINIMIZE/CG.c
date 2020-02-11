@@ -9,7 +9,7 @@
 #include "summation.h"
 
 // local definition of beta
-#define LOC_BETA
+//#define LOC_BETA
 
 // cg iteration
 int
@@ -87,12 +87,12 @@ cg_iter( void *fdesc ,
   double alpha[ Fit -> Nlogic ] ;
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     alpha[ i ] = 1 ;
+    //frintf( stdout , "SD fparam %zu %e %e\n" , i , Fit -> f.fparams[i] , alpha[i] ) ;
     // line search best alpha
     alpha[ i ] = line_search( &f2 , Fit -> f , old_df , s ,
 			      *Fit , data , W , i ,
 			      alpha[i] ) ;
     Fit -> f.fparams[i] += alpha[i] * s[i] ;
-    printf( "SD fparam %zu %e %e\n" , i , Fit -> f.fparams[i] , alpha[i] ) ;
   }
 
   double chisq_diff = 10 , chiprev = 123456789 ,
@@ -108,9 +108,9 @@ cg_iter( void *fdesc ,
     chinew = Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
     chisq_diff = fabs( ( chinew - chiprev ) ) ;
 
-    //#ifdef VERBOSE
-    //fprintf( stdout , "[CG] chidiff %e \n" , chisq_diff ) ;
-    //#endif
+    #ifdef VERBOSE
+    fprintf( stdout , "[CG] chidiff %e \n" , chisq_diff ) ;
+    #endif
 
     // compute beta using polyak - ribiere
     register double num = 0.0 , denom = 0.0 ;
@@ -149,7 +149,10 @@ cg_iter( void *fdesc ,
       denom = old_df[i] * old_df[i] ;
       old_df[i] = newdf ; // reset the old direction to be the new one
       const double beta = fmax( 0 , num / denom ) ;
+
       s[i] = old_df[i] + beta * s[i] ;
+
+      //printf("LOCBETA beta %e \n" , beta ) ;
       #else
       num   += newdf * ( newdf - old_df[i] ) ;
       denom += old_df[i] * old_df[i] ;
@@ -178,7 +181,9 @@ cg_iter( void *fdesc ,
       #endif
 
       // set x = x + \alpha * s
+      //printf( "Before %e\n" , Fit -> f.fparams[i] ) ;
       Fit -> f.fparams[i] += alpha[i] * s[i] ;
+      //printf( "After %e\n" , Fit -> f.fparams[i] ) ;
 
       #ifdef VERBOSE
       printf( "[CG] NEPARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
@@ -205,7 +210,7 @@ cg_iter( void *fdesc ,
 
   printf( "[CG] chisq :: %e | Diff -> %e \n\n" , Fit -> f.chisq , chisq_diff ) ;
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
-    printf( "PARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
+    printf( "PARAMS :: %e \n" , Fit -> f.fparams[i] ) ;
   }
   //exit(1) ;
 

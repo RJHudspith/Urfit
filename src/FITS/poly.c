@@ -95,7 +95,7 @@ poly_guesses( double *fparams ,
   // tell us about the guesses
   printf( "\n" ) ;
   for( i = 0 ; i < Fit.Nlogic ; i++ ) {
-    printf( "[GUESS] Fit param guess %zu -> %f \n" , i , fparams[i] ) ; 
+    printf( "[GUESS] Fit param guess %zu -> %e \n" , i , fparams[i] ) ; 
   }
   printf( "\n" ) ;
   

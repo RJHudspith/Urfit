@@ -10,6 +10,38 @@
 #include "sort.h"
 #include "stats.h"
 
+//#define VERBOSE
+
+#define ALLR
+
+static bool
+is_parallel( const int r[4] )
+{
+#ifndef ALLR
+  const int Ncut = 1 ;
+  int v[][4] = { { 2, 2, 2, 0 } ,
+		 //{ 1 ,1 ,1, 3 } ,
+		 //{ 1 ,1 ,1, 2 } ,
+		 };
+  //int v[4] = { 1, 1, 1, 1 } ;
+  bool isin = false ;
+  for( int i = 0 ; i < Ncut ; i++ ) {
+    int mu , rdotv = 0 , vsq = 0 , rsq = 0 ;
+    for( mu = 0 ; mu < 4 ; mu++ ) {
+      vsq += v[i][mu]*v[i][mu] ;
+      rsq += r[mu]*r[mu] ;
+      rdotv += abs(r[mu])*v[i][mu] ;
+    }
+    if( fabs( rdotv/(sqrt(rsq)*sqrt(vsq)) - 1. ) < 1E-10 ) {
+      isin = true ;
+    }
+  }
+  return isin ;
+#else
+  return true ;
+#endif
+}
+
 static int
 init_GLU( struct input_params *Input )
 {
@@ -35,11 +67,37 @@ init_GLU( struct input_params *Input )
     #ifndef WORDS_BIGENDIAN
     bswap_32( 1 , rlist ) ;
     #endif
-    printf( "[IO] file length -> %u \n" , rlist[0] ) ;
-    
-    Input -> Data.Ndata[i] = rlist[0] ;
+    //printf( "[IO] file length -> %u \n" , rlist[0] ) ;
+
+    // start reading the r-list
+    size_t Nfilter = 0 , k ;
+    for( k = 0 ; k < rlist[0] ; k++ ) {
+      size_t l ;
+      uint32_t Nd[1] ;
+      if( fread( Nd , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
+	return FAILURE ;
+      }
+      #ifndef WORDS_BIGENDIAN
+      bswap_32( 1 , Nd ) ;
+      #endif
+      int32_t r[ Nd[0] ] ;
+      if( fread( r , sizeof( int32_t ) , Nd[0] , Infile ) != Nd[0] ) {
+	return FAILURE ;
+      }
+      #ifndef WORDS_BIGENDIAN
+      bswap_32( Nd[0] , r ) ;
+      #endif
+      
+      if( is_parallel( r ) ) {
+	Nfilter++ ;
+	#if 0
+	fprintf( stdout , "MOM %d %d %d %d\n" ,
+		 r[0] , r[1] , r[2] , r[3] ) ;
+	#endif
+      }
+    }
+    Input -> Data.Ndata[i] = Nfilter ;
     Input -> Data.Ntot += Input -> Data.Ndata[i] ;
-    
     fclose( Infile ) ;
   }
 
@@ -66,6 +124,9 @@ init_GLU( struct input_params *Input )
       shift++ ;
     }
   }
+
+  fprintf( stdout , "GLU inited\n" ) ;
+  
   return SUCCESS ;
 }
 
@@ -107,7 +168,10 @@ read_GLU( struct input_params *Input )
       #endif
 
       // start reading the r-list
+      size_t Nfilter = 0 ;
+      bool *filter = malloc( rlist[0]*sizeof(bool) ) ;
       for( k = 0 ; k < rlist[0] ; k++ ) {
+	filter[k] = false ;
 	size_t l ;
 	uint32_t Nd[1] ;
 	if( fread( Nd , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
@@ -125,11 +189,20 @@ read_GLU( struct input_params *Input )
         #ifndef WORDS_BIGENDIAN
 	bswap_32( Nd[0] , r ) ;
         #endif
-	Input -> Data.x[shift+k].resampled[idx] = 0.0 ;
-        for( l = 0 ; l < Nd[0] ; l++ ) {	  
-	  Input -> Data.x[shift+k].resampled[idx] += r[l]*r[l] ;
+	
+	if( is_parallel( r ) ) {
+	  Input -> Data.x[shift+Nfilter].resampled[idx] = 0.0 ;
+	  for( l = 0 ; l < Nd[0] ; l++ ) {	  
+	    //Input -> Data.x[shift+k].resampled[idx] += r[l]*r[l] ;
+	    Input -> Data.x[shift+Nfilter].resampled[idx] += r[l]*r[l] ;
+	  }
+	  Nfilter++ ;
+	  filter[k] = true ;
 	}
-	//printf( "MOM %d %d %d %d\n" , r[0] , r[1] , r[2] , r[3] ) ;
+	#ifdef VERBOSE
+	fprintf( stdout , "MOM %d %d %d %d\n" ,
+		 r[0] , r[1] , r[2] , r[3] ) ;
+	#endif
       }
 
       uint32_t Newrlist[ 1 ] ;
@@ -151,24 +224,30 @@ read_GLU( struct input_params *Input )
       #ifndef WORDS_BIGENDIAN
       bswap_64( rlist[0] , Cr ) ;
       #endif
-      
-      for( k = 0 ; k < rlist[0] ; k++ ) {
-	Input -> Data.y[ shift + k ].resampled[ idx ] = Cr[k] ;
 
+      Nfilter = 0 ;
+      for( k = 0 ; k < rlist[0] ; k++ ) {
+
+	if( filter[k] == true ) {
+	  Input -> Data.y[ shift + Nfilter ].resampled[ idx ] = Cr[k] ;
+	  Nfilter++ ;
+	}
+	
 	#ifdef VERBOSE
 	printf( "[IO] data -> %e %e \n" ,
 		Input -> Data.x[ shift + k ].resampled[ idx ] ,
 		Input -> Data.y[ shift + k ].resampled[ idx ] ) ;
 	#endif
       }
-
       idx++ ;
-      
+
+      free( filter ) ;
       fclose( Infile ) ;
     }
     
     shift += Input -> Data.Ndata[i] ;
   }
+  //exit(1) ;
 
   // compute error if it hasn't been done already
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {

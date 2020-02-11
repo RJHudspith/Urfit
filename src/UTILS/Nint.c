@@ -252,6 +252,83 @@ Nint( const struct resampled *dataX ,
   return Int ;
 }
 
+// lerp to pt where i is above pt
+struct resampled
+lerp( const struct resampled *dataX ,
+      const struct resampled *dataY ,
+      const double pt ,
+      const size_t i )
+{
+  struct resampled Lerp = init_dist( NULL ,
+				     dataX[0].NSAMPLES ,
+				     dataX[0].restype ) ;
+
+  size_t k ;
+  for( k = 0 ; k < dataX[0].NSAMPLES ; k++ ) {
+    const double m = ( dataY[i-1].resampled[k] - dataY[i].resampled[k] )/
+      ( dataX[i-1].resampled[k] - dataX[i].resampled[k] ) ;
+    Lerp.resampled[k] = m*pt + dataY[i-1].resampled[k]
+      - m*dataX[i-1].resampled[k] ;
+  }
+  const double m = ( dataY[i-1].avg - dataY[i].avg )/
+    ( dataX[i-1].avg - dataX[i].avg ) ;
+  Lerp.avg = m*pt + dataY[i-1].avg - m*dataX[i-1].avg ;
+
+  compute_err( &Lerp ) ;
+  
+  return Lerp ;
+}
+
+// generic numerical integrator to some lerped point
+struct resampled
+Nint_pt( const struct resampled *dataX ,
+	 const struct resampled *dataY ,
+	 const size_t Ndata ,
+	 const double pt ,
+	 const bool put_zero )
+{
+  size_t i ;
+  for( i = 0 ; i < Ndata ; i++ ) {
+    if( dataX[i].avg > pt ) break ;
+  }
+
+  fprintf( stdout , "[Nint_pt] %f %f %f\n" ,
+	   dataX[i-1].avg , pt , dataX[i].avg ) ;
+
+  // integrates up to pt
+  struct resampled Int = Nint( dataX , dataY ,
+			       i+1 , true ) ;
+
+  if( put_zero == true ) {
+    struct resampled tmp = init_dist( &dataY[0] ,
+				      dataY[0].NSAMPLES ,
+				      dataY[0].restype ) ;
+    mult( &tmp , dataX[0] ) ;
+    mult_constant( &tmp , 0.5 ) ;
+    add( &Int , tmp ) ; 
+    free( tmp.resampled ) ;
+  }
+  
+  fprintf( stdout , "[Nint_pt] NINT %e %e\n" , Int.avg , Int.err ) ;
+
+  struct resampled Lerp = lerp( dataX , dataY , pt , i ) ;
+
+  fprintf( stdout , "[Nint_pt] Lerp %e %e\n" , Lerp.avg , Lerp.err ) ;
+
+  // little trapezoid to get back to pt
+  size_t k ;
+  for( k = 0 ; k < dataX[0].NSAMPLES ; k++ ) {
+    Int.resampled[k] -= ( Lerp.resampled[k]+dataY[i].resampled[k])*(dataX[i].resampled[k]-pt)/2. ;
+  }
+  Int.avg -= ( Lerp.avg+dataY[i].avg)*(dataX[i].avg-pt)/2. ;
+
+  compute_err( &Int ) ;
+  
+  free( Lerp.resampled ) ;
+  
+  return Int ;
+}
+
 // placeholder for numerically integrating a fit
 struct resampled
 Nint_fit( struct resampled *f ,

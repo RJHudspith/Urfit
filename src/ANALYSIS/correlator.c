@@ -19,6 +19,8 @@
 
 //#define FIT_EFFMASS
 
+#define CDIV
+
 void 
 my_little_prony( const struct input_params *Input )
 {
@@ -177,13 +179,17 @@ correlator_analysis( struct input_params *Input )
   printf( "Effmass\n" ) ;
   
   // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , ACOSH_EFFMASS ) ;
 
 #ifdef FIT_EFFMASS
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     equate( &Input -> Data.y[i] , effmass[i] ) ;
   }
 #endif
+
+  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
+    divide_constant( &Input -> Data.y[i] , 1E16 ) ;
+  }  
 
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     free( effmass[i].resampled ) ;

@@ -8,6 +8,14 @@ Nint( const struct resampled *dataX ,
       const size_t Ndata ,
       const bool is_trap ) ;
 
+// numerical integrator over the distributions x and y
+struct resampled
+Nint_pt( const struct resampled *dataX ,
+	 const struct resampled *dataY ,
+	 const size_t Ndata ,
+	 const double pt ,
+	 const bool put_zero ) ;
+
 // numerically integrate using the fit parameters
 struct resampled
 Nint_fit( struct resampled *f ,

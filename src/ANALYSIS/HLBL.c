@@ -17,9 +17,19 @@
 #define PUT_ZERO
 
 // beta value of the ensemble of interest
-#define B346
-#define B450
+#define B340
+#define H105
+
 //#define CONNECTED
+//#define CPLUSD // connected plus 2+2
+
+//#define THREEP
+
+//#define FPIRESCALE
+
+//#define STRANGE
+
+static const double lerp_pt = 2.0 ;
 
 #ifdef B340
   #define BETALABEL "Beta 3.4"
@@ -29,6 +39,8 @@
   #elif (defined U103)
     #define SYMMETRIC
     #define CONFIGLABEL "U103"
+  #elif (defined U102)
+    #define CONFIGLABEL "U102"
   #elif (defined H102)
     #define CONFIGLABEL "H102"
   #elif (defined H105)
@@ -69,7 +81,8 @@
 
 static void
 integrate( struct input_params *Input ,
-	   FILE *txtfile )
+	   FILE *txtfile ,
+	   const double a )
 {
   const bool trap = true ;
   size_t i , shift = 0 ;
@@ -90,7 +103,7 @@ integrate( struct input_params *Input ,
     mult( &Int[0] , Input -> Data.x[shift] ) ;
     mult_constant( &Int[0] , 0.5 ) ;
     fprintf( txtfile , "Integral %e %e %e \n" ,
-	       Input -> Data.x[shift].avg , Int[0].avg , Int[0].err ) ;
+	     Input -> Data.x[shift].avg , Int[0].avg , Int[0].err ) ;
     #endif
     
     size_t k ;
@@ -99,6 +112,10 @@ integrate( struct input_params *Input ,
       Int[k] = Nint( Input -> Data.x + shift ,
 		     Input -> Data.y + shift ,
 		     k+1 , trap ) ;
+      #ifdef PUT_ZERO
+      add( &Int[k] , Int[0] ) ;
+      #endif
+
       #ifdef IN_FERMI
       fprintf( txtfile , "Integral %e %e %e \n" ,
 	       Input -> Data.x[shift+k].avg ,
@@ -110,12 +127,32 @@ integrate( struct input_params *Input ,
       #endif      
     }
 
+    // write out a flat distribution
     char str[256] ;
     sprintf( str , "Integral_%zu.flat" , i ) ;
     write_flat_dist( Int , Input->Data.x+shift ,
 		     Input -> Data.Ndata[i] , str ) ;
 
-    // write out a flat distribution
+    #ifdef PUT_ZERO
+    Int[0] = Nint_pt( Input->Data.x+shift , Input->Data.y+shift ,
+		      Input->Data.Ndata[i] , lerp_pt , true ) ;
+    #else
+    Int[0] = Nint_pt( Input->Data.x+shift , Input->Data.y+shift ,
+		      Input->Data.Ndata[i] , lerp_pt , false ) ;
+    #endif
+    
+    printf( "Lerped int %f %e %e\n" , lerp_pt ,
+	    Int[0].avg , Int[0].err ) ;
+    sprintf( str , "Lerp_%g.flat" , lerp_pt ) ;
+    struct resampled LP = init_dist( NULL , Input->Data.x[shift].NSAMPLES ,
+				     Input->Data.x[shift].restype ) ;
+    equate_constant( &LP , a , Input->Data.x[shift].NSAMPLES ,
+		     Input->Data.x[shift].restype ) ;
+    
+    write_flat_dist( Int , &LP , 1 , str ) ;
+
+    free( LP.resampled ) ;
+    
     for( k = 0 ; k < Input -> Data.Ndata[i] ; k++ ) {
       free( Int[k].resampled ) ;
     }
@@ -128,17 +165,29 @@ integrate( struct input_params *Input ,
 int
 HLBL_analysis( struct input_params *Input )
 {
-#ifdef SYMMETRIC
+#ifdef STRANGE
   #ifdef CONNECTED
-  const double NUM[2] = { 18 , 18 } ;
+  const double NUM[2] = { 1 , 1 } ;
   #else
-  const double NUM[2] = { -36 , -36 } ;
+  const double NUM[2] = { -1 , -1 } ;
   #endif
-#else
-  #ifdef CONNECTED
-  const double NUM[2] = { 17 , 17 } ;
+#else 
+  #ifdef SYMMETRIC
+    #ifdef CONNECTED
+    const double NUM[2] = { 18 , 18 } ;
+    #elif defined CPLUSD
+    const double NUM[2] = { 18 , -36 } ;
+    #else
+    const double NUM[2] = { -36 , -36 } ;
+    #endif
   #else
-  const double NUM[2] = { 25 , 25 } ;
+    #ifdef CONNECTED
+    const double NUM[2] = { 17 , 17 } ;
+    #elif defined CPLUSD
+    const double NUM[2] = { 17 , -25 } ;
+    #else
+    const double NUM[2] = { -25 , -25 } ;
+    #endif
   #endif
 #endif
   const double DEN = 81. ;
@@ -154,14 +203,26 @@ HLBL_analysis( struct input_params *Input )
   const double amu = 0.04624130625372472 ;
   const double a = 0.08636 ;
   #if (defined H101)
+  //const double fpirat = 1 ;
+  //const double fpirat = 1.1350853574396977 ;
+  const double fpirat = 1.288225 ;
+  //const double fpirat = 1.659523650625 ;
   const double Z = 0.71562 ;
   #elif (defined U103)
   const double Z = 0.71562 ;
   #elif (defined H102)
   const double Z = 0.71226 ;
+  #elif (defined U102)
+  const double Z = 0.71226 ;
   #elif (defined H105)
+  //const double fpirat = 1 ;
+  //const double fpirat = 1.0197996401467917 ;
+  const double fpirat = 1.0399913060435257 ;
   const double Z = 0.70908 ;
   #elif (defined C101)
+  //const double fpirat = 1 ;
+  //const double fpirat = 0.9728698738732318 ;
+  const double fpirat = 0.9464757914901178 ;
   const double Z = 0.70717 ;
   #endif
 #elif (defined B346)
@@ -188,65 +249,95 @@ HLBL_analysis( struct input_params *Input )
 #elif (defined B370)
   const double amu = 0.02667067466996327 ;
   const double a = 0.04981 ;
-  const double Z = 0.75413 ;
+  const double Z = 0.75909 ;
 #else
   fprintf( stderr , "I do not understand your selected beta\n" ) ;
   return FAILURE ;
 #endif
   const double ZV = pow(Z,PL) ;
   const double alpha_QED = 1.0/137.035999 ;
+#ifdef FPIRESCALE
+  const double prefac = ZV*amu*pow(4*M_PI*alpha_QED,3)/3.*2*M_PI*M_PI*fpirat ;
+#else
   const double prefac = ZV*amu*pow(4*M_PI*alpha_QED,3)/3.*2*M_PI*M_PI ;
+#endif
 
-  fprintf( txtfile , "Using %g/%g charge factor\n" , NUM[0] , DEN ) ;
+  size_t i , j , shift = 0 ;
   fprintf( txtfile , "Config is %s, %s\n" , CONFIGLABEL , BETALABEL ) ;
   fprintf( txtfile , "a = %g [fm], amu %g\n" , a , amu ) ;
   fprintf( txtfile , "Renormalisation (%g)^%d\n" , Z , PL ) ;
   fprintf( txtfile , "          |y| [fm]\tf(|y|)[fm^-1]\terror\n" ) ;
+  #ifndef CPLUSD
+  fprintf( txtfile , "Using %g/%g charge factor\n" , NUM[0] , DEN ) ;
+  #endif
   
-  size_t i , j , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-
     const double Q = NUM[i%2]/DEN ;
-
-    #ifdef PUT_ZERO
-    fprintf( txtfile , "Integrand %e %e %e\n" , 0. , 0. , 0. ) ;
-    #endif
-    
     // multiply by |x|^3*prefac
-    
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      
       // x is |y| when comparing to note
       root( &Input -> Data.x[j] ) ;
-
       #ifdef IN_FERMI
-      mult_constant( &Input -> Data.y[j] ,
-		     Q*prefac*pow( Input -> Data.x[j].avg , 3 )/a ) ;
+        #ifndef THREEP
+        mult_constant( &Input -> Data.y[j] ,
+		       Q*prefac*pow( Input -> Data.x[j].avg , 3 )/a ) ;
+        #else 
+	mult_constant( &Input -> Data.y[j] , 1./a ) ;
+	#endif
       mult_constant( &Input -> Data.x[j] , a ) ;
       #else
       mult_constant( &Input -> Data.y[j] ,
 		     Q*prefac*pow( Input -> Data.x[j].avg , 3 ) ) ;
       #endif
-
-      fprintf( txtfile , "Integrand %e %e %e\n" ,
-	       Input->Data.x[j].avg ,
-	       Input -> Data.y[j].avg ,
-	       Input -> Data.y[j].err ) ;
     }    
     shift += Input -> Data.Ndata[i] ;
   }
 
-  /*
-  // add the two
-  if( Input -> Data.Nsim == 2 ) {
-    for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
-      add( &Input -> Data.y[j] ,
-	   Input -> Data.y[j+Input->Data.Ndata[0]] ) ;
+#ifdef CPLUSD
+  // list is sorted so we just go through and add into shortest
+  const size_t sidx = Input->Data.Ndata[0] < Input->Data.Ndata[1] ? 0 : 1 ;
+  if( sidx == 0 ) {
+    for( j = 0 ; j < Input->Data.Ndata[0] ; j++ ) {
+      size_t k ;
+      for( k = j + Input->Data.Ndata[0] ; k < Input->Data.Ndata[1] + Input->Data.Ndata[0] ; k++ ) {
+	if( fabs( Input -> Data.x[k].avg - Input -> Data.x[j].avg ) < 1E-14 ) {
+	  printf("CHECK %f == %f\n" , Input -> Data.x[j].avg , 
+		 Input -> Data.x[k].avg ) ;
+	  add( &Input -> Data.y[j] , Input -> Data.y[k] ) ;
+	  equate( &Input -> Data.x[j] , Input -> Data.x[k] ) ;
+	}	
+      }
     }
+  } else {
+    for( j = Input->Data.Ndata[0] ; j < Input->Data.Ndata[0]+Input->Data.Ndata[1] ; j++ ) {
+      size_t k ;
+      for( k = 0 ; k < Input->Data.Ndata[0] ; k++ ) {
+	if( fabs( Input -> Data.x[k].avg - Input -> Data.x[j].avg ) < 1E-14 ) {
+	  printf("CHECK %f == %f\n" , Input -> Data.x[j].avg , 
+		 Input -> Data.x[k].avg ) ;
+	  add( &Input -> Data.y[j] , Input -> Data.y[k] ) ;
+	  equate( &Input -> Data.x[j] , Input -> Data.x[k] ) ;
+	}
+      }
+    }     
   }
-  */
-  
-  integrate( Input , txtfile ) ;
+#endif
+
+  // write out integrands
+  shift=0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    #ifdef PUT_ZERO
+    fprintf( txtfile , "Integrand %e %e %e\n" , 0. , 0. , 0. ) ;
+    #endif    
+    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
+      fprintf( txtfile , "Integrand %e %e %e\n" ,
+	       Input -> Data.x[j].avg ,
+	       Input -> Data.y[j].avg ,
+	       Input -> Data.y[j].err ) ;
+    }
+    shift += Input -> Data.Ndata[i] ;
+  }
+  integrate( Input , txtfile , a ) ;
 
   fclose( txtfile ) ;
 
