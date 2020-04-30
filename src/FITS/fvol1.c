@@ -6,13 +6,18 @@
 
 #include "Nder.h"
 
-size_t L[3] = { 48 , 48 , 48 } ;
+//size_t L[3] = { 48 , 48 , 48 } ;
+
+
+// order is H101, B450, H200, N202, N300
+const double MPIL[5] = { 5.8 , 5.2 , 4.4 , 6.4 , 5.1 } ;
+
+const double MPOW = -0.5 ;
 
 double
 ffvol1( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  const double MPIL = sqrt(X.X)*48 ;
-  return fparams[0] + fparams[1]*(X.X) + fparams[2]*exp( -MPIL ) ; ///sqrt(MPIL) ;
+  return fparams[0] + fparams[1]*X.X + fparams[2]*exp(-pow(MPIL[Npars],MPOW))/sqrt(MPIL[Npars]) ;
 }
 
 void
@@ -27,7 +32,7 @@ fvol1_f( double *f , const void *data , const double *fparams )
     }
     struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
 			DATA -> N , DATA -> M } ;
-    f[i] = ffvol1( X , p , DATA -> map[i].bnd ) - DATA -> y[i] ;
+    f[i] = ffvol1( X , p , i ) - DATA -> y[i] ;
   }
   return ;
 }
@@ -41,11 +46,9 @@ fvol1_df( double **df , const void *data , const double *fparams )
   for( i = 0 ; i < DATA -> n ; i++ ) {
     struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
 			DATA -> N , DATA -> M } ;
-    for( j = 0 ; j < DATA -> Npars ; j++ ) {
-      df[ DATA -> map[i].p[j] ][i] = Nder( ffvol1 , X ,
-					   DATA -> map[i].bnd ,
-					   fparams , j , DATA -> Npars ) ;
-    }
+    df[0][i] = 1 ;
+    df[1][i] = X.X ;
+    df[2][i] = exp( -pow(MPIL[i],MPOW) )/sqrt(MPIL[i]) ;
   }
   return ;
 }
@@ -62,8 +65,9 @@ fvol1_guesses( double *fparams ,
 	       const struct data_info Data ,
 	       const struct fit_info Fit )
 {
-  fparams[0] = 0.05 ;
+  fparams[0] = 0.0 ;
   fparams[1] = 1 ;
-  fparams[2] = -400 ;
+  fparams[2] = 1 ;
+  fparams[3] = 1 ;
   return ;
 }

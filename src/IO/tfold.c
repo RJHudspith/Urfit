@@ -41,8 +41,8 @@ map_correlator( const struct traj Traj ,
   const size_t *mapGs , *mapGk ;
   const size_t Vmap[3]   = { 0 , 1 , 2 } ;
   const size_t Amap[3]   = { 6 , 7 , 8 } ;
-  const size_t Titmap[3] = { 12 , 14 , 15 } ;
-  const size_t Tijmap[3] = { 10 , 11 , 13 } ;
+  const size_t Tijmap[3] = { 10 , 11 , 12 } ;
+  const size_t Titmap[3] = { 13 , 14 , 15 } ;
   
   bool trigger1 = false , trigger2 = false ;
 

@@ -39,12 +39,12 @@
 #include "chisq.h"
 #include "ffunction.h"
 
-//#define VERBOSE
+#define VERBOSE
 
-#define NGEN (2048) // number of generations in gene pool
+#define NGEN (256) // number of generations in gene pool
 
 // percentage that persist from the previous generation
-#define NBREED ((int)(4)) 
+#define NBREED ((int)(10)) 
 
 // number of parents of a child
 #define NPARENTS (int)(4)
@@ -52,7 +52,7 @@
 #define NTOURNAMENT (int)(15)
 
 // probability of mutation of the whole pop
-#define PMUTANT (0.15)
+#define PMUTANT (0.5)
 
 // It turns out this one is very important!! WHY???
 #define NOISE (0.1) // guesses * gaussian of width NOISE to start our run
@@ -124,7 +124,7 @@ insertion_sort_GA( struct genes *G )
   return ;
 }
 
-#ifdef verbose
+#ifdef VERBOSE
 // print out the whole population
 static void
 print_population( struct genes *G )
@@ -132,7 +132,7 @@ print_population( struct genes *G )
   size_t i , j ;
   for( i = 0 ; i < NGEN ; i++ ) {
     for( j = 0 ; j < G[i].Nlogic ; j++ ) {
-      printf( " %f " , G[i].g[j] ) ;
+      printf( " %e " , G[i].g[j] ) ;
     }
     printf( " :: %e \n" , G[i].chisq ) ;
   }
@@ -231,8 +231,6 @@ ga_iter( void *fdesc ,
 #ifdef VERBOSE
   printf( "[GA] Using a population of %d \n" , NGEN ) ;
   printf( "[GA] Keeping %d elites \n" , NBREED ) ;
-  printf( "[GA] Breeding elites into %d Children\n" , NCHILD ) ;
-  printf( "[GA] Mutating the above into a pop of %d \n" , NMUTANTS ) ;
 #endif
   
   // gene pool
@@ -275,7 +273,7 @@ ga_iter( void *fdesc ,
 				  Fit -> Prior[j].Err ) ) ;
       } else {
 	G[i].g[j] = Fit -> f.fparams[j] * 
-	  ( 1 + gsl_ran_gaussian( r , fabs( Fit -> f.fparams[j] ) * NOISE ) ) ;
+	  ( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
       }
     }
     G[i].chisq = compute_chi( &f2 , Fit -> f , Fit , G[i].g , data , W ) ;
@@ -289,14 +287,13 @@ ga_iter( void *fdesc ,
   // sort by chisq
   insertion_sort_GA( G ) ;
   
-  #ifdef verbose
-  print_population( G ) ;
+  #ifdef VERBOSE
+  //print_population( G ) ;
   #endif
   
   // iterate the algorithm
   double chisq_diff = 10 ;
   while( chisq_diff > TOL && iters < GAMAX ) {
-
 
     for( i = NBREED ; i < NGEN ; i++ ) {
       size_t parent[ NPARENTS ] , k ;
@@ -342,14 +339,14 @@ ga_iter( void *fdesc ,
 	    G[i].g[j] = G[ i ].g[j] * 
 	      ( 1 + gsl_ran_gaussian( r , Fit -> Prior[j].Err ) ) ;
 	  } else {
-	    G[i].g[j] = G[ i ].g[j] * 
-	      ( 1 + gsl_ran_gaussian( r , Sig.s[j] ) ) ;
+	    G[i].g[j] = G[i].g[j] * 
+	      ( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
 	  }
 	}
 	G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
 				  G[i].g , data , W ) ;
       }
-    }    
+    }
 
     // sort for the next breeding population
     insertion_sort_GA( G ) ;
@@ -361,7 +358,7 @@ ga_iter( void *fdesc ,
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     Fit -> f.fparams[i] = G[0].g[i] ;
     #ifdef VERBOSE
-    printf( "FPARAMS_%zu :: %f \n" , i , Fit -> f.fparams[i] ) ;
+    printf( "FPARAMS_%zu :: %e \n" , i , Fit -> f.fparams[i] ) ;
     #endif
   }
   Fit -> f.chisq = G[0].chisq ;

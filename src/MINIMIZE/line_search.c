@@ -126,9 +126,9 @@ line_search( struct ffunction *f2 ,
 
   // do a rough search 1^12 -> 1E-12 for abest step 100
   double min = 1234567891000 ;
-  double atrial = 1E8*alpha , abest = 1 ;
+  double atrial = 1.0 , abest = 1E-50 ;
   size_t iters = 0 ;
-  while( atrial > (1E-8)*alpha ) {
+  while( atrial > (1E-50)*alpha ) {
     atrial *= fac ;
     double trial = test_step( f2 , descent[jidx] , f1 , fdesc , 
 			      data , W , jidx , atrial ) ;
@@ -150,7 +150,7 @@ line_search( struct ffunction *f2 ,
   double c = aup - ( aup - adn ) / gr ;
   double d = adn + ( aup - adn ) / gr ;
   
-  while( fabs( (c - d) ) > 1E-4 ) {
+  while( fabs( (c - d)/adn ) > 1E-2 ) {
     const double fc = test_step( f2 , descent[jidx] , f1 , fdesc , 
 				 data , W , jidx , c ) ;
     const double fd = test_step( f2 , descent[jidx] , f1 , fdesc , 
@@ -171,7 +171,7 @@ line_search( struct ffunction *f2 ,
   }
   
   #ifdef VERBOSE
-  if( iters == ITERMAX ) {
+  if( iters == 1000 ) {
     fprintf( stderr , "[LINE SEARCH] backtracking failed %e \n" , abest ) ;
   }
   printf( "[LINE SEARCH] abest :: %e \n" , abest ) ;

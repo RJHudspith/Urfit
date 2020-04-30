@@ -111,7 +111,7 @@ modified_covariance( double **correlation ,
   for( i = 0 ; i < Ndata ; i++ ) {
     size_t j ;
     for( j = i ; j < Ndata ; j++ ) {
-      // edge case that I quite often hit
+      // edge case that I sometimes hit
       if( sigma[i] == 0.0 || sigma[j] == 0.0 ) {
 	if( j == i ) {
 	  correlation[i][i] = 1.0 ;
@@ -182,8 +182,8 @@ inverse_correlation( struct data_info *Data ,
 
     write_corrmatrix( (const double**)C , Data -> Ntot , Fit.Corrfit ) ;
 
-    // compute the inverse by svd
 #ifdef CHOLESKY
+    // computes inverse by cholesky decomp
     gsl_matrix *A = gsl_matrix_calloc( Data -> Ntot ,
 				       Data -> Ntot ) ;
     for( i = 0 ; i < Data -> Ntot ; i++ ) {
@@ -201,6 +201,7 @@ inverse_correlation( struct data_info *Data ,
       }
     }
 #else
+    // computes inverse by SVD
     if( svd_inverse( Data -> Cov.W , (const double**)C ,
 		     Data -> Ntot , Data -> Ntot ,
 		     Data -> Cov.Eigenvalue_Tol ,

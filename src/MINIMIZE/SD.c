@@ -9,6 +9,8 @@
 #include "line_search.h"
 #include "summation.h"
 
+//#define VERBOSE
+
 // steepest-descent iterations
 int
 sd_iter( void *fdesc ,
@@ -91,15 +93,17 @@ sd_iter( void *fdesc ,
     for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
 
       // line search best alpha
+      alpha[i] = 1 ;
       alpha[i] = line_search( &f2 , Fit -> f , grad , grad ,
 			      *Fit , data , W , i ,
 			      alpha[i] ) ;
-      
-      Fit -> f.fparams[i] += alpha[i] * grad[i] ;
 
       #ifdef VERBOSE
-      printf( "[SD] line ap :: %e \n" , alpha[i] ) ;
+      printf( "[SD] fparam :: %e \n" , Fit->f.fparams[i] ) ;
+      printf( "[SD] line ap :: %e || grad %e \n" , alpha[i] , grad[i] ) ;
       #endif
+      
+      Fit -> f.fparams[i] += alpha[i] * grad[i] ;
     }
 
     Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
@@ -125,7 +129,7 @@ sd_iter( void *fdesc ,
 
   printf( "[SD] chisq :: %e -> DIFF %e \n\n" , Fit -> f.chisq , chisq_diff ) ;
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
-    printf( "PARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
+    printf( "PARAMS :: %e \n" , Fit -> f.fparams[i] ) ;
   }
 
   // free the temporary array
