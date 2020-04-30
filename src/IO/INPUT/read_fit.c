@@ -73,6 +73,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = FVOL1 ;
   } else if( are_equal( Flat[tag].Value , "HALEXP" ) ) {
     Input -> Fit.Fitdef = HALEXP ;
+  } else if( are_equal( Flat[tag].Value , "HLBL_CONT" ) ) {
+    Input -> Fit.Fitdef = HLBL_CONT ;
   } else if( are_equal( Flat[tag].Value , "NRQCD_EXP" ) ) {
     Input -> Fit.Fitdef = NRQCD_EXP ;
   } else if( are_equal( Flat[tag].Value , "NRQCD_EXP2" ) ) {
@@ -103,10 +105,14 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = TANH ;
   } else if( are_equal( Flat[tag].Value , "SU2_SHITFIT" ) ) {
     Input -> Fit.Fitdef = SU2_SHITFIT ;
+  } else if( are_equal( Flat[tag].Value , "SUN_CONT" ) ) {
+    Input -> Fit.Fitdef = SUN_CONT ;
   } else if( are_equal( Flat[tag].Value , "QCORR_BESSEL" ) ) {
     Input -> Fit.Fitdef = QCORR_BESSEL ;
   } else if( are_equal( Flat[tag].Value , "QSLAB" ) ) {
     Input -> Fit.Fitdef = QSLAB ;
+  } else if( are_equal( Flat[tag].Value , "QSLAB_FIXED" ) ) {
+    Input -> Fit.Fitdef = QSLAB_FIXED ;
   } else if( are_equal( Flat[tag].Value , "QSUSC_SU2" ) ) {
     Input -> Fit.Fitdef = QSUSC_SU2 ;
   } else if( are_equal( Flat[tag].Value , "UDCB_HEAVY" ) ) {
@@ -275,7 +281,7 @@ get_Guesses( struct input_params *Input ,
   Input -> Fit.Guess = malloc( Input -> Fit.Nlogic * sizeof( double ) ) ;
 
   // as the guesses should be in order this becomes a finite-state machine
-  size_t block_idx , i ;
+  size_t block_idx = 0 , i ;
   for( i = 0 ; i < Input -> Fit.Nlogic ; i++ ) {
     Input -> Fit.Guess[i] = UNINIT_FLAG ;
     char guess_str[ 32 ] , *endptr ;

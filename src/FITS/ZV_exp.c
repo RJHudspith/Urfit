@@ -15,7 +15,7 @@ ZV_exp_f( double *f , const void *data , const double *fparams )
   const struct data *DATA = ( const struct data* )data ;
   size_t i ;
   for (i = 0; i < DATA -> n ; i++) {
-    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] } ;
+    const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] , DATA->N, DATA->M } ;
     f[i] = fparams[ DATA -> map[i].p[0] ] * ( 1 - exp( -fparams[ DATA -> map[i].p[1] ] * X.X ) ) - DATA -> y[i] ;
   }
   return ;

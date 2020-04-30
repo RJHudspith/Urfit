@@ -103,12 +103,6 @@ autocorrelation( const struct resampled RAW ,
     in[ i ] = ( RAW.resampled[ i ] - RAW.avg ) ;
   }
 
-  for( i = 0 ; i < N ; i++ ) {
-    printf( "This %zu %f \n" , i , RAW.resampled[ i ] ) ;
-  }
-  
-  message( "FFT planning" ) ;
-
   // are we doing this using openmp ffts?
 #if ( defined OMP_FFTW ) && ( defined HAVE_OMP_H )
   if( parallel_ffts( ) == FAILURE ) {
@@ -195,7 +189,7 @@ ACmeasure( const struct input_params Input )
   size_t i , j , shift = 0 ;
   for( i = 0 ; i < Input.Data.Nsim ; i++ ) {
     for( j = shift ; j < shift + Input.Data.Ndata[i] ; j++ ) {
-      char str[ 256 ] = {} ;
+      char str[ 64 ] = { 0 } ;
       sprintf( str , "TAUINT_%zu" , j ) ;
       compute_err( &Input.Data.y[j] ) ;
       if( autocorrelation( Input.Data.y[j] ,

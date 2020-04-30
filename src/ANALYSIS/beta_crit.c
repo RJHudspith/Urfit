@@ -26,7 +26,7 @@ cmp( const void *a ,
 // the separatrix
 static double
 compute_sep( const double *data ,
-	     const int Ndata ,
+	     const size_t Ndata ,
 	     const double cutoff )
 {
   double *sdata = malloc( Ndata * sizeof( double ) ) ;

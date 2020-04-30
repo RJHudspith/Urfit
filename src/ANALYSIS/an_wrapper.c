@@ -22,6 +22,7 @@
 #include "nrqcd_old.h"
 #include "nrqcd_slope.h"
 #include "Qcorr.h"
+#include "Qcorr_fixed.h"
 #include "Qmoments.h"
 #include "Ren_rats.h"
 #include "statpot.h"
@@ -71,17 +72,23 @@ an_wrapper( struct input_params *Input )
     return pof_analysis( Input ) ;
   case Qcorr :
     //return fit_Qcorr( Input ) ;
-    return Qmoments( Input ) ;
+    //return Qmoments( Input ) ;
+    //return TraditionalQ( Input ) ;
+    return CumFromMom( Input ) ;
   case Qsusc :
     return fit_Qsusc( Input ) ;
   case Qslab :
     return fit_Qslab( Input ) ;
+  case QslabFix :
+    return fit_Qslab_fixed( Input ) ;
   case Ren_Rats :
     return renormalise_rats( Input ) ;
   case StaticPotential :
     return statpot_analysis( Input ) ;
   case TetraGEVP :
     return tetra_gevp_analysis( Input ) ;
+  case TetraGEVP_Fixed :
+    return tetra_gevp_fixed_delta_analysis( Input ) ;
   case Wflow :
     return sun_wflow_analysis( Input ) ;
   case ZV :

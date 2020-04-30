@@ -78,6 +78,66 @@ bootstrap_error( struct resampled *replicas )
   return ;
 }
 
+void
+bootstrap_single( struct resampled *data ,
+		  const size_t Nboots )
+{
+  init_rng( 123456 ) ;
+  
+  size_t i ;
+
+  // perform a bootstrap
+  double *ystrap = malloc( Nboots * sizeof( double ) ) ;
+  
+  // precompute rng sequence
+  const size_t N = data -> NSAMPLES ;
+  double *rng = NULL ;
+  rng = malloc( Nboots * N * sizeof( double ) ) ;
+  for( i = 0 ; i < Nboots*N  ; i++ ) {
+    rng[i] = rng_double() ;
+  }
+
+  printf( "RNG sequence done\n" ) ;
+
+  const double *y = data -> resampled ;
+  size_t k , l ;
+  // loop boots
+  double *p = rng ;
+      
+  for( k = 0 ; k < Nboots ; k++ ) {
+    // set the rng idx
+    register size_t rng_idx = 0 ;
+    // loop raw data
+    register double ysum = 0.0 ;
+    for( l = 0 ; l < N ; l++ ) {
+      rng_idx = (size_t)( ( *p ) * N ) ;
+      ysum += y[ rng_idx ] ;
+      p++ ;
+    }
+    ystrap[k] = ysum / N ;
+  }
+
+  printf( "Straps made\n" ) ;
+
+  // reallocate and copy over
+  data -> resampled = 
+    realloc( data -> resampled , Nboots * sizeof( double ) ) ;
+
+  for( k = 0 ; k < Nboots ; k++ ) {
+    data -> resampled[k] = ystrap[k] ;
+  }
+  data -> restype = BootStrap ;
+  data -> NSAMPLES = Nboots ;
+      
+  // compute the error
+  bootstrap_error( data ) ;
+
+  free( ystrap ) ;
+  free_rng() ;
+  
+  return ;
+}
+
 // perform a bootstrap resampling on the data
 void
 bootstrap_full( struct input_params *Input )

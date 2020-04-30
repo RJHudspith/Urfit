@@ -46,7 +46,7 @@ bin_sample( struct resampled *Data ,
 int
 bin_data( struct input_params *Input )
 {
-  size_t i , j , shift = 0 ;
+  size_t i , j = 0 , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     if( Input -> Traj[i].Bin == 1 ) {
       continue ;
@@ -54,7 +54,7 @@ bin_data( struct input_params *Input )
     //
     if( Input -> Data.x[j].NSAMPLES < Input -> Traj[i].Bin ||
 	Input -> Data.y[j].NSAMPLES < Input -> Traj[i].Bin ) {
-      fprintf( stderr , "[STATS] Binning factor greater than NSAMPLES \n" ) ;
+      fprintf( stderr , "[STATS] Binning factor greater than NSAMPLES %zu > %zu\n" , Input -> Traj[i].Bin , Input -> Data.y[j].NSAMPLES ) ;
       return FAILURE ;
     }
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
@@ -64,7 +64,7 @@ bin_data( struct input_params *Input )
 	return FAILURE ;
       }
     }
-    shift = j ;
+    j += shift ;
   }
 
   // do the binning

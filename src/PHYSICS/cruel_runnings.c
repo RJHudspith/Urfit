@@ -17,7 +17,7 @@
 #define HALLEY_TOL (1.E-14) // tolerance for Halley's method
 
 // LUT for beta function
-const static double beta[ 7 ][ 5 ] =
+static const double beta[ 7 ][ 5 ] =
   {
     { 8.753521870054244e-01, 6.459225457199034e-01, 7.198643271535230e-01, 1.172686527092228e+00 , 1.7141380966000839 } , // nf = 0
     { 8.223005393081260e-01, 5.657099420030526e-01, 5.819927502680805e-01, 9.104347415045818e-01 , 1.17538974969005 } , // nf = 1
@@ -29,39 +29,39 @@ const static double beta[ 7 ][ 5 ] =
   } ;
 
 // embedded cash-karp factors
-const static double b21 = 0.2 ;
-const static double b31 = 0.075 ;
-const static double b32 = 0.225 ;
-const static double b41 = 0.3 ;
-const static double b42 = -0.9 ;
-const static double b43 = 1.2 ;
-const static double b51 = -0.20370370370370369 ;
-const static double b52 = 2.5 ;
-const static double b53 = -2.5925925925925926 ;
-const static double b54 = 1.2962962962962963 ;
-const static double b61 = 0.029495804398148147 ;
-const static double b62 = 0.341796875 ;
-const static double b63 = 0.041594328703703706 ;
-const static double b64 = 0.40034541377314814 ;
-const static double b65 = 0.061767578125 ;
-const static double c1 = 0.097883597883597878 ;
-const static double c3 = 0.40257648953301128 ;
-const static double c4 = 0.21043771043771045 ;
-const static double c6 = 0.28910220214568039 ;
-const static double dc1 = -0.0042937748015873106 ;
-const static double dc3 = 0.018668586093857853 ;
-const static double dc4 = -0.034155026830808066 ;
-const static double dc5 = -0.019321986607142856 ;
-const static double dc6 = 0.039102202145680387 ;
+static const double b21 = 0.2 ;
+static const double b31 = 0.075 ;
+static const double b32 = 0.225 ;
+static const double b41 = 0.3 ;
+static const double b42 = -0.9 ;
+static const double b43 = 1.2 ;
+static const double b51 = -0.20370370370370369 ;
+static const double b52 = 2.5 ;
+static const double b53 = -2.5925925925925926 ;
+static const double b54 = 1.2962962962962963 ;
+static const double b61 = 0.029495804398148147 ;
+static const double b62 = 0.341796875 ;
+static const double b63 = 0.041594328703703706 ;
+static const double b64 = 0.40034541377314814 ;
+static const double b65 = 0.061767578125 ;
+static const double c1 = 0.097883597883597878 ;
+static const double c3 = 0.40257648953301128 ;
+static const double c4 = 0.21043771043771045 ;
+static const double c6 = 0.28910220214568039 ;
+static const double dc1 = -0.0042937748015873106 ;
+static const double dc3 = 0.018668586093857853 ;
+static const double dc4 = -0.034155026830808066 ;
+static const double dc5 = -0.019321986607142856 ;
+static const double dc6 = 0.039102202145680387 ;
 
 // OK cool, write the adaptive bit
-const static double ADAPTIVE_EPS = 1E-12 ;
+static const double ADAPTIVE_EPS = 1E-12 ;
 // Standard shrink and factor from NRC
-const static double ADAPTIVE_SHRINK = -0.25 ;
+static const double ADAPTIVE_SHRINK = -0.25 ;
 // Standard growth and factor from NRC
-const static double ADAPTIVE_GROWTH = -0.20 ;
+static const double ADAPTIVE_GROWTH = -0.20 ;
 // define adaptive safe
-const static double ADAPTIVE_SAFE = 0.9 ;
+static const double ADAPTIVE_SAFE = 0.9 ;
 
 // adaptive error conserving
 #define ADAPTIVE_ERRCON pow( 5./ADAPTIVE_SAFE , 1./ADAPTIVE_GROWTH )

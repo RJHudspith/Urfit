@@ -13,6 +13,7 @@
 #include "autocorr.h"
 #include "bin.h"
 #include "stats.h"
+#include "reweight.h"
 
 #include "write_flat.h"
 
@@ -72,7 +73,7 @@ main( const int argc , const char *argv[] )
 
   // free the structs
   free_Data( &Input.Data , Input.Fit ) ;
-  free_Fit( &Input.Fit , Input.Data ) ;
+  free_Fit( &Input.Fit ) ;
   
   free_inputs( &Input ) ;
   

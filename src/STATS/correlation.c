@@ -45,7 +45,7 @@ compute_upper_correlation( double **correlation ,
   case UNCORRELATED :
 #pragma omp parallel for private(i)
     for( i = 0 ; i < NDATA ; i++ ) {
-      const register double ave = data[i].avg ;
+      register const double ave = data[i].avg ;
       register double sum = 0.0 ;
       size_t k ;
       for( k = 0 ; k < NSAMPLES ; k++ ) {
@@ -59,10 +59,10 @@ compute_upper_correlation( double **correlation ,
   case CORRELATED :
 #pragma omp parallel for private(i)
     for( i = 0 ; i < NDATA ; i++ ) {
-      const double avei = data[i].avg ;
+      register const double avei = data[i].avg ;
       size_t j , k ;
       for( j = i ; j < NDATA ; j++ ) {
-	const double avej = data[j].avg ;
+	register const double avej = data[j].avg ;
 	register double sum = 0.0 ;
 	for( k = 0 ; k < NSAMPLES ; k++ ) {
 	  sum += 

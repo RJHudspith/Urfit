@@ -16,8 +16,7 @@ void
 pade_derivative( struct resampled *adler ,
 		 const double q2 , 
 		 const struct resampled *fit ,
-		 const struct input_params *Input ,
-		 const size_t shift )
+		 const struct input_params *Input )
 {
   // do the individual bootstraps
   size_t j ;
@@ -88,8 +87,7 @@ void
 pade_derivative2( struct resampled *adler ,
 		  const double q2 , 
 		  const struct resampled *fit ,
-		  const struct input_params *Input ,
-		  const size_t shift )
+		  const struct input_params *Input )
 {
   // set up the fit again
   struct fit_descriptor fdesc = init_fit( Input -> Data , Input -> Fit ) ;
@@ -161,7 +159,7 @@ fit_hvp( struct input_params *Input )
   double q2 ;
   for( q2 = lo ; q2 < hi ; q2 += inc ) {
 
-    pade_derivative2( &adler , q2 , fit , Input , i*Input -> Fit.Nparam ) ;
+    pade_derivative2( &adler , q2 , fit , Input ) ;
 
     Q[idx] = q2 ;
     Ave[idx] = adler.avg ; Hi[idx] = adler.err_hi ; Lo[idx] = adler.err_lo ;

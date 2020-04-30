@@ -152,7 +152,6 @@ read_inputs( struct input_params *Input ,
     fprintf( stderr , "[INPUT] FileType tag not found in input file \n" ) ;
     Flag = FAILURE ;
   } else {
-    printf( "In here \n" ) ;
     if( are_equal( Flat[ io_tag ].Value , "Corr_File" ) ) {
       Input -> FileType = Corr_File ;
     } else if( are_equal( Flat[ io_tag ].Value , "Distribution_File" ) ) {
@@ -210,6 +209,8 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = Qsusc ;
     } else if( are_equal( Flat[ an_tag ].Value , "Qslab" ) ) {
       Input -> Analysis = Qslab ;
+    } else if( are_equal( Flat[ an_tag ].Value , "QslabFix" ) ) {
+      Input -> Analysis = QslabFix ;
     } else if( are_equal( Flat[ an_tag ].Value , "Ren_Rats" ) ) {
       Input -> Analysis = Ren_Rats ;
     } else if( are_equal( Flat[ an_tag ].Value , "KKops" ) ) {
@@ -220,6 +221,8 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = General ;
     } else if( are_equal( Flat[ an_tag ].Value , "TetraGEVP" ) ) {
       Input -> Analysis = TetraGEVP ;
+    } else if( are_equal( Flat[ an_tag ].Value , "TetraGEVP_Fixed" ) ) {
+      Input -> Analysis = TetraGEVP_Fixed ;
     } else if( are_equal( Flat[ an_tag ].Value , "StaticPotential" ) ) {
       Input -> Analysis = StaticPotential ;
     } else if( are_equal( Flat[ an_tag ].Value , "ZV" ) ) {
@@ -234,23 +237,27 @@ read_inputs( struct input_params *Input ,
   if( get_traj( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
+#ifdef VERBOSE
   printf( "FLAG %d \n" , Flag ) ;
-
+#endif
   if( get_fit( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
-  printf( "Fit FLAG %d \n" , Flag ) ;
-
+#ifdef VERBOSE
+  fprintf( stdout , "Fit FLAG %d \n" , Flag ) ;
+#endif
   if( get_stats( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
-  printf( "FLAG %d \n" , Flag ) ;
-
+#ifdef VERBOSE
+  fprintf( stdout , "FLAG %d \n" , Flag ) ;
+#endif
   if( get_graph( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
-  printf( "FLAG %d \n" , Flag ) ;
-  
+#ifdef VERBOSE
+  fprintf( stdout , "FLAG %d \n" , Flag ) ;
+#endif
   // close and unpack
   unpack_inputs( Flat , Ntags ) ;
   

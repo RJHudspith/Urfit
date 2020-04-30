@@ -115,10 +115,10 @@ binding_corr_analysis( struct input_params *Input )
   
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;
 
- end:
-
   Input -> Data.Nsim = Nsim_prev ;
   Input -> Data.Ntot = Ntot_prev ;
+
+ end:
   
   return SUCCESS ;
 }

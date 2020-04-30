@@ -4,4 +4,7 @@
 int
 sun_wflow_analysis( struct input_params *Input ) ;
 
+int
+sun_set( struct input_params *Input ) ;
+
 #endif

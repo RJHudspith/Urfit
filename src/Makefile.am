@@ -16,21 +16,25 @@ ANALYSIS_FILES=./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/nrqcd.c ./ANALYSIS/nrqcd_old.c ./ANALYSIS/nrqcd_slope.c \
 	./ANALYSIS/nrqcd_baremass.c ./ANALYSIS/c4c7_analysis.c \
 	./ANALYSIS/su2_shit.c ./ANALYSIS/binding_corr.c ./ANALYSIS/HAL.c \
-	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c ./ANALYSIS/sol.c
+	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c ./ANALYSIS/sol.c \
+	./ANALYSIS/Qcorr_fixed.c
 
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
 INIT_FILES=./INIT/fake.c ./INIT/init.c
 
 FITS_FILES=./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
-	./FITS/cosh.c ./FITS/exp_plusc.c ./FITS/exp.c ./FITS/Nder.c \
+	./FITS/cosh.c ./FITS/exp_plusc.c ./FITS/exp.c \
+	./FITS/HLBL_cont.c ./FITS/Nder.c \
 	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c ./FITS/Pexp.c ./FITS/pp_aa.c \
 	./FITS/pp_aa_ww.c ./FITS/ppaa.c ./FITS/pp_aa_ww_r2.c \
 	./FITS/Qcorr_bessel.c ./FITS/sinh.c ./FITS/poles.c ./FITS/qslab.c \
+	./FITS/qslab2.c \
 	./FITS/cornell.c ./FITS/pp_aa_exp.c ./FITS/qsusc_su2.c \
 	./FITS/adler_alpha_D0.c ./FITS/adler_alpha_D0_multi.c ./FITS/fvol1.c \
 	./FITS/alpha_D0_multi_new.c ./FITS/udcb_heavy.c ./FITS/nrqcd_exp.c \
-	./FITS/nrqcd_exp2.c  ./FITS/c4c7.c ./FITS/su2_shitfit.c ./FITS/HALexp.c \
+	./FITS/nrqcd_exp2.c  ./FITS/c4c7.c ./FITS/su2_shitfit.c \
+	 ./FITS/SUN_cont.c ./FITS/HALexp.c \
 	./FITS/tanh.c ./FITS/ZV_exp.c
 
 GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c

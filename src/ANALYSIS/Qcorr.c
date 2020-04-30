@@ -8,9 +8,13 @@
 #include "fit_and_plot.h"
 #include "init.h"
 #include "momenta.h"
+#include "read_flat.h"
 #include "resampled_ops.h"
+#include "bootstrap.h"
 
 //#define SUBZERO
+
+//#define ZRESCALE
 
 // the the topological corr < Q >^2 / V
 int
@@ -107,35 +111,42 @@ fit_Qsusc( struct input_params *Input )
 int
 fit_Qslab( struct input_params *Input )
 {
-  size_t i , j , shift = 0 ;
+  size_t i = 0 , j , shift = 0 ;
+
+  // V factor
+  struct resampled *t0 = read_flat_single( "b10.6715NC.flat" ) ;
+
+  printf( "bootstrapping t0\n" ) ;
+  
+  bootstrap_single( &t0[0] , Input -> Data.Nboots ) ;
+
+  const double t0sq = 1/(t0[0].avg) ;
+  raise( &t0[0] , 2 ) ;
+
+  fprintf( stdout , "t0^4 read %e %e\n" , t0[0].avg , t0[0].err ) ;
+
+#ifdef ZRESCALE
+  struct resampled *Z = read_flat_single( "HYP120b6.0945.flat" ) ;
+  printf( "bootstrapping Z\n" ) ;
+  bootstrap_single( &Z[0] , Input -> Data.Nboots ) ;
+  raise( &Z[0] , 2 ) ;
+  printf( "Z^2 %e %e\n" , Z[0].avg , Z[0].err ) ;
+  mult( &t0[0] , Z[0] ) ;
+#endif
+  
+  const double V = ( Input -> Traj[0].Dimensions[0] *
+		     Input -> Traj[0].Dimensions[1] *
+		     Input -> Traj[0].Dimensions[2] *
+		     Input -> Traj[0].Dimensions[3] ) ;
+
+  divide_constant( &t0[0] , V ) ;
+  mult_constant( &t0[0] , (double)Input -> Traj[0].Dimensions[3] ) ;
 
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    //const double fac = Input -> Traj[i].Dimensions[3] / ( 10 * 10 * 10 * 10. ) ;
-
-    const double fac =
-      //pow( 1.438525 , 4 ) *
-      //pow( 1.622301 , 4 ) *
-      //pow( 1.808081 , 4 ) *
-      //pow( 1.988718 , 4 ) *
-      //pow( 2.172728 , 4 ) *
-      //pow( 2.356209 , 4 ) *
-      //pow( 2.662277 , 4 ) *
-      // pow( 2.919241 , 4 ) *
-      // pow( 3.799364 , 4 ) *
-      //pow( 5.731501 , 4 ) *
-      //pow( 7.934524 , 4 ) *
-      /*
-      Input -> Traj[i].Dimensions[3] / (double)( Input -> Traj[i].Dimensions[0] *
-					 Input -> Traj[i].Dimensions[1] *
-					 Input -> Traj[i].Dimensions[2] *
-					 Input -> Traj[i].Dimensions[3] ) ;
-      */
-      //1 ;
-      Input -> Traj[i].Dimensions[3] ;
-    
+    // SU2 guy
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
       add_constant( &Input -> Data.x[j] , 1.0 ) ;
-      mult_constant( &Input -> Data.y[j] , fac ) ;
+      mult( &Input -> Data.y[j] , t0[0] ) ;
     }
     shift=j;
   }
@@ -160,26 +171,29 @@ fit_Qslab( struct input_params *Input )
   struct resampled *fit = fit_and_plot( *Input , &chisq ) ;
 
   if( Input -> Fit.Fitdef == QSLAB ) {
-    mult_constant( &fit[2] , Input -> Traj[0].Dimensions[3] / 10. ) ;
-    
-    printf( "T0 * meta :: %e %e \n" , fit[2].avg , fit[2].err ) ;
+    //mult_constant( &fit[2] , Input -> Traj[0].Dimensions[3] / fac ) ;
+    //printf( "T0 * meta :: %e %e \n" , fit[2].avg , fit[2].err ) ;
   }
 
-  // write out a flat file
+  // compute the usual Q^2
+  for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
+    divide_constant( &Input -> Data.y[j] , Input -> Traj[0].Dimensions[3] ) ;
+  }
+  printf( "<Q2> %e %e\n" ,
+	  Input->Data.y[ Input->Data.Ndata[0]-1 ].avg ,
+	  Input->Data.y[ Input->Data.Ndata[0]-1 ].err ) ;
+
+  // write out a flat file?
   char str[256] ;
   sprintf( str , "Qslab_L%zu.flat" , Input -> Traj[0].Dimensions[0] ) ;
-  /*
-  const double a2 = 100. / ( Input -> Traj[0].Dimensions[0] *
-			     Input -> Traj[0].Dimensions[0] ) ;
-  */
   FILE *file = fopen( str , "w" ) ;
-  //fprintf( file , "%zu\n" , fit[1].restype ) ;
-  //fprintf( file , "1\n" ) ;
-  fprintf( file , "%zu\n" , fit[1].NSAMPLES ) ;
+  fprintf( file , "%u\n" , fit[0].restype ) ;
+  fprintf( file , "1\n" ) ;
+  fprintf( file , "%zu\n" , fit[0].NSAMPLES ) ;
   for( j = 0 ; j < Input -> Data.y[0].NSAMPLES ; j++ ) {
-    fprintf( file , "%1.15e %1.15e\n" , -0.900 , fit[1].resampled[j] ) ;
+    fprintf( file , "%1.15e %1.15e\n" , t0sq , fit[0].resampled[j] ) ;
   }
-  fprintf( file , "AVG %1.15e %1.15e\n" , -0.900 , fit[1].avg ) ;
+  fprintf( file , "AVG %1.15e %1.15e\n" , t0sq , fit[0].avg ) ;
   fclose( file ) ;
 
   free_fitparams( fit , Input -> Fit.Nlogic ) ;

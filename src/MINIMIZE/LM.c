@@ -188,11 +188,11 @@ lm_step( struct ffunction *f ,
   int signum ;
   // solves alpha[p][q] * delta( a[q] ) = beta[p] for delta
   if( gsl_linalg_LU_decomp( alpha_new , perm , &signum ) != GSL_SUCCESS ) {
-    printf( "[LM] LU decomp broken?\n" ) ;
+    fprintf( stderr , "[LM] LU decomp broken?\n" ) ;
     return !GSL_SUCCESS ;
   }
   if( gsl_linalg_LU_solve( alpha_new , perm , beta , delta ) != GSL_SUCCESS ) {
-    printf( "[LM] LU solve broken?\n" ) ;
+    fprintf( stderr "[LM] LU solve broken?\n" ) ;
     return !GSL_SUCCESS ;
   }
 #endif

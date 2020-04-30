@@ -43,7 +43,7 @@ read_magic_gammas( FILE *file ,
 		   uint32_t *mommatch ,
 		   const double *mompoint )
 {
-  uint32_t magic[ 1 ] = { } , NMOM[ 1 ] ;
+  uint32_t magic[ 1 ] = { 0 } , NMOM[ 1 ] ;
   int n[ 4 ] ;
   size_t p , flag ;
   
@@ -94,10 +94,6 @@ read_magic_gammas( FILE *file ,
   #ifdef VERBOSE
   printf( "%u %u %u %u\n" , *NMOM , *NGSRC , *NGSNK , *LT ) ;
   #endif
-
-  //printf( "WHAT %u \n" , *mommatch ) ;
-
-  //*mommatch = 0 ;
 
   // if we don't have a matching momentum we complain  
   if( *mommatch == UNINIT_FLAG ) {

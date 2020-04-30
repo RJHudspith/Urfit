@@ -51,8 +51,7 @@ free_Data( struct data_info *Data ,
 
 // free the fit information struct
 void
-free_Fit( struct fit_info *Fit ,
-	  const struct data_info Data )
+free_Fit( struct fit_info *Fit )
 {
   // free the simultaneous parameter map
   if( Fit -> Sims != NULL ) {

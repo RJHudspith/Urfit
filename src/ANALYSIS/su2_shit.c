@@ -20,7 +20,8 @@ get_t0MK( const double aM )
 
 int
 su2_shit( struct input_params *Input )
-{  
+{
+  /*
   size_t i , j , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     equate_constant( &Input -> Data.x[i] ,
@@ -41,9 +42,13 @@ su2_shit( struct input_params *Input )
     shift += Input->Data.Ndata[i] ;
     printf( "\n" ) ;
   }
-
+  */
   double chisq ;  
   struct resampled *fit = fit_and_plot( *Input , &chisq ) ;
+
+  add( &fit[0] , fit[6] ) ;
+
+  fprintf( stdout , "Full %e +/- %e\n" , fit[0].avg , fit[0].err ) ;
 
   free_fitparams( fit , Input -> Fit.Nlogic ) ;
   

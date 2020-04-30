@@ -80,12 +80,9 @@ free_ffunction( struct ffunction *f ,
   }
   free( f -> U ) ;
 
-  //free( f -> fparams ) ;
-  
-  //free( f -> f ) ;
-  
+  free( f -> fparams ) ;
+  free( f -> f ) ;
   free( f -> df ) ;
-
   free( f -> d2f ) ;
 
   return ;

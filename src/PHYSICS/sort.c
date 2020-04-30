@@ -150,7 +150,7 @@ insertion_sort_data( struct input_params *Input )
       equate( &tempx , Input -> Data.x[j] ) ;
       equate( &tempy , Input -> Data.y[j] ) ;
       int hole = (int)j - 1 ;
-      while( hole >= shift && Input -> Data.x[hole].avg > x ) {	
+      while( hole >= (int)shift && Input -> Data.x[hole].avg > x ) {	
 	// copy data
 	equate( &Input -> Data.x[hole+1] , Input -> Data.x[hole] ) ;
 	equate( &Input -> Data.y[hole+1] , Input -> Data.y[hole] ) ;

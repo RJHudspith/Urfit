@@ -19,7 +19,7 @@
 
 //#define ABS_EVALUES
 
-#define OPTIMISED_CORRELATOR
+//#define OPTIMISED_CORRELATOR
 
 struct GEVP_temps {
   gsl_matrix *a ;
@@ -106,65 +106,47 @@ insertion_sort( struct GEVP_temps *G ,
   return ;
 }
 
+#ifdef OPTIMISED_CORRELATOR
 // compute the "optimised correlator" from the eigenvectors
 static void
-optimised_correlator( struct GEVP_temps *G ,
-		      struct resampled *y ,
-		      const size_t k ,
-		      const bool is_avg ,
-		      const size_t N ,
-		      const size_t M ,
-		      const size_t Ndata ,
-		      const size_t td )
+optimised_correlator2( struct GEVP_temps *G1 ,
+		       const struct GEVP_temps G2 ,
+		       const double *C0 ,
+		       const size_t N )
 {
-  // check diagonalisation with V^\dag C(t) V
-  double complex D[N][N] ;
-  double C0[ N*M ] ;
-  size_t i , j , a , b , c , d ;
-  for( j = 0 ; j < Ndata ; j++ ) {    
-    // put these in the linearised matrices
-    size_t shift = 0 ;
-    for( i = 0 ; i < N*M ; i++ ) {
-      if( is_avg == true ) {
-	C0[i] = y[ j  + shift ].avg ;
-      } else {
-	C0[i] = y[ j  + shift ].resampled[k] ;
+  size_t a , b , c ;
+  for( a = 0 ; a < N ; a++ ) {
+    register double complex Sum1 = 0. ;
+    for( b = 0 ; b < N ; b++ ) {
+      const gsl_complex A = gsl_matrix_complex_get( G2.evec , b , a ) ;
+      const double complex AC = A.dat[0] - I*A.dat[1] ;
+      for( c = 0 ; c < N ; c++ ) {
+	const gsl_complex B = gsl_matrix_complex_get( G2.evec , c , a ) ;
+	const double complex BC = B.dat[0] + I*B.dat[1] ;
+	Sum1 += AC * BC * C0[ c + N*b ] ;
       }
-      shift += Ndata ;
     }
-    for( a = 0 ; a < N ; a++ ) {
-      register double complex Sum1 = 0. ;
-      for( b = 0 ; b < N ; b++ ) {
-	const gsl_complex A = gsl_matrix_complex_get( G[td].evec , b , a ) ;
-	const double complex AC = A.dat[0] - I*A.dat[1] ;
-	for( c = 0 ; c < N ; c++ ) {
-	  const gsl_complex B = gsl_matrix_complex_get( G[td].evec , c , a ) ;
-	  const double complex BC = B.dat[0] + I*B.dat[1] ;
-	  Sum1 += AC * BC * C0[ c + N*b ] ;
-	}
-      }
-      G[j].ev[a] = creal( Sum1 ) ;
-    }
+    G1 -> ev[a] = creal( Sum1 ) ;
   }
-  return ;
 }
+#endif
 
 // uses GSL to solve a generalised eigenvalue problem
 // returns the real part of the eigenvalues
 // solves A.v = \lambda B.v
 // where A and B are real matrices
 static int
-gevp( struct GEVP_temps *G ,
-      const size_t n ,
-      const bool before ,
-      const size_t t ,
-      const bool write_evalues ) 
+gevp2( struct GEVP_temps *G ,
+       const size_t n ,
+       const bool before ,
+       const size_t t ,
+       const bool write_evalues ) 
 {
   int flag = SUCCESS ;
   
   // perform decomposition
-  const int err = gsl_eigen_genv( G->a , G->b , G->alpha ,
-				  G->beta , G->evec , G->work ) ;
+  const int err = gsl_eigen_genv( G[t].a , G[t].b , G[t].alpha ,
+				  G[t].beta , G[t].evec , G[t].work ) ;
 
   if( err != 0 ) {
     fprintf( stderr , "%s\n" , gsl_strerror( err ) ) ;
@@ -176,22 +158,22 @@ gevp( struct GEVP_temps *G ,
   // set the ev
   size_t i ;
   for( i = 0 ; i < G -> N ; i++ ) {
-    G -> ev[i] = ( gsl_vector_complex_get( G -> alpha , i ).dat[0] 
-		   + I*gsl_vector_complex_get( G -> alpha , i ).dat[1] )
-      / gsl_vector_get( G->beta , i ) ;
-    if( creal( G -> ev[i] ) < 0.0 ) {
-      G -> ev[i] = 1E-16 ;
+    G[t].ev[i] = ( gsl_vector_complex_get( G[t].alpha , i ).dat[0] 
+		   + I*gsl_vector_complex_get( G[t].alpha , i ).dat[1] )
+      / gsl_vector_get( G[t].beta , i ) ;
+    if( creal( G[t].ev[i] ) < 0.0 ) {
+      G[t].ev[i] = 1E-16 ;
     }
   }
 
   // sort by the real part
   if( before ) {
-    insertion_sort( G , comp_asc ) ;
+    insertion_sort( &G[t] , comp_asc ) ;
   } else {
-    insertion_sort( G , comp_desc ) ;
+    insertion_sort( &G[t] , comp_desc ) ;
   }
-  
-  size_t j ;
+
+    size_t j ;
   for( j = 0 ; j < G -> N ; j++ ) {
     if( write_evalues ) {
       // if we want them written
@@ -365,16 +347,15 @@ solve_GEVP( const struct resampled *y ,
       set_ab( G[j].a , G[j].b , C0 , C1 , N , M ) ;
       
       // compute eigenvalues
-      if( gevp( &G[j] , N , j<t0 , j , false ) == FAILURE ) {
+      if( gevp2( G , N , j<t0 , j , false ) == FAILURE ) {
 	fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
         return NULL ;
       }
+      #ifdef OPTIMISED_CORRELATOR
+      optimised_correlator2( &G[j] , G[td] , C0 , N ) ;
+      #endif
     }
 
-    #ifdef OPTIMISED_CORRELATOR
-    optimised_correlator( G , y , k , false , N , M , Ndata , td ) ;
-    #endif
-    
     for( j = 0 ; j < Ndata ; j++ ) {
       // poke into solution
       for( i = 0 ; i < N ; i++ ) {
@@ -397,15 +378,117 @@ solve_GEVP( const struct resampled *y ,
     set_ab( G[j].a , G[j].b , C0 , C1 , N , M ) ;
 
     // compute eigenvalues
-    if( gevp( &G[j] , N , j<t0 , j , true ) == FAILURE ) {
+    if( gevp2( G , N , j<t0 , j , true ) == FAILURE ) {
+      fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
+      return NULL ;
+    }
+
+    #ifdef OPTIMISED_CORRELATOR
+    optimised_correlator2( &G[j] , G[td] , C0 , N ) ;
+    #endif
+  }
+  
+  for( j = 0 ; j < Ndata ; j++ ) {
+    // poke into solution
+    for( i = 0 ; i < N ; i++ ) {
+      evalues[j+Ndata*i].avg = creal( G[j].ev[i] ) ;
+      compute_err( &evalues[j+Ndata*i] ) ;
+    }
+  }
+  
+  for( j = 0 ; j < Ndata ; j++ ) {
+    free_G( &G[j] ) ;
+  }
+  free( G ) ;
+  
+  return evalues ;
+}
+
+// solve the GEVP
+struct resampled *
+solve_GEVP_fixed( const struct resampled *y ,
+		  const size_t Ndata ,
+		  const size_t N ,
+		  const size_t M ,
+		  const size_t t0 ,
+		  const size_t td )
+{
+  if( N > M ) {
+    fprintf( stderr , "[GEVP] cannot solve when N states "
+	     "are less than M correlators\n" ) ;
+    return NULL ;
+  }
+  
+  // initialise the generalised eigenvalues
+  struct resampled *evalues = malloc( Ndata*N*
+				      sizeof( struct resampled ) ) ;
+  size_t i , j , k ;
+  for( j = 0 ; j < Ndata*N ; j++ ) {
+    evalues[j].resampled = malloc( y[0].NSAMPLES *
+				   sizeof( double ) ) ;
+    evalues[j].restype = y[0].restype ;
+    evalues[j].NSAMPLES = y[0].NSAMPLES ;
+  }
+
+  struct GEVP_temps *G = malloc( Ndata*sizeof( struct GEVP_temps ) ) ;
+
+  double C0[ N*M ] , C1[ N*M ] ;
+  
+  // ugh loop order is all weird
+  for( j = 0 ; j < Ndata ; j++ ) {
+    allocate_G( &G[j] , N );
+  }
+
+  // loop resamples
+  for( k = 0 ; k < y[0].NSAMPLES ; k++ ) {
+    
+    for( j = 0 ; j < Ndata ; j++ ) {
+
+      // put these in the linearised matrices
+      size_t shift = 0 ;
+      for( i = 0 ; i < N*M ; i++ ) {
+	C0[i] = y[ j + shift ].resampled[k] ;
+	C1[i] = y[ (j+t0)%Ndata + shift ].resampled[k] ;
+	shift += Ndata ;
+      }
+
+      // set AB by squaring the matrices, possibly
+      set_ab( G[j].a , G[j].b , C0 , C1 , N , M ) ;
+      
+      // compute eigenvalues
+      if( gevp2( G , N , true , j , false ) == FAILURE ) {
+	fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
+        return NULL ;
+      }
+    }
+    
+    for( j = 0 ; j < Ndata ; j++ ) {
+      // poke into solution
+      for( i = 0 ; i < N ; i++ ) {
+	evalues[j+Ndata*i].resampled[ k ] = creal( G[j].ev[i] ) ;
+      }
+      //
+    }
+  }
+
+  for( j = 0 ; j < Ndata ; j++ ) {
+    // redo for the average
+    size_t shift = 0 ;
+    for( i = 0 ; i < N*M ; i++ ) {
+      C0[i] = y[ j  + shift ].avg ;
+      C1[i] = y[ (j+t0)%Ndata + shift ].avg ;
+      shift += Ndata ;
+    }
+
+    // set AB by squaring the matrices possibly
+    set_ab( G[j].a , G[j].b , C0 , C1 , N , M ) ;
+
+    // compute eigenvalues
+    if( gevp2( G , N , true , j , true ) == FAILURE ) {
       fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
       return NULL ;
     }
   }
-
-  #ifdef OPTIMISED_CORRELATOR
-optimised_correlator( G , y , 0 , true , N , M , Ndata , td ) ;
-  #endif
   
   for( j = 0 ; j < Ndata ; j++ ) {
     // poke into solution

@@ -10,6 +10,38 @@
 #include "sort.h"
 #include "stats.h"
 
+static bool
+keep_r( const int32_t r[] ,
+	const int Nd )
+{
+  // keep only those that are parallel to 2220
+  const int Nr = 2 ;
+  const int keep[][4] = { {1,1,1,3} ,
+			  {2,2,2,0} } ;
+  int i ;
+  for( i = 0 ; i < Nr ; i++ ) {
+    int mu , a = 0 , b = 0 , ab = 0 ;
+    for( mu = 0 ; mu < Nd ; mu++ ) {
+      const int ar = abs( (int)r[mu]) ;
+      ab += keep[i][mu] * ar ;
+      a += ar*ar ;
+      b += keep[i][mu]*keep[i][mu] ;
+    }
+    #ifdef VERBOSE
+    printf( "AB %d , A %d , B %d \n" , ab , a , b ) ;
+    #endif
+    if( fabs( ab/(sqrt(a)*sqrt(b)) - 1. ) < 1E-12 ) {
+      #ifdef VERBOSE
+      fprintf( stdout , "Kept (%d %d %d %d)\n" ,
+	       r[0] , r[1] , r[2] , r[3] ) ;
+      #endif
+      return true ;
+    }
+  }
+  return true ;
+  //return false ;
+}
+
 static int
 init_GLU( struct input_params *Input )
 {
@@ -35,8 +67,9 @@ init_GLU( struct input_params *Input )
     #ifndef WORDS_BIGENDIAN
     bswap_32( 1 , rlist ) ;
     #endif
+    #ifdef VERBOSE
     printf( "[IO] file length -> %u \n" , rlist[0] ) ;
-    
+    #endif
     Input -> Data.Ndata[i] = rlist[0] ;
     Input -> Data.Ntot += Input -> Data.Ndata[i] ;
     
@@ -101,14 +134,18 @@ read_GLU( struct input_params *Input )
 
       // Lt is the length of the time correlator
       uint32_t rlist[ 1 ] ;
-      fread( rlist , sizeof( uint32_t ) , 1 , Infile ) ;
+      if( fread( rlist , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
+	fprintf( stderr , "[IO] rlist length reaad failure\n" ) ;
+	return FAILURE ;
+      }
       #ifndef WORDS_BIGENDIAN
       bswap_32( 1 , rlist ) ;
       #endif
 
       // start reading the r-list
+      int32_t r[ rlist[0] ][ 4 ] ;
       for( k = 0 ; k < rlist[0] ; k++ ) {
-	size_t l ;
+	r[k][0] = r[k][1] = r[k][2] = r[k][3] = 0 ;
 	uint32_t Nd[1] ;
 	if( fread( Nd , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
 	  printf( "[IO] Failed to read Nd @ %zu \n" , idx ) ;
@@ -117,23 +154,25 @@ read_GLU( struct input_params *Input )
         #ifndef WORDS_BIGENDIAN
 	bswap_32( 1 , Nd ) ;
         #endif
-        int32_t r[ Nd[0] ] ;
-	if( fread( r , sizeof( int32_t ) , Nd[0] , Infile ) != Nd[0] ) {
+	//printf( "WTF %u\n" , Nd[0] ) ;
+	if( fread( r[k] , sizeof( int32_t ) , Nd[0] , Infile ) != Nd[0] ) {
 	  printf( "[IO] Failed to read momentum list @ %zu \n" , idx ) ;
 	  return FAILURE ;
 	}
         #ifndef WORDS_BIGENDIAN
-	bswap_32( Nd[0] , r ) ;
+	bswap_32( Nd[0] , r[k] ) ;
         #endif
 	Input -> Data.x[shift+k].resampled[idx] = 0.0 ;
-        for( l = 0 ; l < Nd[0] ; l++ ) {	  
-	  Input -> Data.x[shift+k].resampled[idx] += r[l]*r[l] ;
-	}
-	//printf( "MOM %d %d %d %d\n" , r[0] , r[1] , r[2] , r[3] ) ;
+	#ifdef VERBOSE
+	printf( "MOM %d %d %d %d\n" , r[k][0] , r[k][1] , r[k][2] , r[k][3] ) ;
+	#endif
       }
 
       uint32_t Newrlist[ 1 ] ;
-      fread( Newrlist , sizeof( uint32_t ) , 1 , Infile ) ;
+      if( fread( Newrlist , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
+	fprintf( stderr , "[IO] rlist length read failure\n" ) ;
+	return FAILURE ;
+      }
       #ifndef WORDS_BIGENDIAN
       bswap_32( 1 , Newrlist ) ;
       #endif
@@ -151,23 +190,37 @@ read_GLU( struct input_params *Input )
       #ifndef WORDS_BIGENDIAN
       bswap_64( rlist[0] , Cr ) ;
       #endif
-      
+
+      size_t kidx = 0 ;
       for( k = 0 ; k < rlist[0] ; k++ ) {
-	Input -> Data.y[ shift + k ].resampled[ idx ] = Cr[k] ;
-
-	#ifdef VERBOSE
-	printf( "[IO] data -> %e %e \n" ,
-		Input -> Data.x[ shift + k ].resampled[ idx ] ,
-		Input -> Data.y[ shift + k ].resampled[ idx ] ) ;
-	#endif
+	if( keep_r( r[k] , 4 ) ) {
+	  Input -> Data.x[shift+kidx].resampled[idx] = 0.0 ;
+	  Input -> Data.y[shift+kidx].resampled[ idx ] = 0 ;
+	  for( size_t l = 0 ; l < 4 ; l++ ) {	  
+	    Input -> Data.x[shift+kidx].resampled[idx] += r[k][l]*r[k][l] ;
+	  }
+	  Input -> Data.y[ shift + kidx ].resampled[ idx ] = Cr[k] ;
+	  #ifdef VERBOSE
+	  printf( "[IO] data -> %e %e \n" ,
+		  Input -> Data.x[ shift + kidx ].resampled[ idx ] ,
+		  Input -> Data.y[ shift + kidx ].resampled[ idx ] ) ;
+          #endif
+	  kidx++ ;
+	}
       }
-
+      Input -> Data.Ndata[i] = kidx ;
+      
       idx++ ;
       
       fclose( Infile ) ;
     }
     
     shift += Input -> Data.Ndata[i] ;
+  }
+
+  Input -> Data.Ntot = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    Input -> Data.Ntot += Input -> Data.Ndata[i] ;
   }
 
   // compute error if it hasn't been done already
@@ -180,29 +233,6 @@ read_GLU( struct input_params *Input )
 	     Input -> Data.y[i].avg ) ;
     #endif
   }
-
-#if 0
-  // sort the data
-  printf( "Sorting in IO\n" ) ;
-  if( quick_sort_data( Input ) == FAILURE ) {
-    return FAILURE ;
-  }
-
-  // sum the data
-  printf( "Summing in IO\n" ) ;
-  shift = 0 ;
-  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    size_t j ;
-    for( j = shift + 1 ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      //add( &Input -> Data.y[j] , Input -> Data.y[j-1] ) ;
-      printf( "TEST %f %f %f\n" ,
-	      Input -> Data.x[j].avg ,
-	      Input -> Data.y[j].avg ,
-	      Input -> Data.y[j].err ) ;
-    }
-    j = shift ;
-  }
- #endif
 
   printf( "Averaging equivalent\n" ) ;
   average_equivalent( Input ) ;

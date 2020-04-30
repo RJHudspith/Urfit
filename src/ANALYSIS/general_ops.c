@@ -61,7 +61,7 @@ gen_ops( struct input_params *Input )
     size_t j ;
     for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
 
-      const double mpi2 = Input -> Traj[0].Fit_Low ;
+      const double mpi2 = Input -> Data.x[j].avg ; //Input -> Traj[0].Fit_Low ;
       
       // add
       do_op( Input -> Data.y[j] ,

@@ -16,8 +16,10 @@
 #include "write_flat.h"
 
 //#define MATRIX_PRONY
-
 //#define FIT_EFFMASS
+//#define PADE_LAPLACE
+
+#define CDIV
 
 void 
 my_little_prony( const struct input_params *Input )
@@ -167,14 +169,13 @@ correlator_analysis( struct input_params *Input )
   size_t i , shift = 0 ;
 
 #ifdef MATRIX_PRONY
-  printf( "Matrix prony\n" ) ;
-
+  fprintf( stdout , "[Correlator] Matrix prony\n" ) ;
   my_little_prony( Input ) ;
 #endif
 
-  //boot_pade_laplace( Input ) ;
-  
-  printf( "Effmass\n" ) ;
+#ifdef PADE_LAPLACE
+  boot_pade_laplace( Input ) ;
+#endif
   
   // compute an effective mass 
   struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
@@ -189,6 +190,14 @@ correlator_analysis( struct input_params *Input )
     free( effmass[i].resampled ) ;
   }
   free( effmass ) ;
+
+
+  #ifdef CDIV
+  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
+    divide_constant( &Input -> Data.y[i] , 1E14 ) ;
+  }
+  #endif
+
 
   shift = 0 ;
   

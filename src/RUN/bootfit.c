@@ -149,7 +149,7 @@ perform_bootfit( const struct data_info Data ,
   const size_t Dof = ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ;
   if( Dof != 0 ) {
     divide_constant( &chisq , Dof ) ;
-    fprintf( stdout , "[ CHISQ/dof ] %e %e (Ndof) %zu\n" ,
+    fprintf( stdout , "\n[ CHISQ/dof ] %e %e (Ndof) %zu\n" ,
 	     chisq.avg , chisq.err , Dof ) ;
   }
   
@@ -178,13 +178,9 @@ perform_bootfit( const struct data_info Data ,
   if( chisq.resampled != NULL ) {
     free( chisq.resampled ) ;
   }
-
-  printf( "free ffunc %zu \n" , fdesc.Nlogic ) ;
   
   // free the fitfunction
   free_ffunction( &fdesc.f , fdesc.Nlogic ) ;
-
-  printf( "free ffunc\n" ) ;
 
   return fitparams ;
 }

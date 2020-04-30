@@ -25,7 +25,6 @@ typedef enum { NO_ERROR , NTOT_FAIL ,
 static bool *
 filter( size_t *N ,
 	const struct data_info Data ,
-	const struct fit_info Fit ,
 	const struct traj *Traj )
 {
   bool *in_fitrange = malloc( Data.Ntot * sizeof( bool ) ) ;
@@ -54,8 +53,7 @@ prune_data_for_fit( struct input_params *Input ,
   prune_errflag error = NO_ERROR ;
   
   Data -> Nsim = Input -> Data.Nsim ;
-  in_fitrange = filter( &Data -> Ntot , Input -> Data ,
-			Input -> Fit , Input -> Traj ) ;
+  in_fitrange = filter( &Data -> Ntot , Input -> Data , Input -> Traj ) ;
 
   size_t i , j , idx = 0 ;
 
@@ -156,8 +154,6 @@ fit_and_plot( struct input_params Input ,
   if( error != NO_ERROR ) {
     goto memfree ;
   }
-
-  printf( "Data pruned\n" ) ;
   
   // If we don't specify a fit we can just continue with the plotting
   if( Input.Fit.Fitdef != NOFIT ) {
@@ -226,7 +222,7 @@ fit_and_plot_and_Nint( struct input_params Input ,
 		      Input.Graph.Xaxis ,
 		      Input.Graph.Yaxis ) ;
 
-  size_t shift = 0 , i , j ;
+  size_t shift = 0 , i ;
   for( i = 0 ; i < Data.Nsim ; i++ ) {
     plot_data( Input.Data.x + shift ,
 	       Input.Data.y + shift ,
@@ -240,8 +236,38 @@ fit_and_plot_and_Nint( struct input_params Input ,
   
   close_xmgrace_graph( ) ;
 
+  #if 0
   // numerically integrate fit parameters ?
   shift = 0 ;
+  size_t idx = 0 ;
+  double stp = 0.25 ;
+  const size_t N = (size_t)((Input.Traj[0].Fit_High-Data.x[0].avg)/stp)+1 ;
+
+  struct resampled *Y = malloc( N*sizeof( struct resampled ) ) ;
+  struct resampled *X = malloc( N*sizeof( struct resampled ) ) ;
+
+  for( double x = Data.x[0].avg ;
+       x < Input.Traj[0].Fit_High ;
+       x+=stp ) {
+    Y[idx] = extrap_fitfunc( fitparams , Data ,
+			     Input.Fit ,
+			     x , 0 ) ;
+    X[idx].resampled = malloc( Y[idx].NSAMPLES*sizeof(double) ) ;
+    equate_constant( &X[idx] , x , Y[idx].NSAMPLES , Y[idx].restype ) ;
+
+    mult_constant( &Y[idx] , pow( x , 3 ) ) ;
+    printf( "%e %e %e\n" , X[idx].avg , Y[idx].avg , Y[idx].err ) ;
+    idx++ ;
+  }
+
+  size_t n ;
+  for( n = 1 ; n < N ; n++ ) { 
+    struct resampled Int = Nint( X , Y , n , true ) ;
+
+    add_constant( &Int , -5.337717e-11 ) ; 
+    fprintf( stdout , "%e %e %e\n" , X[n-1].avg , Int.avg , Int.err ) ;
+    free( Int.resampled ) ;
+  }
   for( i = 0 ; i < Input.Data.Nsim ; i++ ) {
     // loop the x to find the max and min of x as they are not sorted
     // we need to traverse the entire array
@@ -260,6 +286,7 @@ fit_and_plot_and_Nint( struct input_params Input ,
     free( Int.resampled ) ;
     shift += Data.Ndata[i] ;
   }
+  #endif
 
  memfree :
   

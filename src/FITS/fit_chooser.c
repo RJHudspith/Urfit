@@ -16,6 +16,7 @@
 #include "fvol1.h"
 #include "c4c7.h"
 #include "HALexp.h"
+#include "HLBL_cont.h"
 #include "nrqcd_exp.h"
 #include "nrqcd_exp2.h"
 #include "pade.h"
@@ -30,7 +31,9 @@
 #include "Qcorr_bessel.h"
 #include "qsusc_su2.h"
 #include "qslab.h"
+#include "qslab2.h"
 #include "sinh.h"
+#include "SUN_cont.h"
 #include "tanh.h"
 #include "udcb_heavy.h"
 #include "ZV_exp.h"
@@ -57,6 +60,7 @@ get_Nparam( const struct fit_info Fit )
  case C4C7 :
    return 3 ;
  case CORNELL : return 6 ;
+ case HLBL_CONT : return 6 ;
  case TANH : return 2 ;
  case COSH :
  case SINH :
@@ -77,9 +81,11 @@ get_Nparam( const struct fit_info Fit )
  case PP_AA_WW : return 5 ;
  case PP_AA_WW_R2 : return 5 + 2*Fit.N ;
  case QCORR_BESSEL : return 2 ;
+ case QSLAB_FIXED : return 2 ;
  case QSLAB : return 3 ;
  case QSUSC_SU2 : return 3 ;
  case UDCB_HEAVY : return 5 ;
+ case SUN_CONT : return 3 ;
  case ZV_EXP : return 2 ;
  case NRQCD_EXP : return 2 ;
  case NRQCD_EXP2 : return 5 ;
@@ -179,7 +185,14 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = HALexp_df ;
     fdesc.d2F        = HALexp_d2f ;
     fdesc.guesses    = HALexp_guesses ; 
-    break ;    
+    break ;
+  case HLBL_CONT :
+    fdesc.func       = fHLBL_cont ;
+    fdesc.F          = HLBL_cont_f ;
+    fdesc.dF         = HLBL_cont_df ;
+    fdesc.d2F        = HLBL_cont_d2f ;
+    fdesc.guesses    = HLBL_cont_guesses ;
+    break ;
   case NRQCD_EXP :
     fdesc.func       = fnrqcd_exp ;
     fdesc.F          = nrqcd_exp_f ;
@@ -266,6 +279,13 @@ init_fit( const struct data_info Data ,
     fdesc.d2F        = sinh_d2f ;
     fdesc.guesses    = exp_guesses ;
     break ;
+  case SUN_CONT :
+    fdesc.func       = fSUN_cont ;
+    fdesc.F          = SUN_cont_f ;
+    fdesc.dF         = SUN_cont_df ;
+    fdesc.d2F        = SUN_cont_d2f ;
+    fdesc.guesses    = SUN_cont_guesses ;
+    break ;
   case TANH : 
     fdesc.func       = ftanh ;
     fdesc.F          = tanh_f ;
@@ -280,6 +300,13 @@ init_fit( const struct data_info Data ,
     fdesc.d2F        = Qcorr_bessel_d2f ;
     fdesc.guesses    = Qcorr_bessel_guesses ;
     break ;
+  case QSLAB_FIXED :
+    fdesc.func       = fqslab2 ;
+    fdesc.F          = qslab2_f ;
+    fdesc.dF         = qslab2_df ;
+    fdesc.d2F        = qslab2_d2f ;
+    fdesc.guesses    = qslab2_guesses ;
+    break ; 
   case QSLAB :
     fdesc.func       = fqslab ;
     fdesc.F          = qslab_f ;

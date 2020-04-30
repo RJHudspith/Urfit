@@ -26,7 +26,7 @@ static const double a2[ 9 ] = { 0.04949440885942718 , 0.04949440885942718 , 0.04
 				0.07684254741528086 , 0.07684254741528086 , 0.07684254741528086 ,
 				0.16601189178800163 , 0.16601189178800163 , 0.16601189178800163 } ;
 */
-const static double m[ 9 ] = { 2.9 , 3 , 3.1 ,
+static const double m[ 9 ] = { 2.9 , 3 , 3.1 ,
 			       2.9 , 3 , 3.1 ,
 			       2.9 , 3 , 3.1 } ;
 
@@ -44,32 +44,32 @@ static const double b3 = 47.228039589777325 ;
 #endif
 #endif
 
-const static double
+static const double
 lp1( const double t , const double d5 ) {
   return 1.0 ;
 }
 
-const static double
+static const double
 lp2( const double t , const double d5 ) {
   return 1.63982 - 2.25 * t ;
 }
 
-const static double
+static const double
 lp3( const double t , const double d5 ) {
   return 6.37108 - 11.379195 * t + 5.0625 * t ;
 }
 
-const static double
+static const double
 lp4( const double t , const double d5 ) {
   return 49.0769 -66.182813*t + 47.404784*t*t -11.390625*t*t*t ;
 }
 
-const static double
+static const double
 lp5( const double t , const double d5 ) {
   return d5 -598.354375*t + 388.732597*t*t - 162.464353*t*t*t + 25.628906*t*t*t*t ;
 }
 
-const static double (*loop[5])( const double t , const double d5 ) = { lp1 , lp2 , lp3 , lp4 , lp5 } ;
+static const double (*loop[5])( const double t , const double d5 ) = { lp1 , lp2 , lp3 , lp4 , lp5 } ;
 
 // writes alpha(m) in terms of alpha(\mu) == a_pim
 static double

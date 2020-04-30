@@ -40,7 +40,7 @@
   #define D5 (400)
 #endif
 
-const static double m[ 3*12 ] = { 2.0 , 2.0 , 2.0 , 2.25 , 2.25 , 2.25 , 2.5 , 2.5 , 2.5 , 2.75 , 2.75 , 2.75 ,
+static const double m[ 3*12 ] = { 2.0 , 2.0 , 2.0 , 2.25 , 2.25 , 2.25 , 2.5 , 2.5 , 2.5 , 2.75 , 2.75 , 2.75 ,
 				  2.0 , 2.0 , 2.0 , 2.25 , 2.25 , 2.25 , 2.5 , 2.5 , 2.5 , 2.75 , 2.75 , 2.75 ,
 				  2.0 , 2.0 , 2.0 , 2.25 , 2.25 , 2.25 , 2.5 , 2.5 , 2.5 , 2.75 , 2.75 , 2.75 } ;
 
@@ -48,7 +48,7 @@ static double mu = 2.0 ;
 
 static double Q1[ 3*12 ] = { 0 } ;
 
-const static double a2[ 3*12 ] = { 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
+static const double a2[ 3*12 ] = { 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
 				   0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
 				   0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 , 0.10090915108763919 ,
 				   0.17605265301057807 , 0.17605265301057807 , 0.17605265301057807 , 0.17605265301057807 ,
@@ -87,35 +87,35 @@ set_mu_multi( const double munew )
   return ;
 }
 
-const static double
+static const double
 lp1( const double t1 , const double t2 , const double d5 ) {
   return 1.0 ;
 }
 
-const static double
+static const double
 lp2( const double t1 , const double t2 , const double d5 ) {
   return 1.63982 - 1.125 * ( t1 + t2 ) ;
 }
 
-const static double
+static const double
 lp3( const double t1 , const double t2 , const double d5 ) {
   return 6.37108 - 5.6896 * ( t1 + t2 ) + 1.6875 * ( t1 * t1 + t1 * t2 + t2*t2 ) ;
 }
 
-const static double
+static const double
 lp4( const double t1 , const double t2 , const double d5 ) {
   return 49.0769 - 33.0914 * ( t1 + t2 ) + 15.8015 * ( t1 * t1 + t1 * t2 + t2*t2 ) \
     - 2.84766 * ( t1*t1*t1 + t1*t1*t2 + t2*t2*t1 + t2*t2*t2 ) ;
 }
 
-const static double
+static const double
 lp5( const double t1 , const double t2 , const double d5 ) {
   return d5 - 299.177 * ( t1 + t2 ) + 129.578 * ( t1*t1 + t1*t2 + t2*t2 ) \
     - 40.6161 * ( t1*t1*t1 + t1*t1*t2 + t2*t2*t1 + t2*t2*t2 )		\
     + 5.12578 * ( t1*t1*t1*t1 + t1*t1*t1*t2 + t1*t1*t2*t2 + t2*t2*t2*t1 + t2*t2*t2*t2 ) ;
 }
 
-const static double (*loop[5])( const double t1 , const double t2 , const double d5 ) = { lp1 , lp2 , lp3 , lp4 , lp5 } ;
+static const double (*loop[5])( const double t1 , const double t2 , const double d5 ) = { lp1 , lp2 , lp3 , lp4 , lp5 } ;
 
 // writes alpha(m) in terms of alpha(\mu) == a_pim
 static double

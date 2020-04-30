@@ -5,11 +5,18 @@
 #include "gens.h"
 #include "Nder.h"
 
+//#define FIXED
+
 double
 fqslab( const struct x_desc X , const double *fparams , const size_t Npars )
 {
+#ifdef FIXED
+  return fparams[0] * X.X * (1-X.X) -
+    fparams[1] * ( 1.0 - exp( -fparams[2] * X.X ) - exp( -fparams[2] * ( X.LT - X.X ) ) + exp( -fparams[2] * X.LT ) ) ;
+#else
   return fparams[0] * X.X -
     fparams[1] * ( 1.0 - exp( -fparams[2] * X.X ) - exp( -fparams[2] * ( X.LT - X.X ) ) + exp( -fparams[2] * X.LT ) ) ;
+#endif
 }
 
 void
@@ -41,9 +48,13 @@ qslab_df( double **df , const void *data , const double *fparams )
     const double C = fparams[ DATA -> map[i].p[1] ] ;
     const double m = fparams[ DATA -> map[i].p[2] ] ;
     const double LT = DATA -> LT[i] ;
-    
+
+    #ifdef FIXED
+    df[ DATA -> map[i].p[0] ][ i ] = x*(x-1) ;
+    #else
     df[ DATA -> map[i].p[0] ][ i ] = x ;
-    df[ DATA -> map[i].p[1] ][ i ] = \
+    #endif
+    df[ DATA -> map[i].p[1] ][ i ] =					\
       - ( 1.0 - exp( -m * x ) - exp( -m * ( LT - x ) ) + exp( -m * LT ) ) ;
     df[ DATA -> map[i].p[2] ][ i ] = \
       - C * ( x * exp( -m * x ) + ( LT - x ) * exp( -m * ( LT - x ) ) - LT * exp( -m * LT ) ) ;

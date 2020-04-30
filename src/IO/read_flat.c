@@ -15,30 +15,112 @@
 
 #include "stats.h"
 
-// reads flat single data 
-struct resampled*
-read_flat_single( struct input_params *Input )
-{
-  return NULL ;
-}
-
 // 
 static int
 read_initial( FILE *file ,
 	      size_t *Restype ,
 	      size_t *Ndata )
 {
-  fscanf( file , "%zu\n" , Restype ) ;
+  if( fscanf( file , "%zu\n" , Restype ) != 1 ) {
+    fprintf( stderr , "[IO] restype incorrectly read\n" ) ;
+    return FAILURE ;
+  }
   if( *Restype > 2 ) {
     fprintf( stderr , "[IO] unknown sample index %zu \n" , *Restype ) ;
     return FAILURE ;
   }
-  fscanf( file , "%zu\n" , Ndata ) ;
+  if( fscanf( file , "%zu\n" , Ndata ) != 1 ) {
+    fprintf( stderr , "[IO] Ndata incorrectly read\n" ) ;
+    return FAILURE ;
+  }
   if( *Ndata == 0 ) {
     fprintf( stderr , "[IO] Ndata is zero \n" ) ;
     return FAILURE ;
   }
   return SUCCESS ;
+}
+
+static int
+read_XY( FILE *file ,
+	 struct resampled *x ,
+	 struct resampled *y ,
+	 const size_t Ndata ,
+	 const resample_type restype )
+{
+  size_t i , j ;
+  for( i = 0 ; i < Ndata ; i++ ) {
+
+    size_t Nsamples ;
+    
+    // should be another NSAMPLES here
+    if( fscanf( file , "%zu" , &Nsamples ) != 1 ) {
+      fprintf( stderr , "[IO] Nsamples read failure\n" ) ;
+      return FAILURE ;
+    }
+
+    x[i].resampled = calloc( Nsamples , sizeof( double ) ) ;
+    x[i].restype = restype ;
+    x[i].NSAMPLES = Nsamples ;
+    
+    y[i].resampled = calloc( Nsamples , sizeof( double ) ) ;
+    y[i].restype = restype ;
+    y[i].NSAMPLES = Nsamples ;
+    
+    for( j = 0 ; j < Nsamples ; j++ ) {
+      if( fscanf( file , "%lf %lf\n" ,
+		  &x[ i ].resampled[j] ,
+		  &y[ i ].resampled[j] ) != 2 ) {
+	fprintf( stderr , "[IO] flat file data read failure\n" ) ;
+	return FAILURE ;
+      }
+      #ifdef VERBOSE
+      printf( "THIS :: %f %f \n" ,
+	      x[ i ].resampled[j] ,
+	      y[ i ].resampled[j] ) ;
+      #endif
+    }
+    // do the average
+    if( x[ i ].restype != Raw ) {
+      if( fscanf( file , "AVG %lf %lf\n" ,
+		  &x[ i ].avg , &y[ i ].avg ) != 2 ) {
+	fprintf( stderr , "[IO] flat file avg read failure\n" ) ;
+	return FAILURE ;
+      }
+    }
+    compute_err( &x[ i ] ) ;
+    compute_err( &y[ i ] ) ;
+
+    #ifdef VERBOSE
+    fprintf( stdout , "AVERAGE read %e %e \n" ,
+	     x[ i ].avg , y[ i ].avg ) ;
+    #endif
+  }
+  return SUCCESS ;
+}
+
+// reads flat single data 
+struct resampled*
+read_flat_single( const char *infile )
+{
+  FILE *file = fopen( infile , "r" ) ;
+  if( file == NULL ) {
+    fprintf( stderr , "[IO] read_flat_single cannot read %s\n" , infile ) ;
+    return NULL ;
+  }
+
+  struct resampled *x = NULL , *y = NULL ;
+  size_t Restype , Ndata ;
+  if( read_initial( file , &Restype , &Ndata ) == FAILURE ) {
+    return y ;
+  }
+
+  y = malloc( Ndata*sizeof( struct resampled ) ) ;
+  x = malloc( Ndata*sizeof( struct resampled ) ) ;
+  
+  // read the first loop
+  read_XY( file , x , y , Ndata , Restype ) ;
+  
+  return y ;
 }
 
 // expects x y data layout with a single space between x and y
@@ -57,7 +139,8 @@ read_flat_double( struct input_params *Input ,
   
   if( file == NULL ) {
     fprintf( stderr , "[IO] cannot open file %s %s \n" ,
-	     Input -> Traj[ Traj_idx ].FileX , Input -> Traj[ Traj_idx ].FileY ) ;
+	     Input -> Traj[ Traj_idx ].FileX ,
+	     Input -> Traj[ Traj_idx ].FileY ) ;
     return FAILURE ;
   }
 
@@ -71,14 +154,18 @@ read_flat_double( struct input_params *Input ,
   size_t i , j ;
   for( i = 0 ; i < Ndata ; i++ ) {
     // should be another NSAMPLES here
-    fscanf( file , "%zu" , &Nsamples ) ;
-
-    printf( "Here NSAMPLES %zu\n" , Nsamples ) ;
+    if( fscanf( file , "%zu" , &Nsamples ) != 1 ) {
+      fprintf( stderr , "[IO] flat file Nsamples read failure\n" ) ;
+      return FAILURE ;
+    }
     
     for( j = 0 ; j < Nsamples ; j++ ) {
-      fscanf( file , "%lf %lf\n" ,
-	      &Input -> Data.x[ shift + i ].resampled[j] ,
-	      &Input -> Data.y[ shift + i ].resampled[j] ) ;
+      if( fscanf( file , "%lf %lf\n" ,
+		  &Input -> Data.x[ shift + i ].resampled[j] ,
+		  &Input -> Data.y[ shift + i ].resampled[j] ) != 2 ) {
+	fprintf( stderr , "[IO] flat file data read failure\n" ) ;
+	return FAILURE ;
+      }
       #ifdef VERBOSE
       printf( "THIS :: %f %f \n" ,
 	      Input -> Data.x[ shift + i ].resampled[j] ,
@@ -87,15 +174,21 @@ read_flat_double( struct input_params *Input ,
     }
     // do the average
     if( Input -> Data.x[ shift + i ].restype != Raw) {
-      fscanf( file , "AVG %lf %lf\n" ,
-	      &Input -> Data.x[ shift + i ].avg ,
-	      &Input -> Data.y[ shift + i ].avg ) ;
+      if( fscanf( file , "AVG %lf %lf\n" ,
+		  &Input -> Data.x[ shift + i ].avg ,
+		  &Input -> Data.y[ shift + i ].avg ) != 2 ) {
+	fprintf( stderr , "[IO] flat file AVG read failure\n" ) ;
+	return FAILURE ;
+      }
     }
     compute_err( &Input -> Data.x[ shift + i ] ) ;
     compute_err( &Input -> Data.y[ shift + i ] ) ;
 
-    printf( "AVERAGE read %e %e \n" , Input -> Data.x[ shift + i ].avg ,
-	    Input -> Data.y[ shift + i ].avg ) ;
+    #ifdef VERBOSE
+    fprintf( stdout , "AVERAGE read %e %e \n" ,
+	     Input -> Data.x[ shift + i ].avg ,
+	     Input -> Data.y[ shift + i ].avg ) ;
+    #endif
   }
 
   fclose(file) ;
@@ -154,8 +247,10 @@ init_data( struct input_params *Input )
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
 
       size_t Nsamples ;
-      fscanf( file , "%zu" , &Nsamples ) ;
-      printf( "NSAMPLE :: %zu \n" , Nsamples ) ;
+      if( fscanf( file , "%zu" , &Nsamples ) != 1 ) {
+	fprintf( stderr , "[IO] Nsamples read failure\n" ) ;
+	return FAILURE ;
+      }
       
       Input -> Data.x[ j ].resampled = malloc( Nsamples * sizeof( double ) ) ;
       Input -> Data.x[ j ].restype = Restype[i] ;
@@ -166,9 +261,20 @@ init_data( struct input_params *Input )
       Input -> Data.y[ j ].NSAMPLES = Nsamples ;
 
       size_t k ;
+      double a , b ;
       for( k = 0 ; k < Nsamples ; k++ ) {
-	double a , b ;
-	fscanf( file , "%lf %lf\n" , &a , &b ) ; 
+	int tmp = 0 ;
+	if( (tmp = fscanf( file , "%lf %lf\n" , &a , &b )) != 2 ) {
+	  fprintf( stderr , "[IO] data read failure %d\n" , tmp ) ;
+	  return FAILURE ;
+	}
+      }
+      // count the average
+      if( Input -> Data.x[ shift + i ].restype != Raw) {
+	if( fscanf( file , "AVG %lf %lf\n" , &a , &b ) != 2 ) {
+	  fprintf( stderr , "[IO] flat AVG read failure\n" ) ;
+	  return FAILURE ;
+	}
       }
     }
     shift = j ;
@@ -184,7 +290,7 @@ read_flat( struct input_params *Input )
 {
   if( init_data( Input ) == FAILURE ) {
     fprintf( stderr , "[IO] data initialisation failure \n" ) ;
-    return FAILURE ;
+    //return FAILURE ;
   }
 
   size_t i , shift = 0 ;
@@ -206,7 +312,10 @@ read_flat( struct input_params *Input )
   Input -> Data.Ntot = shift ;
 
   #ifdef VERBOSE
-  printf( "WHAT :: %zu %zu %zu \n" , Input -> Data.Nsim , Input -> Data.Ndata[0] , Input -> Data.Ntot ) ;
+  fprintf( stdout , "WHAT :: %zu %zu %zu \n" ,
+	   Input -> Data.Nsim ,
+	   Input -> Data.Ndata[0] ,
+	   Input -> Data.Ntot ) ;
 
   // test
   shift = 0 ;
@@ -214,9 +323,9 @@ read_flat( struct input_params *Input )
     size_t j , k ;
     for( j = 0 ; j < Input -> Data.Ndata[i] ; j++ ) {
       for( k = 0 ; k < Input -> Data.x[ shift + j ].NSAMPLES ; k++ ) {
-	printf( "TEST :: %f %f \n" ,
-		Input -> Data.x[ shift + j ].resampled[ k ] ,
-		Input -> Data.y[ shift + j ].resampled[ k ] ) ;
+	fprintf( stdout , "TEST :: %f %f \n" ,
+		 Input -> Data.x[ shift + j ].resampled[ k ] ,
+		 Input -> Data.y[ shift + j ].resampled[ k ] ) ;
       }
     }
     shift += Input -> Data.Ndata[i] ;

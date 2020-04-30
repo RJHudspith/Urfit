@@ -7,6 +7,7 @@
 #include "fit_and_plot.h"
 #include "init.h"
 #include "Nint.h"
+#include "plot_fitfunc.h"
 #include "resampled_ops.h"
 #include "write_flat.h"
 
@@ -15,13 +16,23 @@
 
 #define IN_FERMI
 #define PUT_ZERO
+#define MULT_X3
 
 // beta value of the ensemble of interest
-#define B346
-#define B450
-//#define CONNECTED
+#define B355
+#define D200
+#define CONNECTED
 
-#ifdef B340
+//#define STRANGE
+
+#ifdef B334
+  #define BETALABEL "Beta 3.34"
+  #if (defined A654)
+    #define CONFIGLABEL "A654"
+  #else
+    #error
+  #endif
+#elif (defined B340)
   #define BETALABEL "Beta 3.4"
   #if (defined H101)
     #define SYMMETRIC
@@ -31,6 +42,8 @@
     #define CONFIGLABEL "U103"
   #elif (defined H102)
     #define CONFIGLABEL "H102"
+  #elif (defined U102)
+    #define CONFIGLABEL "U102"
   #elif (defined H105)
     #define CONFIGLABEL "H105"
   #elif (defined C101)
@@ -99,15 +112,9 @@ integrate( struct input_params *Input ,
       Int[k] = Nint( Input -> Data.x + shift ,
 		     Input -> Data.y + shift ,
 		     k+1 , trap ) ;
-      #ifdef IN_FERMI
       fprintf( txtfile , "Integral %e %e %e \n" ,
 	       Input -> Data.x[shift+k].avg ,
-	       Int[k].avg , Int[k].err ) ;
-      #else
-      fprintf( txtfile , "Integral %e %e %e \n" ,
-	       Input -> Data.x[shift+k].avg*a ,
-	       Int[k].avg , Int[k].err ) ;
-      #endif      
+	       Int[k].avg , Int[k].err ) ;  
     }
 
     char str[256] ;
@@ -125,20 +132,29 @@ integrate( struct input_params *Input ,
   return ;
 }
 
+
 int
 HLBL_analysis( struct input_params *Input )
 {
-#ifdef SYMMETRIC
+#ifdef STRANGE
+  #ifdef CONNECTED
+  const double NUM[2] = { 1 , 1 } ;
+  #else
+  const double NUM[2] = { -1 , -1 } ;
+  #endif
+#else
+  #ifdef SYMMETRIC
   #ifdef CONNECTED
   const double NUM[2] = { 18 , 18 } ;
   #else
   const double NUM[2] = { -36 , -36 } ;
   #endif
-#else
+  #else
   #ifdef CONNECTED
   const double NUM[2] = { 17 , 17 } ;
   #else
-  const double NUM[2] = { 25 , 25 } ;
+  const double NUM[2] = { -25 , -25 } ;
+  #endif
   #endif
 #endif
   const double DEN = 81. ;
@@ -150,14 +166,20 @@ HLBL_analysis( struct input_params *Input )
   // values from the g-2 paper and the ZV paper
   // https://arxiv.org/pdf/1904.03120.pdf
   // https://arxiv.org/pdf/1811.08209.pdf
-#ifdef B340
+#ifdef B334
+  const double amu = 0.05316465193824131 ;
+  const double a = 0.09929 ;
+  #if (defined A654)
+  const double Z = 0.69789 ;
+  #endif
+#elif (defined B340)
   const double amu = 0.04624130625372472 ;
   const double a = 0.08636 ;
   #if (defined H101)
   const double Z = 0.71562 ;
   #elif (defined U103)
   const double Z = 0.71562 ;
-  #elif (defined H102)
+  #elif (defined H102) || (defined U102)
   const double Z = 0.71226 ;
   #elif (defined H105)
   const double Z = 0.70908 ;
@@ -219,15 +241,18 @@ HLBL_analysis( struct input_params *Input )
       // x is |y| when comparing to note
       root( &Input -> Data.x[j] ) ;
 
-      #ifdef IN_FERMI
-      mult_constant( &Input -> Data.y[j] ,
-		     Q*prefac*pow( Input -> Data.x[j].avg , 3 )/a ) ;
-      mult_constant( &Input -> Data.x[j] , a ) ;
-      #else
-      mult_constant( &Input -> Data.y[j] ,
-		     Q*prefac*pow( Input -> Data.x[j].avg , 3 ) ) ;
-      #endif
+      // multiply by Q-factors
+      mult_constant( &Input -> Data.y[j] , Q*prefac ) ;
 
+      #ifdef MULT_X3
+        #ifdef IN_FERMI
+        mult_constant( &Input -> Data.y[j] , pow( Input -> Data.x[j].avg , 3 )/a ) ;
+        mult_constant( &Input -> Data.x[j] , a ) ;
+        #else
+        mult_constant( &Input -> Data.y[j] , pow( Input -> Data.x[j].avg , 3 ) ) ;
+        #endif
+      #endif
+      
       fprintf( txtfile , "Integrand %e %e %e\n" ,
 	       Input->Data.x[j].avg ,
 	       Input -> Data.y[j].avg ,
@@ -254,7 +279,7 @@ HLBL_analysis( struct input_params *Input )
   double Chi ;
   struct resampled *Fit = fit_and_plot_and_Nint( *Input , &Chi ) ;
 
-  free_fitparams( Fit , Input -> Fit.Nlogic ) ;  
+  free_fitparams( Fit , Input -> Fit.Nlogic ) ;
   
   return SUCCESS ;
 }

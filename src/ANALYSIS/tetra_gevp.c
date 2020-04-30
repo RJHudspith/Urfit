@@ -13,8 +13,8 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
-static const int t0 = 2 ;
-static const int td = t0+2 ;
+static const int t0 = 4 ;
+static const int td = 2 ;
 
 //#define FIT_EFFMASS
 //#define COMBINE
@@ -38,7 +38,7 @@ write_evalues( struct resampled *evalues ,
 	       const size_t N ,
 	       const size_t t0 )
 {
-  size_t i , j , k ;
+  size_t i , j = 0 , k ;
   for( i = 0 ; i < N ; i++ ) {
     char str[ 256 ] ;
     sprintf( str , "Evalue.%zu.flat" , i ) ;
@@ -74,7 +74,7 @@ tetra_gevp_analysis( struct input_params *Input )
   const size_t LT = Input -> Data.Ndata[0] ;
   size_t i , j , shift = 0 ; 
 
-  printf( "[TET GEVP] In here :: %zu %zu %zu %zu\n" , t0 , td , N , LT ) ;
+  printf( "[TET GEVP] In here :: %d %d %zu %zu\n" , t0 , td , N , LT ) ;
   
   // make a correlator matrix
   // C_ij / sqrt( C_ii * C_jj )
@@ -91,23 +91,13 @@ tetra_gevp_analysis( struct input_params *Input )
       printf( "\n" ) ;
     }
   }
-  
-  printf( "Divide ?\n" ) ;
-  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    struct resampled V = init_dist( &Input -> Data.y[i*Input->Data.Ndata[0]] ,
-				    Input -> Data.y[i*Input->Data.Ndata[0]].NSAMPLES ,
-				    Input -> Data.y[i*Input->Data.Ndata[0]].restype ) ;
-				    
-    for( j = 0 ; j < Input->Data.Ndata[0] ; j++ ) {
-      //divide( &Input -> Data.y[j+i*Input->Data.Ndata[0]] , V ) ;
-    }
-    free( V.resampled ) ;
-  }
 
   if( ( Input -> Fit.N*Input-> Fit.M ) != Input -> Data.Nsim ) {
     fprintf( stderr , "GEVP N,M not equal to Nsim\n" ) ;
     goto end ;
   }
+
+  printf( "Solving GEVP ...\n" ) ;
   
   // compute evalues
   struct resampled *evalues = solve_GEVP( Input -> Data.y ,
@@ -181,12 +171,108 @@ tetra_gevp_analysis( struct input_params *Input )
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     subtract_constant( &Input -> Data.x[ i ] , (double)t0 ) ;
   }
+  
+  // fit the ground state ?
+  double Chi ;
+  struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
 
-  Input -> Data.Nsim = 1 ;
-  Input -> Data.Ntot = Input->Data.Ndata[0] ;
-  Input -> Fit.N = Input -> Fit.M = 1 ;
-  Input -> Fit.Nlogic = 2 ;
+  // write out the fit result for reasons
+  if( Input -> Fit.Fitdef == EXP ||
+      Input -> Fit.Fitdef == COSH ) {
+    FILE *massfile = fopen( "massfits.dat" , "w" ) ;
+    size_t j ;
+    for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+      for( j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
+	write_fitmass_graph( massfile , Fit[j+1] ,
+			     Input -> Traj[i].Fit_Low ,
+			     Input -> Traj[i].Fit_High ,
+			     t0 ) ;
+      }
+      shift += Input -> Data.Ndata[i] ;
+    }
+    fclose( massfile ) ;
+  }
+  
+  
+  free_fitparams( Fit , Input -> Fit.Nlogic ) ;
+  
+  Input -> Data.Nsim = Nsim_prev ;
+  Input -> Data.Ntot = Ntot_prev ;
 
+ end :
+
+  return SUCCESS ;
+}
+
+int
+tetra_gevp_fixed_delta_analysis( struct input_params *Input )
+{
+  const size_t N = Input -> Fit.N ;
+  const size_t LT = Input -> Data.Ndata[0] ;
+  size_t i , j , shift = 0 ; 
+
+  printf( "[TET Fixed GEVP] In here :: %d %d %zu %zu\n" , t0 , td , N , LT ) ;
+  
+  // make a correlator matrix
+  // C_ij / sqrt( C_ii * C_jj )
+  fprintf( stdout , "[TET Fixed GEVP] correlator matrix\n" ) ;
+  size_t t ;
+  for( t = 0 ; t < LT ; t++ ) {
+    printf( "\n C(%zu) \n" , t ) ;
+    for( i = 0 ; i < Input -> Fit.M ; i++ ) {
+      for( j = 0 ; j < N ; j++ ) {
+	printf( "%g " , Input -> Data.y[ t + LT*( j +  N*i ) ].avg
+		/sqrt( Input -> Data.y[ t + LT*( j + N*j ) ].avg * Input -> Data.y[ t + LT*( i + N*i ) ].avg )
+		) ;
+      }
+      printf( "\n" ) ;
+    }
+  }
+
+
+  if( ( Input -> Fit.N*Input-> Fit.M ) != Input -> Data.Nsim ) {
+    fprintf( stderr , "GEVP N,M not equal to Nsim\n" ) ;
+    goto end ;
+  }
+
+  printf( "Solving GEVP ...\n" ) ;
+  
+  // compute evalues
+  struct resampled *evalues = solve_GEVP_fixed( Input -> Data.y ,
+						Input -> Data.Ndata[0] ,
+						Input -> Fit.N ,
+						Input -> Fit.M ,
+						t0 , td ) ;
+  
+  if( evalues == NULL ) {
+    goto end ;
+  }
+
+  const size_t Nsim_prev = Input -> Data.Nsim , Ntot_prev = Input -> Data.Ntot ;
+  Input -> Data.Nsim = N ;
+  Input -> Data.Ntot = N*Input->Data.Ndata[0] ;
+  
+
+  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
+    res_log( &evalues[i] ) ;
+    divide_constant( &evalues[i] , (double)(t0) ) ;
+  }
+  
+  // write them out
+  write_evalues( evalues , Input -> Data.Ndata[0] , Input -> Fit.N , t0 ) ;
+
+  for( i = 0 ; i < Input -> Fit.N ; i++ ) {
+    for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
+      equate( &Input -> Data.y[j+i*Input->Data.Ndata[0]] , evalues[ j + i*Input->Data.Ndata[0] ] ) ;
+    }
+  }
+
+  // free the eigenvalues
+  for( i = 0 ; i < Input ->Data.Ndata[0] * Input -> Fit.N  ; i++ ) {
+    free( evalues[i].resampled ) ;
+  }
+  free( evalues ) ;
+  
   // fit the ground state ?
   double Chi ;
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;

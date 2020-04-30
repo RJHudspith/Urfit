@@ -262,7 +262,7 @@ res_atanh( struct resampled *a )
 void
 res_exp( struct resampled *a ) 
 {
-  int i ;
+  size_t i ;
   for( i = 0 ; i < a -> NSAMPLES ; i++ ) {
     a -> resampled[i] = exp( a -> resampled[i] ) ;
   }
@@ -275,7 +275,7 @@ res_exp( struct resampled *a )
 void
 res_log( struct resampled *a ) 
 {
-  int i ;
+  size_t i ;
   for( i = 0 ; i < a -> NSAMPLES ; i++ ) {
     a -> resampled[i] = log( a -> resampled[i] ) ;
   }

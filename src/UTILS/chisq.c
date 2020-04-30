@@ -15,7 +15,7 @@ compute_chisq( const struct ffunction f ,
   const double *pf = f.f , *pW = *W ;
   register double chisq = 0.0 ;
   double *y = NULL , *t ;
-  size_t i , j , Nsum ;
+  size_t i , j , Nsum = 1 ;
 
   // allocate the array we want to sum
   switch( CORRFIT ) {
@@ -42,7 +42,7 @@ compute_chisq( const struct ffunction f ,
     break ;
   case CORRELATED :
     for( i = 0 ; i < f.N ; i++ ) {
-      const register double fi = f.f[i] ;
+      register const double fi = f.f[i] ;
       // point to the data and the W matrix
       pf = f.f ; pW = *( W + i ) ;
       for( j = 0 ; j < f.N ; j++ ) {

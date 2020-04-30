@@ -6,8 +6,7 @@ free_Data( struct data_info *Data ,
 	   const struct fit_info Fit ) ;
 
 void
-free_Fit( struct fit_info *Fit ,
-	  const struct data_info Data ) ;
+free_Fit( struct fit_info *Fit ) ;
 
 void
 free_fitparams( struct resampled *Fit ,

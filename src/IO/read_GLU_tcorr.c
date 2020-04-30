@@ -81,7 +81,10 @@ read_GLU_tcorr( struct input_params *Input )
 
       // Lt is the length of the time correlator
       uint32_t Lt[ 1 ] ;
-      fread( Lt , sizeof( uint32_t ) , 1 , Infile ) ;
+      if( fread( Lt , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
+	fprintf( stderr , "[IO] Lt read failure\n" ) ;
+	return FAILURE ;
+      }
       #ifndef WORDS_BIGENDIAN
       bswap_32( 1 , Lt ) ;
       #endif
@@ -104,7 +107,10 @@ read_GLU_tcorr( struct input_params *Input )
       #endif
 
       uint32_t NewLt[ 1 ] ;
-      fread( NewLt , sizeof( uint32_t ) , 1 , Infile ) ;
+      if( fread( NewLt , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
+	fprintf( stderr , "[IO] lt read failure\n" ) ;
+	return FAILURE ;
+      }
       #ifndef WORDS_BIGENDIAN
       bswap_32( 1 , NewLt ) ;
       #endif
@@ -116,7 +122,10 @@ read_GLU_tcorr( struct input_params *Input )
 
       // read in y data
       double Ct[ Lt[0] ] ;
-      fread( Ct , sizeof( double ) , Lt[0] , Infile ) ;
+      if( fread( Ct , sizeof( double ) , Lt[0] , Infile ) != Lt[0] ) {
+	fprintf( stderr , "[IO] Ct read failure\n" ) ;
+	return FAILURE ;
+      }
       #ifndef WORDS_BIGENDIAN
       bswap_64( Lt[0] , Ct ) ;
       #endif
@@ -131,7 +140,7 @@ read_GLU_tcorr( struct input_params *Input )
       for( k = 0 ; k < Lt[0] ; k++ ) {
 	Input -> Data.x[ shift + k ].resampled[idx] = k ;
 	Input -> Data.y[ shift + k ].resampled[idx] = Ct[k] ;
-	#ifdef verbose
+        #ifdef verbose
 	printf( "Check :: %f %f \n" ,
 		Input -> Data.x[ shift + k ].resampled[idx] ,
 		Input -> Data.y[ shift + k ].resampled[idx] ) ;

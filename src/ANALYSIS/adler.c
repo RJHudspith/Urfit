@@ -14,6 +14,8 @@
 #include "stats.h"
 #include "write_flat.h"
 
+#define SINGLE
+
 // perform an SVD to get the continuum result
 //
 // Matrix is of the form :
@@ -86,7 +88,8 @@ get_cont( struct input_params *Input )
     
     size_t i , l , m ;
     for( i = 0 ; i < N ; i++ ) {    
-      const register double ave = Input -> Data.y[ j + i*Input -> Data.Ndata[0] ].avg ;
+      register const double ave =				\
+	Input -> Data.y[ j + i*Input -> Data.Ndata[0] ].avg ;
       register double sum = 0.0 ;
       size_t k ;
       for( k = 0 ; k < NSAMPLES ; k++ ) {
@@ -198,32 +201,32 @@ get_cont( struct input_params *Input )
   return 0 ;
 }
 
-const static double
+static const double
 lp1( const double t , const double d5 ) {
   return 1.0 ;
 }
 
-const static double
+static const double
 lp2( const double t , const double d5 ) {
   return 1.63982 - 2.25 * t ;
 }
 
-const static double
+static const double
 lp3( const double t , const double d5 ) {
   return 6.37108 - 11.379195 * t + 5.0625 * t ;
 }
 
-const static double
+static const double
 lp4( const double t , const double d5 ) {
   return 49.0769 -66.182813*t + 47.404784*t*t -11.390625*t*t*t ;
 }
 
-const static double
+static const double
 lp5( const double t , const double d5 ) {
   return d5 -598.354375*t + 388.732597*t*t - 162.464353*t*t*t + 25.628906*t*t*t*t ;
 }
 
-const static double (*loop[5])( const double t , const double d5 ) = { lp1 , lp2 , lp3 , lp4 , lp5 } ;
+static const double (*loop[5])( const double t , const double d5 ) = { lp1 , lp2 , lp3 , lp4 , lp5 } ;
 
 // perturbation theory result
 double
@@ -240,9 +243,6 @@ PT( const double alpha ,
   }
   return pt ;
 }
-
-
-#define SINGLE
 
 int
 adler_analysis( struct input_params *Input )

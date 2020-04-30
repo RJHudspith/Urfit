@@ -224,11 +224,7 @@ effective_mass( struct input_params *Input ,
 	  break ;
 	}
       }
-
-      //mult_constant( &effmass[j] , 2 ) ;
     }
-
-
     plot_data( Input -> Data.x + shift , effmass + shift ,
 	       Input -> Data.Ndata[i] ) ;
     

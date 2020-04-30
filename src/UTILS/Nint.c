@@ -55,7 +55,7 @@ adaptive_simpsons( const double *fparams ,
     register double step = 0.0 , step2 = 0.0 ;
     struct x_desc xdesc = { x , Data.LT[shift] , Fit.N , Fit.M } ;
     
-    int nsteps = 0 ;
+    size_t nsteps = 0 ;
     while( nsteps < max_steps ) {
 
       xdesc.X = x ;
@@ -109,12 +109,12 @@ general_simpsons_array_O3( const double *x ,
 			   const double *y , 
 			   const size_t i )
 {
-  const register double a = x[ i ] ;
-  const register double b = x[ i + 1 ] ;
-  const register double c = x[ i + 2 ] ;
-  const register double fa = y[ i ] / 6.0 ;
-  const register double fb = y[ i + 1 ] / 6.0 ;
-  const register double fc = y[ i + 2 ] / 6.0 ;
+  register const double a = x[ i ] ;
+  register const double b = x[ i + 1 ] ;
+  register const double c = x[ i + 2 ] ;
+  register const double fa = y[ i ] / 6.0 ;
+  register const double fb = y[ i + 1 ] / 6.0 ;
+  register const double fc = y[ i + 2 ] / 6.0 ;
 
   // up to some tolerance we just return the trapezoid evaluation
   if( ( b - a ) < 1E-20 ) {
