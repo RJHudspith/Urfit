@@ -15,6 +15,8 @@
 
 #include "stats.h"
 
+//#define VERBOSE
+
 // 
 static int
 read_initial( FILE *file ,
@@ -37,6 +39,11 @@ read_initial( FILE *file ,
     fprintf( stderr , "[IO] Ndata is zero \n" ) ;
     return FAILURE ;
   }
+#ifdef VERBOSE
+    fprintf( stdout , "[IO] flat file summary\n" ) ;
+    fprintf( stdout , "[IO] restype %zu\n" , *Restype ) ;
+    fprintf( stdout , "[IO] Ndata %zu \n" , *Ndata ) ;
+#endif
   return SUCCESS ;
 }
 
@@ -59,11 +66,11 @@ read_XY( FILE *file ,
     }
 
     x[i].resampled = calloc( Nsamples , sizeof( double ) ) ;
-    x[i].restype = restype ;
+    x[i].restype = (unsigned int)restype ;
     x[i].NSAMPLES = Nsamples ;
     
     y[i].resampled = calloc( Nsamples , sizeof( double ) ) ;
-    y[i].restype = restype ;
+    y[i].restype = (unsigned int)restype ;
     y[i].NSAMPLES = Nsamples ;
     
     for( j = 0 ; j < Nsamples ; j++ ) {
@@ -83,7 +90,8 @@ read_XY( FILE *file ,
     if( x[ i ].restype != Raw ) {
       if( fscanf( file , "AVG %lf %lf\n" ,
 		  &x[ i ].avg , &y[ i ].avg ) != 2 ) {
-	fprintf( stderr , "[IO] flat file avg read failure\n" ) ;
+	fprintf( stderr , "[IO] flat file avg read failure %u\n" ,
+		 x[ i ].restype ) ;
 	return FAILURE ;
       }
     }
@@ -153,6 +161,10 @@ read_flat_double( struct input_params *Input ,
   
   size_t i , j ;
   for( i = 0 ; i < Ndata ; i++ ) {
+
+    Input -> Data.x[ shift + i ].restype = Restype ;
+    Input -> Data.y[ shift + i ].restype = Restype ;
+    
     // should be another NSAMPLES here
     if( fscanf( file , "%zu" , &Nsamples ) != 1 ) {
       fprintf( stderr , "[IO] flat file Nsamples read failure\n" ) ;
@@ -177,7 +189,8 @@ read_flat_double( struct input_params *Input ,
       if( fscanf( file , "AVG %lf %lf\n" ,
 		  &Input -> Data.x[ shift + i ].avg ,
 		  &Input -> Data.y[ shift + i ].avg ) != 2 ) {
-	fprintf( stderr , "[IO] flat file AVG read failure\n" ) ;
+	fprintf( stderr , "[IO] flat file AVG read failure %u\n" ,
+		 Input -> Data.x[ shift + i ].restype ) ;
 	return FAILURE ;
       }
     }
@@ -209,6 +222,10 @@ init_data( struct input_params *Input )
   
   size_t i ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+
+    Restype[i] = 0 ;
+    Ndata[i] = 1 ;
+    
     FILE *file = NULL ;
     file = fopen( Input -> Traj[ i ].FileY , "r" ) ;
   
@@ -233,7 +250,7 @@ init_data( struct input_params *Input )
   // allocate the x and y data
   Input -> Data.x = malloc( Input -> Data.Ntot * sizeof( struct resampled ) ) ;
   Input -> Data.y = malloc( Input -> Data.Ntot * sizeof( struct resampled ) ) ;
-
+  
   size_t shift = 0 , j ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     FILE *file = NULL ;
@@ -269,10 +286,12 @@ init_data( struct input_params *Input )
 	  return FAILURE ;
 	}
       }
+
       // count the average
-      if( Input -> Data.x[ shift + i ].restype != Raw) {
+      if( Input -> Data.x[ j ].restype != Raw) {
 	if( fscanf( file , "AVG %lf %lf\n" , &a , &b ) != 2 ) {
-	  fprintf( stderr , "[IO] flat AVG read failure\n" ) ;
+	  fprintf( stderr , "[IO] flat AVG read failure %u\n" ,
+		   Input -> Data.x[ j ].restype ) ;
 	  return FAILURE ;
 	}
       }
@@ -290,7 +309,7 @@ read_flat( struct input_params *Input )
 {
   if( init_data( Input ) == FAILURE ) {
     fprintf( stderr , "[IO] data initialisation failure \n" ) ;
-    //return FAILURE ;
+    return FAILURE ;
   }
 
   size_t i , shift = 0 ;
@@ -316,21 +335,25 @@ read_flat( struct input_params *Input )
 	   Input -> Data.Nsim ,
 	   Input -> Data.Ndata[0] ,
 	   Input -> Data.Ntot ) ;
-
+  
   // test
   shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     size_t j , k ;
     for( j = 0 ; j < Input -> Data.Ndata[i] ; j++ ) {
-      for( k = 0 ; k < Input -> Data.x[ shift + j ].NSAMPLES ; k++ ) {
-	fprintf( stdout , "TEST :: %f %f \n" ,
-		 Input -> Data.x[ shift + j ].resampled[ k ] ,
-		 Input -> Data.y[ shift + j ].resampled[ k ] ) ;
+      fprintf( stdout , "[IO] NSAMPLES %zu\n" ,
+	       Input -> Data.x[ shift + j ].NSAMPLES ) ;
+	for( k = 0 ; k < Input -> Data.x[ shift + j ].NSAMPLES ; k++ ) {
+	  fprintf( stdout , "TEST :: %f %f \n" ,
+		   Input -> Data.x[ shift + j ].resampled[ k ] ,
+		   Input -> Data.y[ shift + j ].resampled[ k ] ) ;
       }
     }
     shift += Input -> Data.Ndata[i] ;
   }
   #endif
+
+  fprintf( stdout , "[IO] flat file reading done\n" ) ;
   
   return SUCCESS ;  
 }

@@ -69,7 +69,7 @@ get_Nparam( const struct fit_info Fit )
  case HALEXP :
    return 3 * Fit.N ;
    // these have independent amounts
- case EXP_PLUSC : return 3 ;
+ case EXP_PLUSC : return 2*Fit.N+1 ;
  case FVOL1 : return 3 ;
  case PADE : return Fit.N + Fit.M ;
  case POLES : return Fit.N + Fit.M + 1 ;

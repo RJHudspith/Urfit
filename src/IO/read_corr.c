@@ -10,6 +10,8 @@
 #include "resampled_ops.h"
 #include "tfold.h"
 
+//#define VERBOSE
+
 // do we have to byte swap?
 static bool must_swap = false ;
 // read 32 bytes
@@ -150,16 +152,15 @@ pre_allocate( struct input_params *Input )
     case NOFOLD_SWAPT :
     case NOFOLD_MINUS_SWAPT :
       Input -> Data.Ndata[i] = LT ;
-      Input -> Data.Ntot += LT ;
       break ;
     case PLUS_PLUS :
     case PLUS_MINUS :
     case MINUS_PLUS :
     case MINUS_MINUS :
-      Input -> Data.Ndata[i] = LT/2 ;
-      Input -> Data.Ntot += LT/2 ;
+      Input -> Data.Ndata[i] = LT/2+1 ;
       break ;
     }
+    Input -> Data.Ntot += Input -> Data.Ndata[i] ;
     
     fclose( file ) ;
   }
@@ -218,6 +219,7 @@ get_correlator( double complex *C ,
 			 &mommatch , mompoint ) == FAILURE ) {
     return FAILURE ;
   }
+
   if( snk >= (size_t)NGSNK || src >= (size_t)NGSRC ) {
     fprintf( stderr , "[IO] source and sink provided are out of bounds\n"
 	     "[IO] ( %zu , %zu ) >= ( %du , %du ) \n" ,
@@ -240,6 +242,12 @@ get_correlator( double complex *C ,
     fprintf( stderr , "[IO] Fread failure C(t) \n" ) ;
     return FAILURE ;
   }
+
+#ifdef VERBOSE
+  for( int i = 0 ; i < LT ; i++ ) {
+    printf( "CT %e\n" , Ctmp[i] ) ;
+  }
+#endif
   
   // read the final LT and make sure that it is the same as Ndata
   if( src != (NGSRC-1) && snk != (NGSNK-1) ) {
@@ -248,6 +256,7 @@ get_correlator( double complex *C ,
       return FAILURE ;
     }
   }
+  
   if( LT != Nlt ) {
     fprintf( stderr , "[IO] LT mismatch (read %u) (Ndata %zu)\n" ,
 	     LT , Nlt ) ;
@@ -294,21 +303,7 @@ read_corr( struct input_params *Input )
     char str[ strlen( Input -> Traj[i].FileY ) + 6 ] ;
 
     // set the temporary correlator
-    size_t Nlt = Input -> Data.Ndata[i] ;
-    switch( Input -> Traj[i].Fold ) {
-    case NOFOLD :
-    case NOFOLD_MINUS :
-    case TDER :
-    case NOFOLD_SWAPT :
-    case NOFOLD_MINUS_SWAPT :
-      break ;
-    case PLUS_PLUS :
-    case PLUS_MINUS :
-    case MINUS_PLUS :
-    case MINUS_MINUS :
-      Nlt *= 2 ;
-      break ;
-    }
+    const size_t Nlt = Input -> Traj[i].Dimensions[3] ;
     
     // linearised measurement index
     register size_t meas = 0 ;

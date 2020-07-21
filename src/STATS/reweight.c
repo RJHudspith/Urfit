@@ -14,6 +14,8 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
+//#define CONTINUOUS
+
 static double
 get_rw( double *rwfac ,
 	FILE *file ,
@@ -23,7 +25,8 @@ get_rw( double *rwfac ,
   size_t cidx ;
 
   //fprintf( stdout , "searching for cnfg %zu\n" , cnfg ) ;
-  
+
+#ifndef CONTINUOUS
   while( fscanf( file , "%zu %le\n" , &cidx , rwfac ) != EOF ) {
     printf( "%zu %1.15e\n" , cidx , *rwfac ) ;
     if( cidx == cnfg ) return SUCCESS ;
@@ -31,6 +34,11 @@ get_rw( double *rwfac ,
   fprintf( stderr , "[RW] matching rw factor for cnfg %zu not found\n" ,
 	   cnfg ) ;
   return FAILURE ;
+#else
+  fscanf( file , "%zu %le\n" , &cidx , rwfac ) ;
+  printf( "%zu %1.15e\n" , cidx , *rwfac ) ;
+  return SUCCESS ;
+#endif
 }
 
 int

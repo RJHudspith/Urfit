@@ -8,6 +8,8 @@
 #include "line_search.h"
 #include "summation.h"
 
+//#define VERBOSE
+
 // local definition of beta
 //#define LOC_BETA
 
@@ -109,7 +111,7 @@ cg_iter( void *fdesc ,
     chisq_diff = fabs( ( chinew - chiprev ) ) ;
 
     #ifdef VERBOSE
-    fprintf( stdout , "[CG] chidiff %e \n" , chisq_diff ) ;
+    fprintf( stdout , "[CG] chidiff %zu %e \n" , iters , chisq_diff ) ;
     #endif
 
     // compute beta using polyak - ribiere
@@ -177,16 +179,16 @@ cg_iter( void *fdesc ,
 			      alpha[i] ) ;
       alsum += alpha[i] ;
       #ifdef VERBOSE
-      fprintf( "[CG] NEW ALPHA(%zu) = %e \n" , i , alpha[i] ) ;
+      fprintf( stdout , "[CG] NEW ALPHA(%zu) = %e \n" , i , alpha[i] ) ;
       #endif
 
       // set x = x + \alpha * s
-      //printf( "Before %e\n" , Fit -> f.fparams[i] ) ;
+      //fprintf( stdout , "Before %e\n" , Fit -> f.fparams[i] ) ;
       Fit -> f.fparams[i] += alpha[i] * s[i] ;
-      //printf( "After %e\n" , Fit -> f.fparams[i] ) ;
+      //fprintf( stdout , "After %e\n" , Fit -> f.fparams[i] ) ;
 
       #ifdef VERBOSE
-      printf( "[CG] NEPARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
+      fprintf( stdout , "[CG] NEPARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
       #endif
     }
 

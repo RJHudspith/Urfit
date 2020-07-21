@@ -12,6 +12,8 @@
 
 #define ALLR
 
+//#define VERBOSE
+
 static bool
 is_parallel( const int r[4] )
 {
@@ -158,7 +160,7 @@ read_GLU( struct input_params *Input )
       // Lt is the length of the time correlator
       uint32_t rlist[ 1 ] ;
       if( fread( rlist , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
-	fprintf( stderr , "[IO] rlist length reaad failure\n" ) ;
+	fprintf( stderr , "[IO] rlist length reaad failure -> %zu\n" , j ) ;
 	return FAILURE ;
       }
       #ifndef WORDS_BIGENDIAN
@@ -264,7 +266,7 @@ read_GLU( struct input_params *Input )
     #endif
   }
 
-  printf( "Averaging equivalent\n" ) ;
+  fprintf( stdout , "Averaging equivalent\n" ) ;
   average_equivalent( Input ) ;
   
   return SUCCESS ;

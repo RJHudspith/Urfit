@@ -105,7 +105,7 @@ time_fold( struct resampled *sample ,
 	   const fold_type fold ,
 	   const size_t meas )
 {
-  const size_t L2 = LT/2 ;
+  const size_t L2 = LT/2+1 ;
   size_t t ;
   switch( fold ) {
   case PLUS_PLUS :

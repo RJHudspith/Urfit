@@ -29,7 +29,9 @@ init_GLU_tcorr( struct input_params *Input )
     const size_t Nsamples = ( Input -> Traj[i].End -
 			      Input -> Traj[i].Begin ) / Input -> Traj[i].Increment ;
 
-    printf( "Nsamples %zu %zu %zu\n" , Nsamples , Input -> Data.Ntot , Input -> Traj[i].Dimensions[ 3 ]  ) ;
+    fprintf( stdout , "Nsamples %zu %zu %zu\n" ,
+	     Nsamples , Input -> Data.Ntot ,
+	     Input -> Traj[i].Dimensions[ 3 ]  ) ;
     
     for( j = 0 ; j < Input -> Traj[i].Dimensions[ 3 ] ; j++ ) {
       Input -> Data.x[ shift ].resampled = malloc( Nsamples * sizeof( double ) ) ;
@@ -42,7 +44,7 @@ init_GLU_tcorr( struct input_params *Input )
 
       shift++ ;
     }
-    printf( "SHIFT %zu \n" , shift ) ;
+    fprintf( stdout , "SHIFT %zu \n" , shift ) ;
   }
   return SUCCESS ;
 }
@@ -82,7 +84,7 @@ read_GLU_tcorr( struct input_params *Input )
       // Lt is the length of the time correlator
       uint32_t Lt[ 1 ] ;
       if( fread( Lt , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
-	fprintf( stderr , "[IO] Lt read failure\n" ) ;
+	fprintf( stderr , "[IO] Lt read failure %zu\n" , j ) ;
 	return FAILURE ;
       }
       #ifndef WORDS_BIGENDIAN
@@ -91,15 +93,15 @@ read_GLU_tcorr( struct input_params *Input )
 
       // simple check
       if( Lt[0] != Input -> Traj[i].Dimensions[ 3 ] ) {
-	fprintf( stderr , "[IO] lt and input file differ %u %zu \n" ,
-		 Lt[0] , Input -> Traj[i].Dimensions[ 3 ] ) ;
+	fprintf( stderr , "[IO] lt and input file differ %u %zu -> %zu\n" ,
+		 Lt[0] , Input -> Traj[i].Dimensions[ 3 ] , j ) ;
 	return FAILURE ;
       }
 
       // t-list
       uint32_t tlist[ Lt[0] ] ;
       if( fread( tlist , sizeof(uint32_t) , Lt[0] , Infile ) != Lt[0] ) {
-	fprintf( stderr , "[IO] Tlist read failure \n" ) ;
+	fprintf( stderr , "[IO] Tlist read failure -> %zu\n" , j ) ;
         return FAILURE ;
       }
       #ifndef WORDS_BIGENDIAN
@@ -108,7 +110,7 @@ read_GLU_tcorr( struct input_params *Input )
 
       uint32_t NewLt[ 1 ] ;
       if( fread( NewLt , sizeof( uint32_t ) , 1 , Infile ) != 1 ) {
-	fprintf( stderr , "[IO] lt read failure\n" ) ;
+	fprintf( stderr , "[IO] lt read failure -> %zu\n" , j ) ;
 	return FAILURE ;
       }
       #ifndef WORDS_BIGENDIAN
@@ -116,14 +118,14 @@ read_GLU_tcorr( struct input_params *Input )
       #endif
 
       if( NewLt[0] != Lt[0] ) {
-	fprintf( stderr , "[IO] Lt[0] misread \n" ) ;
+	fprintf( stderr , "[IO] Lt[0] misread -> %zu \n" , j ) ;
 	return FAILURE ;
       }
 
       // read in y data
       double Ct[ Lt[0] ] ;
       if( fread( Ct , sizeof( double ) , Lt[0] , Infile ) != Lt[0] ) {
-	fprintf( stderr , "[IO] Ct read failure\n" ) ;
+	fprintf( stderr , "[IO] Ct read failure -> %zu\n" , j ) ;
 	return FAILURE ;
       }
       #ifndef WORDS_BIGENDIAN
