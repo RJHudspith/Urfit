@@ -122,3 +122,26 @@ binding_corr_analysis( struct input_params *Input )
   
   return SUCCESS ;
 }
+
+int
+binding_corr_analysis2( struct input_params *Input )
+{
+  size_t i , j ;
+  const size_t N = Input -> Fit.N ;
+  const size_t LT = Input -> Data.Ndata[0] ;
+  
+  const size_t shift = Input -> Data.Nsim-2 ;
+  for( j = 0 ; j < LT ; j++ ) {  
+    divide( &Input -> Data.y[ j ] ,
+	    Input -> Data.y[ j+LT ] ) ;
+  }
+
+  // compute an effective mass 
+  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
+
+  // perform a fit
+  double Chi ;
+  struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
+  
+  return SUCCESS ;
+}

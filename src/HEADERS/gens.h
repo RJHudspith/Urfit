@@ -36,12 +36,12 @@ typedef enum {
 
 // fit types
 typedef enum {
-  ALPHA_D0 , ALPHA_D0_MULTI , ADLERALPHA_D0 , ADLERALPHA_D0_MULTI , HALEXP , EXP , COSH , EXP_PLUSC , HLBL_CONT , NRQCD_EXP , NRQCD_EXP2 , NOFIT , PADE , PEXP , POLY , PP_AA , PP_AA_WW , PP_AA_WW_R2 , PP_AA_EXP , PPAA , QCORR_BESSEL , QSUSC_SU2 , SINH , TANH , POLES , QSLAB , QSLAB_FIXED , CORNELL , FVOL1 , UDCB_HEAVY , C4C7 , SU2_SHITFIT , SUN_CONT , ZV_EXP
+  ALPHA_D0 , ALPHA_D0_MULTI , ADLERALPHA_D0 , ADLERALPHA_D0_MULTI , HALEXP , EXP , EXP_XINV , COSH , EXP_PLUSC , HLBL_CONT , NRQCD_EXP , NRQCD_EXP2 , NOFIT , PADE , PEXP , POLY , PP_AA , PP_AA_WW , PP_AA_WW_R2 , PP_AA_EXP , PPAA , QCORR_BESSEL , QSUSC_SU2 , SINH , TANH , POLES , QSLAB , QSLAB_FIXED , CORNELL , FVOL1 , FVOL2 , FVOL3 , UDCB_HEAVY , C4C7 , SOL , SU2_SHITFIT , SUN_CONT , ZV_EXP
 } fittype ;
 
 // time folding types
 typedef enum {
-  PLUS_PLUS , PLUS_MINUS , MINUS_PLUS , MINUS_MINUS , NOFOLD , NOFOLD_MINUS , TDER , NOFOLD_SWAPT , NOFOLD_MINUS_SWAPT
+  PLUS_PLUS , PLUS_MINUS , MINUS_PLUS , MINUS_MINUS , NOFOLD , NOFOLD_MINUS , TDER , NOFOLD_SWAPT , NOFOLD_MINUS_SWAPT , ZV_SUB 
 } fold_type ;
 
 // special channel types
@@ -53,7 +53,7 @@ typedef enum { Raw , JackKnife , BootStrap } resample_type ;
 // file type we expect to read
 typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File , GLU_Qmoment_File } file_type ;
 
-typedef enum { Adler , Alphas , Beta_crit , Binding_Corr , Correlator , Exceptional , Fit , General , HLBL , HVP , KKops , KK_BK , Nrqcd , Pof , Qcorr , Qsusc , Qslab , QslabFix , Ren_Rats , StaticPotential , TetraGEVP , TetraGEVP_Fixed , Wflow , ZV } analysis_type ;
+typedef enum { Adler , Alphas , Beta_crit , Binding_Corr , Correlator , Exceptional , Fit , General , HLBL , HVP , KKops , KK_BK , Nrqcd , Pof , Qcorr , Qsusc , Qslab , QslabFix , Ren_Rats , StaticPotential , TetraGEVP , TetraGEVP_Fixed , Wflow , Sol , ZV } analysis_type ;
 
 // x-data descriptor
 struct x_desc {

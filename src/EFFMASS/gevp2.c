@@ -107,50 +107,6 @@ insertion_sort( struct GEVP_temps *G ,
 }
 
 #ifdef OPTIMISED_CORRELATOR
-
-// compute the "optimised correlator" from the eigenvectors
-static void
-optimised_correlator( struct GEVP_temps *G ,
-		      struct resampled *y ,
-		      const size_t k ,
-		      const bool is_avg ,
-		      const size_t N ,
-		      const size_t M ,
-		      const size_t Ndata ,
-		      const size_t td )
-{
-  // check diagonalisation with V^\dag C(t) V
-  double complex D[N][N] ;
-  double C0[ N*M ] ;
-  size_t i , j , a , b , c , d ;
-  for( j = 0 ; j < Ndata ; j++ ) {    
-    // put these in the linearised matrices
-    size_t shift = 0 ;
-    for( i = 0 ; i < N*M ; i++ ) {
-      if( is_avg == true ) {
-	C0[i] = y[ j  + shift ].avg ;
-      } else {
-	C0[i] = y[ j  + shift ].resampled[k] ;
-      }
-      shift += Ndata ;
-    }
-    for( a = 0 ; a < N ; a++ ) {
-      register double complex Sum1 = 0. ;
-      for( b = 0 ; b < N ; b++ ) {
-	const gsl_complex A = gsl_matrix_complex_get( G[td].evec , b , a ) ;
-	const double complex AC = A.dat[0] - I*A.dat[1] ;
-	for( c = 0 ; c < N ; c++ ) {
-	  const gsl_complex B = gsl_matrix_complex_get( G[td].evec , c , a ) ;
-	  const double complex BC = B.dat[0] + I*B.dat[1] ;
-	  Sum1 += AC * BC * C0[ c + N*b ] ;
-	}
-      }
-      G[j].ev[a] = creal( Sum1 ) ;
-    }
-  }
-  return ;
-}
-
 // compute the "optimised correlator" from the eigenvectors
 static void
 optimised_correlator2( struct GEVP_temps *G1 ,
@@ -395,12 +351,11 @@ solve_GEVP( const struct resampled *y ,
 	fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
         return NULL ;
       }
+      #ifdef OPTIMISED_CORRELATOR
+      optimised_correlator2( &G[j] , G[td] , C0 , N ) ;
+      #endif
     }
 
-#ifdef OPTIMISED_CORRELATOR
-    optimised_correlator( G , y , k , false , N , M , Ndata , td ) ;
-#endif
-    
     for( j = 0 ; j < Ndata ; j++ ) {
       // poke into solution
       for( i = 0 ; i < N ; i++ ) {
@@ -427,10 +382,11 @@ solve_GEVP( const struct resampled *y ,
       fprintf( stderr , "[GEVP] GEVP solve failed \n" ) ;
       return NULL ;
     }
+
+    #ifdef OPTIMISED_CORRELATOR
+    optimised_correlator2( &G[j] , G[td] , C0 , N ) ;
+    #endif
   }
-#ifdef OPTIMISED_CORRELATOR
-  optimised_correlator( G , y , 0 , true , N , M , Ndata , td ) ;
-#endif
   
   for( j = 0 ; j < Ndata ; j++ ) {
     // poke into solution

@@ -17,6 +17,8 @@
 #define STR1_LENGTH (64)
 #define STR2_LENGTH (256)
 
+#define VERBOSE
+
 // get the file length
 static size_t
 get_file_length( FILE *Infile )
@@ -217,6 +219,8 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = KKops ;
     } else if( are_equal( Flat[ an_tag ].Value , "KK_BK" ) ) {
       Input -> Analysis = KK_BK ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Sol" ) ) {
+      Input -> Analysis = Sol ;
     } else if( are_equal( Flat[ an_tag ].Value , "General" ) ) {
       Input -> Analysis = General ;
     } else if( are_equal( Flat[ an_tag ].Value , "TetraGEVP" ) ) {
@@ -233,10 +237,15 @@ read_inputs( struct input_params *Input ,
       Flag = FAILURE ;
     }
   }
+
+  printf( "Here get_traj\n" ) ;
   
   if( get_traj( Input , Flat , Ntags ) == FAILURE ) {
     Flag = FAILURE ;
   }
+
+  printf( "Here get fit\n" ) ;
+  
 #ifdef VERBOSE
   printf( "FLAG %d \n" , Flag ) ;
 #endif

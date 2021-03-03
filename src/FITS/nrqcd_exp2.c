@@ -10,11 +10,13 @@ static double psq[ 25 ] = { 0 } ;
 
 //#define SQRT
 //#define TAYLOR
-#define P4_AMP
+//#define P4_AMP
 //#define P4_EXP
 //#define P4_EXP2
 //#define P4_EXPAMP2
 //#define P4_EXPAMP
+
+#define SOL
 
 void
 set_psq_nrqcd2( const double *p2 ,
@@ -52,6 +54,9 @@ fnrqcd_exp2( const struct x_desc X , const double *fparams , const size_t Npars 
 #elif (defined P4_EXPAMP2)
   return fparams[0] * ( 1. + fparams[3] * psq[ Npars ] + fparams[4]*psq[Npars]*psq[Npars] )
     * exp( -( fparams[1] + psq[ Npars ]/(2*fparams[2]) * ( 1 - psq[ Npars ]/8. ) ) * X.X ) ;
+#elif (defined SOL)
+  return fparams[0] * ( 1. + fparams[3] * psq[ Npars ] )
+    * exp( -sqrt( fparams[1]*fparams[1] + psq[ Npars ]*fparams[2] ) * X.X ) ;
 #endif
 }
 
@@ -147,6 +152,14 @@ nrqcd_exp2_df( double **df , const void *data , const double *fparams )
     df[DATA -> map[i].p[2]][i] =  A * psq[bnd] * ( 1-psq[bnd]/8. ) * t * expfac / ( 2*MK*MK ) ;
     df[DATA -> map[i].p[3]][i] =  psq[bnd] * fparams[ DATA -> map[i].p[0] ] * expfac ;
     df[DATA -> map[i].p[4]][i] =  psq[bnd] * psq[bnd] * fparams[ DATA -> map[i].p[0] ] * expfac ;
+#elif (defined SOL)
+    const double A  = fparams[ DATA -> map[i].p[0] ] * ( 1 + psq[bnd]*fparams[ DATA -> map[i].p[3] ] ) ;
+    const double root = sqrt( M0*M0 + psq[bnd]*MK ) ;
+    const double expfac = exp( -root * t ) ;
+    df[DATA -> map[i].p[0]][i] = ( 1 + psq[bnd]*fparams[ DATA -> map[i].p[3] ] ) * expfac ;
+    df[DATA -> map[i].p[1]][i] = -A * t * M0 * expfac / root ;
+    df[DATA -> map[i].p[2]][i] = -A * t * psq[bnd] * expfac / (2*root) ;
+    df[DATA -> map[i].p[3]][i] = psq[bnd] * fparams[ DATA -> map[i].p[0] ] * expfac ;
 #endif
   }
 

@@ -21,8 +21,8 @@ fit_Qslab_fixed( struct input_params *Input )
   // V factor
   //struct resampled *t0 = read_flat_single( "../b24.786NC.flat" ) ;
   //struct resampled *t0 = read_flat_single( "../b25.175NC.flat" ) ;
-  struct resampled *t0 = read_flat_single( "b45.74NC.flat" ) ;
-  //struct resampled *t0 = read_flat_single( "b57.369NC.flat" ) ;
+  //struct resampled *t0 = read_flat_single( "b45.74NC.flat" ) ;
+  struct resampled *t0 = read_flat_single( "b57.369NC.flat" ) ;
   //struct resampled *t0 = read_flat_single( "b70.682NC.flat" ) ;
   //struct resampled *t0 = read_flat_single( "b71.25NC.flat" ) ;
   //struct resampled *t0 = read_flat_single( "b101.788NC.flat" ) ;

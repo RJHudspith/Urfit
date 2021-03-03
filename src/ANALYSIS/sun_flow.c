@@ -256,20 +256,26 @@ sun_set( struct input_params *Input )
   //const double L[] = { 27 , 27 , 11 , 11 , 13 , 13 , 16 , 19 , 21 , 21 , 21 , 21 } ;
 
   //const double L[] = { 28 , 22 , 18 , 18 , 18 , 16 , 16 , 16 , 14 } ;
-  const double L[] = { 18 , 16 , 16 , 14 , 12 , 10 , 10 } ;
+  //const double L[] = { 18 , 16 , 16 , 14 , 12 , 10 , 10 } ;
   //const double L[] = { 10 , 10 , 10 , 10 , 12 , 12 , 14 , 14 , 16 , 18 } ;
   //const double L[] = { 8 , 8 , 8 , 10 , 10 , 12 , 12 , 14 , 14 , 14 } ;
   //const double L[] = { 8 , 12 , 12 , 12 } ;
+
+  const double L[] = { 9 , 10 , 11 , 12 , 14 } ;
   
   size_t i ;
   for( i = 0 ; i < Input -> Data.Ndata[0] ; i++ ) {
     divide_constant( &Input->Data.y[i] , L[i] ) ;
     raise( &Input->Data.y[i] , -1 ) ;
+
+    printf("%f %e %e\n" , L[i] ,
+	   Input -> Data.y[i].avg ,
+	   Input -> Data.y[i].err ) ;
   }
 
   double chi = 0.0 ;
-  struct resampled *fit = fit_and_plot( *Input , &chi ) ;
-  free_fitparams( fit , Input -> Fit.Nlogic ) ;
+  //struct resampled *fit = fit_and_plot( *Input , &chi ) ;
+  //free_fitparams( fit , Input -> Fit.Nlogic ) ;
 
   return SUCCESS ;
 }

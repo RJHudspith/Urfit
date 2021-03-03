@@ -14,8 +14,9 @@
 #include "plot_fitfunc.h"
 #include "resampled_ops.h"
 
+// takes the ratio of two correlators
 int
-ZV_analysis( struct input_params *Input )
+ZV_old_analysis( struct input_params *Input )
 {
   if( Input -> Data.Nsim != 2 ) {
     return FAILURE ;
@@ -34,6 +35,34 @@ ZV_analysis( struct input_params *Input )
   Input -> Fit.N = Input -> Fit.M = 1 ;
   Input -> Fit.Nlogic = 2 ;
 
+  // perform a fit to a constant
+  double Chi ;
+  struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
+
+  free_fitparams( Fit , Input -> Fit.Nlogic ) ;
+
+  return SUCCESS ;
+}
+
+// 3pt divided by the pion at t/2
+int
+ZV_analysis( struct input_params *Input )
+{
+  if( Input -> Data.Nsim != 2 ) {
+    return FAILURE ;
+  }
+  
+  // square the first data point
+  size_t j ;
+  const size_t T1 = Input -> Data.Ndata[0] ;
+  const size_t T2 = Input -> Data.Ndata[1] ;
+  
+  for( j = 0 ; j < T1 ; j++ ) {
+    divide( &Input -> Data.y[j] , Input -> Data.y[T1+T2-1] ) ;
+    mult_constant( &Input -> Data.y[j] , 2 ) ;
+    raise( &Input -> Data.y[j] , -1 ) ;
+  }
+  
   // perform a fit to a constant
   double Chi ;
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;

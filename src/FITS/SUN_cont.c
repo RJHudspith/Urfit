@@ -5,7 +5,7 @@
 
 #include "Nder.h"
 
-#define FIT8
+#define FIT7
 
 double
 fSUN_cont( const struct x_desc X , const double *fparams , const size_t Npars )
@@ -34,6 +34,9 @@ fSUN_cont( const struct x_desc X , const double *fparams , const size_t Npars )
 #elif defined FIT8
   return fparams[0]*( 1 + fparams[1]*X.X
 		      + fparams[2]*X.X*X.X/(X.LT*X.LT*X.LT*X.LT*X.LT) ) ;
+#elif defined FIT9
+  return fparams[0]*( 1 + fparams[1]*X.X
+		      + fparams[2]*X.X*X.X*X.X/(X.LT*X.LT*X.LT*X.LT*X.LT*X.LT) ) ;  
 #else
   return fparams[0]*( 1 + fparams[3]/(X.LT*X.LT) + fparams[1]*X.X + fparams[2]*X.X/(X.LT*X.LT) ) ;
 #endif
@@ -113,6 +116,10 @@ SUN_cont_df( double **df , const void *data , const double *fparams )
     df[ DATA -> map[i].p[0] ][i] = (1 + p1*x+p2*x*x/(NC*NC*NC*NC*NC)) ;
     df[ DATA -> map[i].p[1] ][i] = p0*x ;
     df[ DATA -> map[i].p[2] ][i] = p0*x*x/(NC*NC*NC*NC*NC);
+#elif defined FIT9
+    df[ DATA -> map[i].p[0] ][i] = (1 + p1*x+p2*x*x*x/(NC*NC*NC*NC*NC*NC)) ;
+    df[ DATA -> map[i].p[1] ][i] = p0*x ;
+    df[ DATA -> map[i].p[2] ][i] = p0*x*x*x/(NC*NC*NC*NC*NC*NC);
 #else
     const double p3 = fparams[ DATA -> map[i].p[3] ] ;
     df[ DATA -> map[i].p[0] ][i] = (1+p3/(NC*NC) + p1*x+p2*x/(NC*NC)) ;

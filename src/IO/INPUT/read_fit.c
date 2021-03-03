@@ -67,10 +67,16 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = COSH ;
   } else if( are_equal( Flat[tag].Value , "EXP" ) ) {
     Input -> Fit.Fitdef = EXP ;
+  } else if( are_equal( Flat[tag].Value , "EXP_XINV" ) ) {
+    Input -> Fit.Fitdef = EXP_XINV ;
   } else if( are_equal( Flat[tag].Value , "EXP_PLUSC" ) ) {
     Input -> Fit.Fitdef = EXP_PLUSC ;
   } else if( are_equal( Flat[tag].Value , "FVOL1" ) ) {
     Input -> Fit.Fitdef = FVOL1 ;
+  } else if( are_equal( Flat[tag].Value , "FVOL2" ) ) {
+    Input -> Fit.Fitdef = FVOL2 ;
+  } else if( are_equal( Flat[tag].Value , "FVOL3" ) ) {
+    Input -> Fit.Fitdef = FVOL3 ;
   } else if( are_equal( Flat[tag].Value , "HALEXP" ) ) {
     Input -> Fit.Fitdef = HALEXP ;
   } else if( are_equal( Flat[tag].Value , "HLBL_CONT" ) ) {
@@ -103,6 +109,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = SINH ;
   } else if( are_equal( Flat[tag].Value , "TANH" ) ) {
     Input -> Fit.Fitdef = TANH ;
+  } else if( are_equal( Flat[tag].Value , "SOL" ) ) {
+    Input -> Fit.Fitdef = SOL ;
   } else if( are_equal( Flat[tag].Value , "SU2_SHITFIT" ) ) {
     Input -> Fit.Fitdef = SU2_SHITFIT ;
   } else if( are_equal( Flat[tag].Value , "SUN_CONT" ) ) {
@@ -368,7 +376,7 @@ get_fit( struct input_params *Input ,
     for( i = 0 ; i < Nsims ; i++ ) {
       if( Node -> sim < Input -> Fit.Nparam ) {
 	Input -> Fit.Sims[ Node -> sim ] = true ;
-	free( Node ) ;
+	//free( Node ) ;
 	Node = Node -> next ;
       } else {
 	fprintf( stderr , "[INPUTS] specified simultaneous fit parameter %zu"

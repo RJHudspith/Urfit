@@ -43,6 +43,7 @@ single_fit( struct resampled *fitparams ,
       yloc[j] = Data.y[j].resampled[sample_idx] ;
     }
   }
+  
   struct data d = { Data.Ntot , xloc , yloc , Data.LT ,
 		    fdesc.Nparam , Fit.map , Fit.N , Fit.M } ;
 
@@ -110,6 +111,8 @@ perform_bootfit( const struct data_info Data ,
   struct fit_descriptor fdesc = init_fit( Data , Fit ) ;
   fdesc.Prior = (const struct prior*)Fit.Prior ;
 
+  fprintf( stdout , "[FIT] check Nlogic %zu\n" , fdesc.Nlogic ) ;
+  
   // allocate the fitparams
   struct resampled *fitparams = malloc( fdesc.Nlogic * sizeof( struct resampled ) ) ; 
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
@@ -123,6 +126,8 @@ perform_bootfit( const struct data_info Data ,
 				      Data.y[0].restype ) ;
 
   if( fitparams == NULL ) goto memfree ;
+
+  fprintf( stdout , "[FIT] single fit for the average\n" ) ;
   
   // do the average first
   single_fit( fitparams , &chisq , fdesc , Data , Fit , 0 , true ) ;

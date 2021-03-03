@@ -5,7 +5,7 @@
 
 #include "Nder.h"
 
-#define LINEARA
+//#define LINEARA
 
 static const size_t fparam_map[12] = { 2 , 2 , 3 , 4 , 4 , 5 ,
 				       2 , 2 , 3 , 4 , 4 , 5 } ;

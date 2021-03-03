@@ -199,6 +199,8 @@ set_GsGk( struct traj *Traj ,
     Traj -> Fold = NOFOLD_SWAPT ;
   } else if( are_equal( tok , "NOFOLD_MINUS_SWAPT" ) ) {
     Traj -> Fold = NOFOLD_MINUS_SWAPT ;
+  } else if( are_equal( tok , "ZV_SUB" ) ) {
+    Traj -> Fold = ZV_SUB ;
   } else {
     fprintf( stderr , "[INPUT] I don't understand the fold %s\n" ,
 	     tok ) ;
@@ -264,7 +266,7 @@ set_trajs( const struct flat_file *Flat ,
     Traj[i].Dimensions = malloc( Traj[i].Nd * sizeof( size_t ) ) ;
     for( j = Traj[i].Nd ; j != 0 ; j-- ) {
       Traj[i].Dimensions[j-1] = (size_t)Node -> dim ;
-      free( Node ) ;        // free this node
+      //free( Node ) ;        // free this node
       Node = Node -> next ; // point to the next node
     }
 
@@ -278,7 +280,7 @@ set_trajs( const struct flat_file *Flat ,
     Traj[i].mom = malloc( 4 * sizeof( double ) ) ;
     for( j = Ndims ; j != 0 ; j-- ) {
       Traj[i].mom[j-1] = (double)ndbl -> dim ;
-      free( ndbl ) ;        // free this node
+      //free( ndbl ) ;        // free this node
       ndbl = ndbl -> next ; // point to the next node
     }
 
@@ -314,9 +316,12 @@ get_traj( struct input_params *Input ,
     goto memfree ;
   }
 
+  printf( "In traj set_trajs\n" ) ;
+
   // set the trajectory information into the Input struct
   if( ( Input -> Traj = set_trajs( Flat , Block , Input -> Data.Nsim ) )
       == NULL ) {
+    fprintf( stderr , "[INPUT] set_trajs failure\n" ) ;
     flag = FAILURE ;
     goto memfree ;
   }

@@ -13,6 +13,7 @@
 #include "pmap.h"
 #include "resampled_ops.h"
 #include "stats.h"
+#include "write_flat.h"
 
 #include "Nint.h"
 #include "GLS.h"
@@ -163,6 +164,31 @@ fit_and_plot( struct input_params Input ,
       goto memfree ;
     }
   }
+
+#if 0
+  // su3
+  double pos[ 4 ] = { 16.8762 , 17.1074 , 17.3386 , 17.5585 } ;
+  const int LT[ 4 ] = { 5 , 6 , 7 , 8  } ;
+  size_t x ;
+  for( x = 0 ; x < 4 ; x++ ) {
+    const double shft = pos[x]-17.432 ;
+    
+    struct resampled t0 = extrap_fitfunc( fitparams ,
+					   Input.Data ,
+					   Input.Fit ,
+					   shft , 0 ) ;
+    printf( "[T0] %f %f %f\n" , pos[x] , t0.avg , t0.err ) ;
+
+    struct resampled a2 = init_dist( &t0 ,
+				     t0.NSAMPLES ,
+				     t0.restype ) ;
+    raise( &a2 , -2 ) ;
+    
+    divide_constant( &t0 , LT[x] ) ;
+    printf( "[TC] %f %f %f\n" , a2.avg , t0.avg , t0.err ) ;	     
+    free( t0.resampled ) ;
+  }
+#endif
   
   // make the graph
   make_xmgrace_graph( Input.Graph.Name ,
@@ -178,7 +204,8 @@ fit_and_plot( struct input_params Input ,
   }
 
   if( fitparams != NULL ) {
-    plot_fitfunction( fitparams , Data , Input.Fit ) ;
+    //plot_fitfunction( fitparams , Data , Input.Fit ) ;
+    plot_fitfunction_HACK( fitparams , Data , Input.Fit ) ;
   }
   
   close_xmgrace_graph( ) ;
@@ -238,7 +265,7 @@ fit_and_plot_and_Nint( struct input_params Input ,
   
   close_xmgrace_graph( ) ;
 
-  #ifdef NINTPAR
+#ifdef NINTPAR
   // numerically integrate fit parameters ?
   shift = 0 ;
   size_t idx = 0 , j ;
@@ -292,16 +319,13 @@ fit_and_plot_and_Nint( struct input_params Input ,
   for( size_t j = 0 ; j < n ; j++ ) {
     mult_constant( &Input.Data.y[j] ,
 		   pow( Input.Data.x[j].avg , 3 ) ) ;
-    printf( "Grand %e %e %e\n" ,
-	    Input.Data.x[j].avg ,
+    printf( "Grand %e %e %e\n" , Input.Data.x[j].avg ,
 	    Input.Data.y[j].avg , Input.Data.y[j].err ) ;
   }
 
   // and then do the fit for the rest
   idx=0 ;
-  for( double x = Data.x[0].avg ;
-       x < 64 ;
-       x+=stp ) {
+  for( double x = Data.x[0].avg ; x < 64 ; x+=stp ) {
     Y[idx] = extrap_fitfunc( fitparams , Data ,
 			     Input.Fit ,
 			     x , 0 ) ;
@@ -310,14 +334,23 @@ fit_and_plot_and_Nint( struct input_params Input ,
 
     //mult_constant( &Y[idx] , pow( x , 3 )/0.06426 ) ;
     mult_constant( &Y[idx] , pow( x , 3 ) ) ;
-    printf( "Grand %e %e %e\n" , X[idx].avg , Y[idx].avg , Y[idx].err ) ;
+    printf( "Grand %e %e %e %e\n" , X[idx].avg , Y[idx].err_hi , Y[idx].avg , Y[idx].err_lo ) ;
     idx++ ;
   }
   
   for( n = 1 ; n < N ; n++ ) { 
     struct resampled Int = Nint( X , Y , n , true ) ;
     add( &Int , LInt ) ;
-    fprintf( stdout , "Gral %e %e %e\n" , X[n-1].avg , Int.avg , Int.err ) ;
+    fprintf( stdout , "Gral %e %e %e %e\n" , X[n-1].avg , Int.err_hi , Int.avg , Int.err_lo ) ;
+    if( n == (N-1) ) {
+      struct resampled mpi2 = init_dist( NULL ,
+					 Int.NSAMPLES ,
+					 Int.restype ) ;
+      char str[256] ;
+      sprintf( str , "Gral.flat" ) ;
+      equate_constant( &mpi2 , 0.0 , Int.NSAMPLES , Int.restype ) ;
+      write_flat_dist( &Int , &mpi2 , 1 , str ) ;
+    }
     free( Int.resampled ) ;
   }
   for( i = 0 ; i < Input.Data.Nsim ; i++ ) {

@@ -8,6 +8,10 @@
 #include "read_corr.h"
 
 #define REAL
+//#define IMAG
+//#define CABS
+//#define IABS
+//#define RABS
 
 #ifdef REAL
 static double part( const double complex C ) { return creal( C ) ; }
@@ -157,6 +161,11 @@ time_fold( struct resampled *sample ,
     sample[0].resampled[meas] = -part( C[0] ) ;
     for( t = 1 ; t < LT ; t++ ) {
       sample[t].resampled[meas] = -( part( C[LT-t]) ) ;
+    }
+    break ;
+  case ZV_SUB :
+    for( t = 0 ; t < LT/2 ; t++ ) {
+      sample[t].resampled[meas] = -0.5*( part( C[t] - C[t+LT/2] ) ) ;
     }
     break ;
   }

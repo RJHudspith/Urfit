@@ -13,7 +13,11 @@
 #include "cosh.h"
 #include "exp.h"
 #include "exp_plusc.h"
+#include "exp_xinv.h"
+#include "fsol.h"
 #include "fvol1.h"
+#include "fvol2.h"
+#include "fvol3.h"
 #include "c4c7.h"
 #include "HALexp.h"
 #include "HLBL_cont.h"
@@ -66,17 +70,21 @@ get_Nparam( const struct fit_info Fit )
  case SINH :
  case EXP :
    return 2 * Fit.N ;
+ case EXP_XINV :
+   return 3 ;
  case HALEXP :
    return 3 * Fit.N ;
    // these have independent amounts
  case EXP_PLUSC : return 2*Fit.N+1 ;
- case FVOL1 : return 3 ;
+ case FVOL1 : return 2 ;
+ case FVOL2 : return 4 ;
+ case FVOL3 : return 5 ;
  case PADE : return Fit.N + Fit.M ;
  case POLES : return Fit.N + Fit.M + 1 ;
  case POLY : return Fit.N + 1 ;
  case PPAA : return 3*Fit.N ;
  case PEXP : return 1+2*Fit.N ;
- case PP_AA : return 5 ;
+ case PP_AA : return 4 ;
  case PP_AA_EXP : return 5 ;
  case PP_AA_WW : return 5 ;
  case PP_AA_WW_R2 : return 5 + 2*Fit.N ;
@@ -88,7 +96,8 @@ get_Nparam( const struct fit_info Fit )
  case SUN_CONT : return 3 ;
  case ZV_EXP : return 2 ;
  case NRQCD_EXP : return 2 ;
- case NRQCD_EXP2 : return 5 ;
+ case NRQCD_EXP2 : return 4 ;
+ case SOL : return 5 ;
  case SU2_SHITFIT : return 2 ;
  case NOFIT : return 0 ;
  }
@@ -173,11 +182,33 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = exp_plusc_df ;
     fdesc.d2F        = exp_plusc_d2f ;
     break ;
+  case EXP_XINV :
+    fdesc.func       = fexp_xinv ;
+    fdesc.F          = exp_xinv_f ;
+    fdesc.dF         = exp_xinv_df ;
+    fdesc.d2F        = exp_xinv_d2f ;
+    fdesc.guesses    = exp_xinv_guesses ; 
+    break ;
   case FVOL1 :
     fdesc.func       = ffvol1 ;
     fdesc.F          = fvol1_f ;
     fdesc.dF         = fvol1_df ;
     fdesc.d2F        = fvol1_d2f ;
+    fdesc.guesses    = fvol1_guesses ;
+    break ;
+  case FVOL2 :
+    fdesc.func       = ffvol2 ;
+    fdesc.F          = fvol2_f ;
+    fdesc.dF         = fvol2_df ;
+    fdesc.d2F        = fvol2_d2f ;
+    fdesc.guesses    = fvol2_guesses ;
+    break ;
+  case FVOL3 :
+    fdesc.func       = ffvol3 ;
+    fdesc.F          = fvol3_f ;
+    fdesc.dF         = fvol3_df ;
+    fdesc.d2F        = fvol3_d2f ;
+    fdesc.guesses    = fvol3_guesses ;
     break ;
   case HALEXP :
     fdesc.func       = fHALexp ;
@@ -278,6 +309,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = sinh_df ;
     fdesc.d2F        = sinh_d2f ;
     fdesc.guesses    = exp_guesses ;
+    break ;
+  case SOL :
+    fdesc.func       = fsol ;
+    fdesc.F          = sol_f ;
+    fdesc.dF         = sol_df ;
+    fdesc.d2F        = sol_d2f ;
+    fdesc.guesses    = sol_guesses ; 
     break ;
   case SUN_CONT :
     fdesc.func       = fSUN_cont ;

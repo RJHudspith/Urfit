@@ -114,12 +114,12 @@ fit_Qslab( struct input_params *Input )
   size_t i = 0 , j , shift = 0 ;
 
   // V factor
-  struct resampled *t0 = read_flat_single( "b10.6715NC.flat" ) ;
+  struct resampled *t0 = read_flat_single( "b17.074NC.flat" ) ;
 
   printf( "bootstrapping t0\n" ) ;
   
   bootstrap_single( &t0[0] , Input -> Data.Nboots ) ;
-
+  //raise( &t0[0] , 2 ) ;
   const double t0sq = 1/(t0[0].avg) ;
   raise( &t0[0] , 2 ) ;
 

@@ -28,6 +28,8 @@ main( const int argc , const char *argv[] )
     return -1 ;
   }
 
+  printf( "Here \n" ) ;
+
   // initially read the inputs
   struct input_params Input ;
   if( read_inputs( &Input , argv[2] ) == FAILURE ) {
@@ -35,18 +37,20 @@ main( const int argc , const char *argv[] )
     goto free_failure ;
   }
 
+  printf( "Input read \n" ) ;
+
   // choose the correct IO
   if( io_wrap( &Input ) == FAILURE ) {
     goto free_failure ;
   }
 
-  // bin the data we have read in
-  if( bin_data( &Input ) == FAILURE ) {
+  // reweight the data
+  if( reweight_data( &Input ) == FAILURE ) {
     goto free_failure ;
   }
 
-  // reweight the data
-  if( reweight_data( &Input ) == FAILURE ) {
+  // bin the data we have read in
+  if( bin_data( &Input ) == FAILURE ) {
     goto free_failure ;
   }
 

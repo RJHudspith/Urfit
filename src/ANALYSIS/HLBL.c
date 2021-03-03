@@ -14,29 +14,35 @@
 // power of local current renormalisation
 #define PL (4)
 
-#define IN_FERMI
+#define NINT_HLBL
 #define PUT_ZERO
+#define LIGHT_ONLY
+
+#ifndef NINT_HLBL
+//#define IN_FERMI
 #define MULT_X3
+#endif
 
 // beta value of the ensemble of interest
-#define B355
-#define D200
-#define CONNECTED
-
+#define B340
+#define C101
 //#define CONNECTED
+
 //#define CPLUSD // connected plus 2+2
 //#define THREEP
 //#define FPIRESCALE
 //#define STRANGE
+//#define LS
 
-static const double lerp_pt = 2.0 ;
-
-//#define STRANGE
+static const double lerp_pt = 10 ;
 
 #ifdef B334
   #define BETALABEL "Beta 3.34"
   #if (defined A654)
     #define CONFIGLABEL "A654"
+  #elif (defined A653)
+    #define SYMMETRIC
+    #define CONFIGLABEL "A653"
   #else
     #error
   #endif
@@ -54,6 +60,8 @@ static const double lerp_pt = 2.0 ;
     #define CONFIGLABEL "H102"
   #elif (defined U102)
     #define CONFIGLABEL "U102"
+  #elif (defined U101)
+    #define CONFIGLABEL "U101"
   #elif (defined H105)
     #define CONFIGLABEL "H105"
   #elif (defined C101)
@@ -62,9 +70,15 @@ static const double lerp_pt = 2.0 ;
     #error
   #endif
 #elif (defined B346)
-  #define SYMMETRIC
   #define BETALABEL "Beta 3.46"
-  #define CONFIGLABEL "B450"
+  #if (defined B450)
+    #define SYMMETRIC
+    #define CONFIGLABEL "B450"
+  #elif(defined D450)
+    #define CONFIGLABEL "D450"
+  #else
+    #error
+  #endif
 #elif (defined B355)
   #define BETALABEL "Beta 3.55"
   #if (defined H200)
@@ -88,6 +102,10 @@ static const double lerp_pt = 2.0 ;
   #define CONFIGLABEL "N300"
 #else
   #error
+#endif
+
+#ifdef LIGHT_ONLY
+  #undef SYMMETRIC
 #endif
 
 static void
@@ -166,7 +184,6 @@ integrate( struct input_params *Input ,
   return ;
 }
 
-
 int
 HLBL_analysis( struct input_params *Input )
 {
@@ -191,7 +208,11 @@ HLBL_analysis( struct input_params *Input )
     #elif defined CPLUSD
     const double NUM[2] = { 17 , -25 } ;
     #else
-    const double NUM[2] = { -25 , -25 } ;
+      #ifdef LS // in the code I add the two contributions
+      const double NUM[2] = { -5 , -5 } ;
+      #else
+      const double NUM[2] = { -25 , -25 } ;
+      #endif
     #endif
   #endif
 #endif
@@ -209,6 +230,8 @@ HLBL_analysis( struct input_params *Input )
   const double a = 0.09929 ;
   #if (defined A654)
   const double Z = 0.69789 ;
+  #elif (defined A653)
+  const double Z = 0.703507 ;
   #endif
 #elif (defined B340)
   const double amu = 0.04624130625372472 ;
@@ -225,7 +248,7 @@ HLBL_analysis( struct input_params *Input )
   const double Z = 0.71226 ;
   #elif (defined U102)
   const double Z = 0.71226 ;
-  #elif (defined H105)
+  #elif (defined H105) || (defined U101)
   //const double fpirat = 1 ;
   //const double fpirat = 1.0197996401467917 ;
   const double fpirat = 1.0399913060435257 ;
@@ -239,11 +262,15 @@ HLBL_analysis( struct input_params *Input )
 #elif (defined B346)
   const double amu = 0.040876115324332385 ;
   const double a = 0.07634 ;
-  const double Z = 0.71998 ;
+  #if (defined B450)
+  const double Z = 0.72647 ;
+  #elif (defined D450)
+  const double Z = 0.719209 ;
+  #endif
 #elif (defined B355)
   const double amu = 0.034407901110055004 ;
   const double a = 0.06426 ;
-  #if (defined H200) 
+  #if (defined H200)
   const double Z = 0.74028 ;
   #elif (defined N202)
   const double Z = 0.74028 ;
@@ -270,7 +297,7 @@ HLBL_analysis( struct input_params *Input )
 #ifdef FPIRESCALE
   const double prefac = ZV*amu*pow(4*M_PI*alpha_QED,3)/3.*2*M_PI*M_PI*fpirat ;
 #else
-  const double prefac = ZV*amu*pow(4*M_PI*alpha_QED,3)/3.*2*M_PI*M_PI ;
+  const double prefac = 35*ZV*amu*pow(4*M_PI*alpha_QED,3)/3.*2*M_PI*M_PI ;
 #endif
 
   size_t i , j , shift = 0 ;
@@ -353,15 +380,19 @@ HLBL_analysis( struct input_params *Input )
     }
     shift += Input -> Data.Ndata[i] ;
   }
+  #ifndef NINT_HLBL
   integrate( Input , txtfile , a ) ;
-
+  #endif
   fclose( txtfile ) ;
 
   // perform a fit
   double Chi ;
+#ifdef NINT_HLBL
   struct resampled *Fit = fit_and_plot_and_Nint( *Input , &Chi ) ;
-
+#else
+  struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
+#endif
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;
-  
+
   return SUCCESS ;
 }

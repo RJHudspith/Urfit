@@ -20,7 +20,7 @@ is_parallel( const int r[4] )
 #ifndef ALLR
   const int Ncut = 1 ;
   int v[][4] = { { 2, 2, 2, 0 } ,
-		 //{ 1 ,1 ,1, 3 } ,
+		 { 1 ,1 ,1, 3 } ,
 		 //{ 1 ,1 ,1, 2 } ,
 		 };
   bool isin = false ;
@@ -156,6 +156,8 @@ read_GLU( struct input_params *Input )
 	fprintf( Infile , "[IO] File %s does not exist\n" , str ) ;
 	return FAILURE ;
       }
+
+      fprintf( stdout , "[IO] reading file %s\n" , str ) ;
 
       // Lt is the length of the time correlator
       uint32_t rlist[ 1 ] ;

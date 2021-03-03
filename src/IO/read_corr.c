@@ -159,6 +159,9 @@ pre_allocate( struct input_params *Input )
     case MINUS_MINUS :
       Input -> Data.Ndata[i] = LT/2+1 ;
       break ;
+    case ZV_SUB :
+      Input -> Data.Ndata[i] = LT/2 ;
+      break ;
     }
     Input -> Data.Ntot += Input -> Data.Ndata[i] ;
     

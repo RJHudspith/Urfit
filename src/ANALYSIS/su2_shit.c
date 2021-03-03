@@ -10,6 +10,7 @@
 #include "init.h"
 #include "make_xmgrace.h"
 #include "resampled_ops.h"
+#include "plot_fitfunc.h"
 #include "stats.h"
 
 static double
@@ -22,6 +23,8 @@ int
 su2_shit( struct input_params *Input )
 {
   /*
+  raise( &Input -> Data.y[0] , 0.25 ) ;
+  printf( "U0 %f %f\n" , Input ->Data.y[0].avg , Input -> Data.y[0].err ) ;
   size_t i , j , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     equate_constant( &Input -> Data.x[i] ,
@@ -43,12 +46,31 @@ su2_shit( struct input_params *Input )
     printf( "\n" ) ;
   }
   */
+
+  /*
+  size_t i , j , shift = 0 ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    for( j = shift ; j < shift+Input->Data.Ndata[i] ; j++ ) {
+      //raise( &Input -> Data.y[j] , 2 ) ;
+      fprintf( stdout , "%e %1.15e %1.15e\n" ,
+	       Input -> Data.x[j].avg ,
+	       Input -> Data.y[j].avg ,
+	       Input -> Data.y[j].err ) ;
+    }
+	shift = j ;
+  }
+  */
+  const size_t end = Input -> Data.Ndata[0]-1 ;
+  
+  struct resampled sub = init_dist( &Input -> Data.x[ end ] , Input -> Data.x[ end ].NSAMPLES , Input -> Data.x[ end ].restype ) ;
+  for( int i = 0 ; i < Input -> Data.Ndata[0] ; i++ ) {
+    //root( &Input -> Data.y[i] ) ;
+    subtract( &Input -> Data.x[i] , sub ) ;
+  }
+  free( sub.resampled ) ;
+  
   double chisq ;  
   struct resampled *fit = fit_and_plot( *Input , &chisq ) ;
-
-  add( &fit[0] , fit[6] ) ;
-
-  fprintf( stdout , "Full %e +/- %e\n" , fit[0].avg , fit[0].err ) ;
 
   free_fitparams( fit , Input -> Fit.Nlogic ) ;
   

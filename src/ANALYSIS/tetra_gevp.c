@@ -13,14 +13,8 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
-static const int t0 = 4 ;
-static const int td = 2 ;
-
-//static const int t0 = 1 ;
-//static const int td = t0+1 ;
-
-//#define FIT_EFFMASS
-//#define COMBINE
+static const int t0 = 1 ;
+static const int td = 3 ;
 
 static int
 write_fitmass_graph( FILE *file , 
@@ -142,7 +136,7 @@ tetra_gevp_analysis( struct input_params *Input )
   Input -> Data.Ntot = N*Input->Data.Ndata[0] ;
   
   // compute an effective mass
-  struct resampled *effmass = effective_mass( Input , ACOSH_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
 
   // subtract the ground state?
   for( j = 0 ; j < Input->Data.Ndata[0] ; j++ ) {

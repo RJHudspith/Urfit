@@ -43,12 +43,17 @@ nrqcd_analysis( struct input_params *Input )
   // write out the mass fits
   FILE *file = fopen( "massfits.dat" , "w" ) ;
   struct resampled temp = init_dist( NULL , fit[0].NSAMPLES , fit[0].restype ) ;
+  struct resampled temp2 = init_dist( NULL , fit[0].NSAMPLES , fit[0].restype ) ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    equate( &temp , fit[2] ) ;
-    mult_constant( &temp , 2 ) ; 
-    raise( &temp , -1 ) ;
-    mult_constant( &temp , p2[i] ) ;
-    add( &temp , fit[1] ) ;
+
+    equate( &temp , fit[1] ) ;
+    raise( &temp , 2 ) ;
+    
+    equate( &temp2 , fit[2] ) ;
+    mult_constant( &temp2 , p2[i] ) ;
+
+    add( &temp , temp2 ) ;
+    root( &temp ) ;
 
     fprintf( file , "%f %f\n" , Input->Traj[i].Fit_Low , temp.err_hi ) ;
     fprintf( file , "%f %f\n\n" , Input->Traj[i].Fit_High , temp.err_hi ) ;

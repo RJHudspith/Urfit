@@ -157,7 +157,8 @@ am__objects_1 = ./ANALYSIS/alphas.$(OBJEXT) \
 	./ANALYSIS/binding_corr.$(OBJEXT) ./ANALYSIS/HAL.$(OBJEXT) \
 	./ANALYSIS/pof.$(OBJEXT) ./ANALYSIS/HLBL.$(OBJEXT) \
 	./ANALYSIS/ZV.$(OBJEXT) ./ANALYSIS/sol.$(OBJEXT) \
-	./ANALYSIS/Qcorr_fixed.$(OBJEXT)
+	./ANALYSIS/Qcorr_fixed.$(OBJEXT) \
+	./ANALYSIS/SpinOrbit.$(OBJEXT)
 am__objects_2 = ./EFFMASS/blackbox.$(OBJEXT) \
 	./EFFMASS/effmass.$(OBJEXT) ./EFFMASS/gevp.$(OBJEXT)
 am__objects_3 = ./FITS/alpha_D0.$(OBJEXT) \
@@ -171,15 +172,17 @@ am__objects_3 = ./FITS/alpha_D0.$(OBJEXT) \
 	./FITS/pp_aa_ww_r2.$(OBJEXT) ./FITS/Qcorr_bessel.$(OBJEXT) \
 	./FITS/sinh.$(OBJEXT) ./FITS/poles.$(OBJEXT) \
 	./FITS/qslab.$(OBJEXT) ./FITS/qslab2.$(OBJEXT) \
-	./FITS/cornell.$(OBJEXT) ./FITS/pp_aa_exp.$(OBJEXT) \
-	./FITS/qsusc_su2.$(OBJEXT) ./FITS/adler_alpha_D0.$(OBJEXT) \
+	./FITS/exp_xinv.$(OBJEXT) ./FITS/cornell.$(OBJEXT) \
+	./FITS/pp_aa_exp.$(OBJEXT) ./FITS/qsusc_su2.$(OBJEXT) \
+	./FITS/adler_alpha_D0.$(OBJEXT) \
 	./FITS/adler_alpha_D0_multi.$(OBJEXT) ./FITS/fvol1.$(OBJEXT) \
 	./FITS/alpha_D0_multi_new.$(OBJEXT) \
 	./FITS/udcb_heavy.$(OBJEXT) ./FITS/nrqcd_exp.$(OBJEXT) \
 	./FITS/nrqcd_exp2.$(OBJEXT) ./FITS/c4c7.$(OBJEXT) \
 	./FITS/su2_shitfit.$(OBJEXT) ./FITS/SUN_cont.$(OBJEXT) \
 	./FITS/HALexp.$(OBJEXT) ./FITS/tanh.$(OBJEXT) \
-	./FITS/ZV_exp.$(OBJEXT)
+	./FITS/ZV_exp.$(OBJEXT) ./FITS/fvol2.$(OBJEXT) \
+	./FITS/fvol3.$(OBJEXT) ./FITS/fsol.$(OBJEXT)
 am__objects_4 = ./GRAPH/make_xmgrace.$(OBJEXT) \
 	./GRAPH/plot_fitfunc.$(OBJEXT)
 am__objects_5 = ./INIT/fake.$(OBJEXT) ./INIT/init.$(OBJEXT)
@@ -397,7 +400,7 @@ ANALYSIS_FILES = ./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/nrqcd_baremass.c ./ANALYSIS/c4c7_analysis.c \
 	./ANALYSIS/su2_shit.c ./ANALYSIS/binding_corr.c ./ANALYSIS/HAL.c \
 	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c ./ANALYSIS/sol.c \
-	./ANALYSIS/Qcorr_fixed.c
+	./ANALYSIS/Qcorr_fixed.c ./ANALYSIS/SpinOrbit.c
 
 EFFMASS_FILES = ./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 INIT_FILES = ./INIT/fake.c ./INIT/init.c
@@ -407,13 +410,13 @@ FITS_FILES = ./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/poly.c ./FITS/pade.c ./FITS/pmap.c ./FITS/Pexp.c ./FITS/pp_aa.c \
 	./FITS/pp_aa_ww.c ./FITS/ppaa.c ./FITS/pp_aa_ww_r2.c \
 	./FITS/Qcorr_bessel.c ./FITS/sinh.c ./FITS/poles.c ./FITS/qslab.c \
-	./FITS/qslab2.c \
+	./FITS/qslab2.c ./FITS/exp_xinv.c \
 	./FITS/cornell.c ./FITS/pp_aa_exp.c ./FITS/qsusc_su2.c \
 	./FITS/adler_alpha_D0.c ./FITS/adler_alpha_D0_multi.c ./FITS/fvol1.c \
 	./FITS/alpha_D0_multi_new.c ./FITS/udcb_heavy.c ./FITS/nrqcd_exp.c \
 	./FITS/nrqcd_exp2.c  ./FITS/c4c7.c ./FITS/su2_shitfit.c \
 	 ./FITS/SUN_cont.c ./FITS/HALexp.c \
-	./FITS/tanh.c ./FITS/ZV_exp.c
+	./FITS/tanh.c ./FITS/ZV_exp.c ./FITS/fvol2.c ./FITS/fvol3.c ./FITS/fsol.c
 
 GRAPH_FILES = ./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 IO_FILES = ./IO/distribution.c ./IO/GLU_bswap.c ./IO/io_wrapper.c \
@@ -598,6 +601,8 @@ ANALYSIS/$(DEPDIR)/$(am__dirstamp):
 	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
 ./ANALYSIS/Qcorr_fixed.$(OBJEXT): ANALYSIS/$(am__dirstamp) \
 	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
+./ANALYSIS/SpinOrbit.$(OBJEXT): ANALYSIS/$(am__dirstamp) \
+	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
 EFFMASS/$(am__dirstamp):
 	@$(MKDIR_P) ./EFFMASS
 	@: > EFFMASS/$(am__dirstamp)
@@ -658,6 +663,8 @@ FITS/$(DEPDIR)/$(am__dirstamp):
 	FITS/$(DEPDIR)/$(am__dirstamp)
 ./FITS/qslab2.$(OBJEXT): FITS/$(am__dirstamp) \
 	FITS/$(DEPDIR)/$(am__dirstamp)
+./FITS/exp_xinv.$(OBJEXT): FITS/$(am__dirstamp) \
+	FITS/$(DEPDIR)/$(am__dirstamp)
 ./FITS/cornell.$(OBJEXT): FITS/$(am__dirstamp) \
 	FITS/$(DEPDIR)/$(am__dirstamp)
 ./FITS/pp_aa_exp.$(OBJEXT): FITS/$(am__dirstamp) \
@@ -689,6 +696,12 @@ FITS/$(DEPDIR)/$(am__dirstamp):
 ./FITS/tanh.$(OBJEXT): FITS/$(am__dirstamp) \
 	FITS/$(DEPDIR)/$(am__dirstamp)
 ./FITS/ZV_exp.$(OBJEXT): FITS/$(am__dirstamp) \
+	FITS/$(DEPDIR)/$(am__dirstamp)
+./FITS/fvol2.$(OBJEXT): FITS/$(am__dirstamp) \
+	FITS/$(DEPDIR)/$(am__dirstamp)
+./FITS/fvol3.$(OBJEXT): FITS/$(am__dirstamp) \
+	FITS/$(DEPDIR)/$(am__dirstamp)
+./FITS/fsol.$(OBJEXT): FITS/$(am__dirstamp) \
 	FITS/$(DEPDIR)/$(am__dirstamp)
 GRAPH/$(am__dirstamp):
 	@$(MKDIR_P) ./GRAPH
@@ -933,6 +946,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/Qcorr_fixed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/Qmoments.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/Ren_rats.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/SpinOrbit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/Wall_Local.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/ZV.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/adler.Po@am__quote@
@@ -977,8 +991,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/cosh.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/exp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/exp_plusc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/exp_xinv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fit_chooser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fsol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/nrqcd_exp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/nrqcd_exp2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/pade.Po@am__quote@
