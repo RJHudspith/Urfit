@@ -180,9 +180,10 @@ am__objects_3 = ./FITS/alpha_D0.$(OBJEXT) \
 	./FITS/udcb_heavy.$(OBJEXT) ./FITS/nrqcd_exp.$(OBJEXT) \
 	./FITS/nrqcd_exp2.$(OBJEXT) ./FITS/c4c7.$(OBJEXT) \
 	./FITS/su2_shitfit.$(OBJEXT) ./FITS/SUN_cont.$(OBJEXT) \
-	./FITS/HALexp.$(OBJEXT) ./FITS/tanh.$(OBJEXT) \
-	./FITS/ZV_exp.$(OBJEXT) ./FITS/fvol2.$(OBJEXT) \
-	./FITS/fvol3.$(OBJEXT) ./FITS/fsol.$(OBJEXT)
+	./FITS/HALexp.$(OBJEXT) ./FITS/cosh_plusc.$(OBJEXT) \
+	./FITS/tanh.$(OBJEXT) ./FITS/ZV_exp.$(OBJEXT) \
+	./FITS/fvol2.$(OBJEXT) ./FITS/fvol3.$(OBJEXT) \
+	./FITS/fsol.$(OBJEXT)
 am__objects_4 = ./GRAPH/make_xmgrace.$(OBJEXT) \
 	./GRAPH/plot_fitfunc.$(OBJEXT)
 am__objects_5 = ./INIT/fake.$(OBJEXT) ./INIT/init.$(OBJEXT)
@@ -415,7 +416,7 @@ FITS_FILES = ./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/adler_alpha_D0.c ./FITS/adler_alpha_D0_multi.c ./FITS/fvol1.c \
 	./FITS/alpha_D0_multi_new.c ./FITS/udcb_heavy.c ./FITS/nrqcd_exp.c \
 	./FITS/nrqcd_exp2.c  ./FITS/c4c7.c ./FITS/su2_shitfit.c \
-	 ./FITS/SUN_cont.c ./FITS/HALexp.c \
+	./FITS/SUN_cont.c ./FITS/HALexp.c ./FITS/cosh_plusc.c \
 	./FITS/tanh.c ./FITS/ZV_exp.c ./FITS/fvol2.c ./FITS/fvol3.c ./FITS/fsol.c
 
 GRAPH_FILES = ./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
@@ -692,6 +693,8 @@ FITS/$(DEPDIR)/$(am__dirstamp):
 ./FITS/SUN_cont.$(OBJEXT): FITS/$(am__dirstamp) \
 	FITS/$(DEPDIR)/$(am__dirstamp)
 ./FITS/HALexp.$(OBJEXT): FITS/$(am__dirstamp) \
+	FITS/$(DEPDIR)/$(am__dirstamp)
+./FITS/cosh_plusc.$(OBJEXT): FITS/$(am__dirstamp) \
 	FITS/$(DEPDIR)/$(am__dirstamp)
 ./FITS/tanh.$(OBJEXT): FITS/$(am__dirstamp) \
 	FITS/$(DEPDIR)/$(am__dirstamp)
@@ -989,6 +992,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/c4c7.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/cornell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/cosh.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/cosh_plusc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/exp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/exp_plusc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/exp_xinv.Po@am__quote@

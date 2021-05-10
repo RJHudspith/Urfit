@@ -12,29 +12,29 @@
 #include "write_flat.h"
 
 // power of local current renormalisation
-#define PL (4)
+#define PL (3)
 
-#define NINT_HLBL
+//#define NINT_HLBL
 #define PUT_ZERO
 #define LIGHT_ONLY
 
 #ifndef NINT_HLBL
-//#define IN_FERMI
+#define IN_FERMI
 #define MULT_X3
 #endif
 
 // beta value of the ensemble of interest
-#define B340
-#define C101
-//#define CONNECTED
+#define B334
+#define A653
+#define CONNECTED
 
-//#define CPLUSD // connected plus 2+2
-//#define THREEP
-//#define FPIRESCALE
 //#define STRANGE
 //#define LS
+#define CHARM
+#define CHARMZV
+//#define LC
 
-static const double lerp_pt = 10 ;
+static const double lerp_pt = 1 ;
 
 #ifdef B334
   #define BETALABEL "Beta 3.34"
@@ -193,6 +193,14 @@ HLBL_analysis( struct input_params *Input )
   #else
   const double NUM[2] = { -1 , -1 } ;
   #endif
+#elif (defined CHARM)
+  #ifdef CONNECTED
+  const double NUM[2] = { 16 , 16 } ;
+  #elif (defined LC)
+  const double NUM[2] = { -20 , -20 } ;
+  #else
+  const double NUM[2] = { -16 , -16 } ;
+  #endif
 #else
   #ifdef SYMMETRIC
     #ifdef CONNECTED
@@ -210,6 +218,10 @@ HLBL_analysis( struct input_params *Input )
     #else
       #ifdef LS // in the code I add the two contributions
       const double NUM[2] = { -5 , -5 } ;
+      #elif (defined LC)
+      const double NUM[2] = { -20 , -20 } ;
+      #elif (defined CC)
+      const double NUM[2] = { -16 , -16 } ;
       #else
       const double NUM[2] = { -25 , -25 } ;
       #endif
@@ -231,7 +243,11 @@ HLBL_analysis( struct input_params *Input )
   #if (defined A654)
   const double Z = 0.69789 ;
   #elif (defined A653)
-  const double Z = 0.703507 ;
+    #ifdef CHARMZV
+    const double Z = 1.321992 ;
+    #else
+    const double Z = 0.703507 ;
+    #endif
   #endif
 #elif (defined B340)
   const double amu = 0.04624130625372472 ;
@@ -241,7 +257,11 @@ HLBL_analysis( struct input_params *Input )
   //const double fpirat = 1.1350853574396977 ;
   const double fpirat = 1.288225 ;
   //const double fpirat = 1.659523650625 ;
-  const double Z = 0.71562 ;
+    #ifdef CHARMZV
+    const double Z = 1.20324 ;
+    #else
+    const double Z = 0.71562 ;
+    #endif
   #elif (defined U103)
   const double Z = 0.71562 ;
   #elif (defined H102) || (defined U102)
@@ -263,7 +283,11 @@ HLBL_analysis( struct input_params *Input )
   const double amu = 0.040876115324332385 ;
   const double a = 0.07634 ;
   #if (defined B450)
-  const double Z = 0.72647 ;
+    #ifdef CHARMZV
+    const double Z = 1.12972 ;
+    #else
+    const double Z = 0.72647 ;
+    #endif
   #elif (defined D450)
   const double Z = 0.719209 ;
   #endif
@@ -271,15 +295,35 @@ HLBL_analysis( struct input_params *Input )
   const double amu = 0.034407901110055004 ;
   const double a = 0.06426 ;
   #if (defined H200)
-  const double Z = 0.74028 ;
+    #ifdef CHARMZV
+    const double Z = 1.04843 ;
+    #else
+    const double Z = 0.74028 ;
+    #endif
   #elif (defined N202)
-  const double Z = 0.74028 ;
+    #ifdef CHARMZV
+    const double Z = 1.04843 ;
+    #else
+    const double Z = 0.74028 ;
+    #endif
   #elif (defined N203)
-  const double Z = 0.73792 ;
+    #ifdef CHARMZV
+    const double Z = 1.04534 ;
+    #else
+    const double Z = 0.73792 ;
+    #endif
   #elif (defined N200)
-  const double Z = 0.73614 ;
+    #ifdef CHARMZV
+    const double Z = 1.03587 ;
+    #else
+    const double Z = 0.73614 ;
+    #endif
   #elif (defined D200)
-  const double Z = 0.73429 ;
+    #ifdef CHARMZV
+    const double Z = 1.03310 ;
+    #else
+    const double Z = 0.73429 ;
+    #endif
   #else
   fprintf( stdout , "Ensemble not recognised for Z_V\n") ;
   return FAILURE ;
@@ -287,7 +331,11 @@ HLBL_analysis( struct input_params *Input )
 #elif (defined B370)
   const double amu = 0.02667067466996327 ;
   const double a = 0.04981 ;
+  #ifdef CHARMZV
+  const double Z = 0.97722 ;
+  #else
   const double Z = 0.75909 ;
+  #endif
 #else
   fprintf( stderr , "I do not understand your selected beta\n" ) ;
   return FAILURE ;
@@ -297,7 +345,7 @@ HLBL_analysis( struct input_params *Input )
 #ifdef FPIRESCALE
   const double prefac = ZV*amu*pow(4*M_PI*alpha_QED,3)/3.*2*M_PI*M_PI*fpirat ;
 #else
-  const double prefac = 35*ZV*amu*pow(4*M_PI*alpha_QED,3)/3.*2*M_PI*M_PI ;
+  const double prefac = ZV*amu*pow(4*M_PI*alpha_QED,3)/3.*2*M_PI*M_PI ;
 #endif
 
   size_t i , j , shift = 0 ;

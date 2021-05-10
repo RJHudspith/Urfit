@@ -13,6 +13,8 @@ int
 nrqcd_baremass_analysis( struct input_params *Input )
 {
   size_t i , j , shift = 0 ;
+
+#if 0
   const double ainv = 2.194 ; //2.287 ; //2.206 ; //2.194 ;
 
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
@@ -30,11 +32,12 @@ nrqcd_baremass_analysis( struct input_params *Input )
     spin_average( &Input -> Data.y[j] , Input -> Data.y[j+Input->Data.Ndata[0]] ) ;
     //divide_constant( &Input -> Data.y[j] , 9.445 ) ;
   }
+#endif
 
   double chi = 0.0 ;
   struct resampled *fit = fit_and_plot( *Input , &chi ) ;
 
-  const double Meta = 9.445 ;
+  const double Meta = 1.96834*sqrt( 0.2532 ) ;
 
   struct resampled res = init_dist( NULL , Input -> Data.y[0].NSAMPLES ,
 				    Input -> Data.y[0].restype ) ;
@@ -46,7 +49,7 @@ nrqcd_baremass_analysis( struct input_params *Input )
   subtract( &res , fit[0] ) ;
   divide( &res , fit[1] ) ;
   
-  fprintf( stdout , "Pred %f +/- %f \n" , res.avg , res.err ) ; 
+  fprintf( stdout , "Pred %1.10f +/- %1.10f \n" , res.avg , res.err ) ; 
 
   free( res.resampled ) ;
 

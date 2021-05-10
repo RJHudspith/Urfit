@@ -302,17 +302,20 @@ read_corr( struct input_params *Input )
   int Flag = SUCCESS ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
-    // temporary string
-    char str[ strlen( Input -> Traj[i].FileY ) + 6 ] ;
-
     // set the temporary correlator
     const size_t Nlt = Input -> Traj[i].Dimensions[3] ;
     
     // linearised measurement index
     register size_t meas = 0 ;
+#pragma omp parallel for private(k)
     for( k = Input -> Traj[i].Begin ;
 	 k < Input -> Traj[i].End ;
 	 k += Input -> Traj[i].Increment ) {
+
+      // temporary string
+      char str[ strlen( Input -> Traj[i].FileY ) + 6 ] ;
+
+      const size_t meas = (k-Input -> Traj[i].Begin)/Input -> Traj[i].Increment ;
       
       // open up a file
       sprintf( str , Input -> Traj[i].FileY , k ) ;
@@ -323,18 +326,15 @@ read_corr( struct input_params *Input )
       if( ( C = map_correlator( Input -> Traj[i] , str ,
 				Input -> Traj[i].mom , Nlt ) ) == NULL ) {
 	Flag = FAILURE ;
-	break ;
       }
 
       // poke C correctly into y, doing the folding if required
       if( time_fold( Input -> Data.y + shift , C , Nlt ,
 		     Input -> Traj[i].Fold , meas ) == FAILURE ) {
 	Flag = FAILURE ;
-	break ;
       }
 
       free( C ) ;
-      meas ++ ;
     }    
     shift += Input -> Data.Ndata[i] ;
   }

@@ -98,7 +98,7 @@ an_wrapper( struct input_params *Input )
   case Sol :
     return sol_analysis( Input ) ;
   case Fit :
-    //return nrqcd_baremass_analysis( Input ) ;
+    return nrqcd_baremass_analysis( Input ) ;
     //return c4c7_analysis( Input ) ;
     //return su2_shit( Input ) ;
     //return HAL_analysis( Input ) ;

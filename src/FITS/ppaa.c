@@ -12,7 +12,7 @@
 
 #include "Nder.h"
 
-//#define PPAP_ONLY
+#define PPAP_ONLY
 
 #ifdef PPAP_ONLY
 enum { PLPL , PLAL } ;

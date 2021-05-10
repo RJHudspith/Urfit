@@ -35,19 +35,19 @@ extrap_fitfunc( const struct resampled *f ,
   for( j = 0 ; j < f[0].NSAMPLES ; j++ ) {
     // evaluate the fitfunc
     for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-      //fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
-      fparams[p] = f[ p ].resampled[j] ;
+      fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
+      //fparams[p] = f[ p ].resampled[j] ;
     }
-    data.resampled[j] = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
-    //data.resampled[j] = fdesc.func( xdesc , fparams , shift ) ;
+    //data.resampled[j] = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+    data.resampled[j] = fdesc.func( xdesc , fparams , shift ) ;
   }
   // and the average
   for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-    //fparams[ p ] = f[ Fit.map[shift].p[p] ].avg ;
-    fparams[ p ] = f[ p ].avg ;
+    fparams[ p ] = f[ Fit.map[shift].p[p] ].avg ;
+    //fparams[ p ] = f[ p ].avg ;
   }
-  data.avg = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
-  //data.avg = fdesc.func( xdesc , fparams , shift ) ;
+  //data.avg = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+  data.avg = fdesc.func( xdesc , fparams , shift ) ;
   compute_err( &data ) ;
 	
   // free the fitfunction
@@ -107,7 +107,7 @@ plot_fitfunction_HACK( const struct resampled *f ,
 
   size_t h , i ;
 
-  const size_t MAX = 16 ; //fvol2_NMAX( ) ;
+  const size_t MAX = fvol2_NMAX( ) ;
   //const size_t MAX = 15 ; //fvol3_NMAX( ) ;
 
   // loop over the simultaneous parameters

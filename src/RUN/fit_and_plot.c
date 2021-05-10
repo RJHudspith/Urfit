@@ -204,8 +204,8 @@ fit_and_plot( struct input_params Input ,
   }
 
   if( fitparams != NULL ) {
-    //plot_fitfunction( fitparams , Data , Input.Fit ) ;
-    plot_fitfunction_HACK( fitparams , Data , Input.Fit ) ;
+    plot_fitfunction( fitparams , Data , Input.Fit ) ;
+    //plot_fitfunction_HACK( fitparams , Data , Input.Fit ) ;
   }
   
   close_xmgrace_graph( ) ;

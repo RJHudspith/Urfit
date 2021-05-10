@@ -65,6 +65,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = CORNELL ;
   } else if( are_equal( Flat[tag].Value , "COSH" ) ) {
     Input -> Fit.Fitdef = COSH ;
+  } else if( are_equal( Flat[tag].Value , "COSH_PLUSC" ) ) {
+    Input -> Fit.Fitdef = COSH_PLUSC ;
   } else if( are_equal( Flat[tag].Value , "EXP" ) ) {
     Input -> Fit.Fitdef = EXP ;
   } else if( are_equal( Flat[tag].Value , "EXP_XINV" ) ) {

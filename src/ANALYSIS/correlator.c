@@ -276,7 +276,6 @@ correlator_analysis( struct input_params *Input )
     struct resampled mpi2 = init_dist( NULL ,
 				       Fit[1].NSAMPLES ,
 				       Fit[1].restype ) ;
-
     size_t shift = 0 , j ;
     for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
       for( j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
@@ -287,8 +286,8 @@ correlator_analysis( struct input_params *Input )
 				     Input -> Traj[0].Dimensions[mu] ) ;
 	  psq += ptilde*ptilde ;
 	}
-	equate_constant( &mpi2 , psq ,
-			 Fit[1].NSAMPLES , Fit[1].restype ) ;
+	equate_constant( &mpi2 , 0.11975 , Fit[1].NSAMPLES , Fit[1].restype  ) ;
+	//equate_constant( &mpi2 , psq , Fit[1].NSAMPLES , Fit[1].restype ) ;
 	char str[256] ;
 	sprintf( str , "Mass_%zu.flat" , j+i*2*Input->Fit.N ) ;
 	write_flat_dist( &Fit[j+1+i*2*Input -> Fit.N] , &mpi2 , 1 , str ) ;

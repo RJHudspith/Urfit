@@ -109,8 +109,8 @@ SpinOrbit( struct input_params *Input )
   }
 
   //const double ainv = (0.19733/0.09929) ;
-  const double ainv = (0.19733/0.08636) ;
-  //const double ainv = (0.19733/0.07634) ;
+  //const double ainv = (0.19733/0.08636) ;
+  const double ainv = (0.19733/0.07634) ;
   //const double ainv = (0.19733/0.06426) ;
 
   // print the results

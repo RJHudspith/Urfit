@@ -11,6 +11,7 @@
 #include "adler_alpha_D0_multi.h"
 #include "cornell.h"
 #include "cosh.h"
+#include "cosh_plusc.h"
 #include "exp.h"
 #include "exp_plusc.h"
 #include "exp_xinv.h"
@@ -70,6 +71,8 @@ get_Nparam( const struct fit_info Fit )
  case SINH :
  case EXP :
    return 2 * Fit.N ;
+ case COSH_PLUSC :
+   return 1+2 * Fit.N ;
  case EXP_XINV :
    return 3 ;
  case HALEXP :
@@ -77,7 +80,7 @@ get_Nparam( const struct fit_info Fit )
    // these have independent amounts
  case EXP_PLUSC : return 2*Fit.N+1 ;
  case FVOL1 : return 2 ;
- case FVOL2 : return 4 ;
+ case FVOL2 : return 9 ; //return 4 ;
  case FVOL3 : return 5 ;
  case PADE : return Fit.N + Fit.M ;
  case POLES : return Fit.N + Fit.M + 1 ;
@@ -168,6 +171,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = cosh_df ;
     fdesc.d2F        = cosh_d2f ;
     fdesc.guesses    = exp_guesses ;
+    break ;
+  case COSH_PLUSC : 
+    fdesc.func       = fcosh_plusc ;
+    fdesc.F          = cosh_plusc_f ;
+    fdesc.dF         = cosh_plusc_df ;
+    fdesc.d2F        = cosh_plusc_d2f ;
+    fdesc.guesses    = cosh_plusc_guesses ;
     break ;
   case EXP :
     fdesc.func       = fexp ;
