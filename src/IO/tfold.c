@@ -165,7 +165,8 @@ time_fold( struct resampled *sample ,
     break ;
   case ZV_SUB :
     for( t = 0 ; t < LT/2 ; t++ ) {
-      sample[t].resampled[meas] = -0.5*( part( C[t] - C[t+LT/2] ) ) ;
+      //sample[t].resampled[meas] = -0.5*( part( C[t] - C[t+LT/2] ) ) ;
+      sample[t].resampled[meas] = -1*( part( C[t] - C[t+LT/2] ) ) ;
     }
     break ;
   }

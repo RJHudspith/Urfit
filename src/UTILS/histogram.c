@@ -67,6 +67,8 @@ hist_min( size_t *min ,
 	  const struct histogram *hist ,
 	  const size_t Nbin )
 {
+  *min = 0 ;
+  
   // compute the general finite-difference derivatives
   double y[ Nbin ] , x[ Nbin ] ;
   size_t k ;

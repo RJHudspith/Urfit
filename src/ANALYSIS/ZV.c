@@ -14,6 +14,9 @@
 #include "plot_fitfunc.h"
 #include "resampled_ops.h"
 
+//#define OBC
+//#define OBCTLEN (96)
+
 // takes the ratio of two correlators
 int
 ZV_old_analysis( struct input_params *Input )
@@ -55,12 +58,22 @@ ZV_analysis( struct input_params *Input )
   // square the first data point
   size_t j ;
   const size_t T1 = Input -> Data.Ndata[0] ;
+  #ifdef OBC
+  const size_t T2 = OBCTLEN+1 ; //64+1 ; //48+1 ;
+  #else
   const size_t T2 = Input -> Data.Ndata[1] ;
+  #endif
   
   for( j = 0 ; j < T1 ; j++ ) {
     divide( &Input -> Data.y[j] , Input -> Data.y[T1+T2-1] ) ;
-    mult_constant( &Input -> Data.y[j] , 2 ) ;
     raise( &Input -> Data.y[j] , -1 ) ;
+    #ifdef OBC
+    if( j > T2 ) {
+      equate_constant( &Input->Data.y[j] , 0.0 ,
+		       Input->Data.y[j].NSAMPLES ,
+		       Input->Data.y[j].restype ) ;
+    }
+    #endif
   }
   
   // perform a fit to a constant

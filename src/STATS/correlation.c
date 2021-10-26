@@ -176,7 +176,7 @@ inverse_correlation( struct data_info *Data ,
     if( Data -> Cov.Divided_Covariance == true ) {
       modified_covariance( C , Data -> Ntot ) ;
     }
-  
+
     // correlation matrix is symmetric
     fill_lower_triangular( C , Data -> Ntot ) ;
 

@@ -37,7 +37,7 @@ nrqcd_baremass_analysis( struct input_params *Input )
   double chi = 0.0 ;
   struct resampled *fit = fit_and_plot( *Input , &chi ) ;
 
-  const double Meta = 1.96834*sqrt( 0.2532 ) ;
+  const double Meta = 0.38991236399508716 ;
 
   struct resampled res = init_dist( NULL , Input -> Data.y[0].NSAMPLES ,
 				    Input -> Data.y[0].restype ) ;
@@ -49,7 +49,11 @@ nrqcd_baremass_analysis( struct input_params *Input )
   subtract( &res , fit[0] ) ;
   divide( &res , fit[1] ) ;
   
-  fprintf( stdout , "Pred %1.10f +/- %1.10f \n" , res.avg , res.err ) ; 
+  fprintf( stdout , "Pred %1.10f +/- %1.10f \n" , res.avg , res.err ) ;
+
+  raise( &res , -1 ) ;
+
+  fprintf( stdout , "Kc %1.10f +/- %1.10f \n" , res.avg , res.err ) ;
 
   free( res.resampled ) ;
 

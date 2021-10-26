@@ -83,8 +83,13 @@ gen_ops( struct input_params *Input )
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
 	     spin_average , "SpinAve" , mpi2 , j ) ;
-      
 
+      // computes x^2 y
+      raise( &Input -> Data.y[j] , 2 ) ;
+      
+      do_op( Input -> Data.y[j] ,
+	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
+	     mult , "x^2.y" , mpi2 , j ) ;
     }
   }
   return SUCCESS ;

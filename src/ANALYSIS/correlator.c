@@ -286,7 +286,7 @@ correlator_analysis( struct input_params *Input )
 				     Input -> Traj[0].Dimensions[mu] ) ;
 	  psq += ptilde*ptilde ;
 	}
-	equate_constant( &mpi2 , 0.11975 , Fit[1].NSAMPLES , Fit[1].restype  ) ;
+	equate_constant( &mpi2 , 1./0.1318 , Fit[1].NSAMPLES , Fit[1].restype  ) ;
 	//equate_constant( &mpi2 , psq , Fit[1].NSAMPLES , Fit[1].restype ) ;
 	char str[256] ;
 	sprintf( str , "Mass_%zu.flat" , j+i*2*Input->Fit.N ) ;

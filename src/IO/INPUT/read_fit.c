@@ -73,6 +73,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = EXP_XINV ;
   } else if( are_equal( Flat[tag].Value , "EXP_PLUSC" ) ) {
     Input -> Fit.Fitdef = EXP_PLUSC ;
+  } else if( are_equal( Flat[tag].Value , "FVOLCC" ) ) {
+    Input -> Fit.Fitdef = FVOLCC ;
   } else if( are_equal( Flat[tag].Value , "FVOL1" ) ) {
     Input -> Fit.Fitdef = FVOL1 ;
   } else if( are_equal( Flat[tag].Value , "FVOL2" ) ) {

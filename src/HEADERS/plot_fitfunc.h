@@ -13,6 +13,11 @@ plot_fitfunction_HACK( const struct resampled *f ,
 		       const struct data_info Data ,
 		       const struct fit_info Fit ) ;
 
+int
+plot_feffmass( const struct resampled *f ,
+	       const struct data_info Data ,
+	       const struct fit_info Fit ) ;
+
 void
 plot_fitfunction( const struct resampled *f ,
 		  const struct data_info Data ,

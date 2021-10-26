@@ -119,7 +119,7 @@ read_inputs( struct input_params *Input ,
   Input -> Data.x = NULL ;
   Input -> Data.y = NULL ;
   Input -> Data.Ndata = NULL ;
-  Input -> Data.Cov.W = NULL ;
+  Input -> Data.Cov.W = NULL ;    
   Input -> Data.Ntot = 0 ;
   Input -> Data.Nsim = 0 ;
   Input -> Data.LT = NULL ;

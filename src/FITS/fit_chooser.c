@@ -16,6 +16,7 @@
 #include "exp_plusc.h"
 #include "exp_xinv.h"
 #include "fsol.h"
+#include "fvolcc.h"
 #include "fvol1.h"
 #include "fvol2.h"
 #include "fvol3.h"
@@ -79,6 +80,7 @@ get_Nparam( const struct fit_info Fit )
    return 3 * Fit.N ;
    // these have independent amounts
  case EXP_PLUSC : return 2*Fit.N+1 ;
+ case FVOLCC : return 4 + 4 ;
  case FVOL1 : return 2 ;
  case FVOL2 : return 9 ; //return 4 ;
  case FVOL3 : return 5 ;
@@ -198,6 +200,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = exp_xinv_df ;
     fdesc.d2F        = exp_xinv_d2f ;
     fdesc.guesses    = exp_xinv_guesses ; 
+    break ;
+  case FVOLCC :
+    fdesc.func       = ffvolcc ;
+    fdesc.F          = fvolcc_f ;
+    fdesc.dF         = fvolcc_df ;
+    fdesc.d2F        = fvolcc_d2f ;
+    fdesc.guesses    = fvolcc_guesses ;
     break ;
   case FVOL1 :
     fdesc.func       = ffvol1 ;

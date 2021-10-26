@@ -19,13 +19,13 @@
 #define LIGHT_ONLY
 
 #ifndef NINT_HLBL
-#define IN_FERMI
-#define MULT_X3
+  #define IN_FERMI
+  #define MULT_X3
 #endif
 
 // beta value of the ensemble of interest
-#define B334
-#define A653
+#define J500
+#define B385
 #define CONNECTED
 
 //#define STRANGE
@@ -100,6 +100,10 @@ static const double lerp_pt = 1 ;
   #define SYMMETRIC
   #define BETALABEL "Beta 3.7"
   #define CONFIGLABEL "N300"
+#elif (defined B385)
+  #define SYMMETRIC
+  #define BETALABEL "Beta 3.85"
+  #define CONFIGLABEL "J500"
 #else
   #error
 #endif
@@ -244,7 +248,14 @@ HLBL_analysis( struct input_params *Input )
   const double Z = 0.69789 ;
   #elif (defined A653)
     #ifdef CHARMZV
-    const double Z = 1.321992 ;
+  //const double Z = 8.415401e-01 ;
+  //const double Z = 8.781319e-01 ;
+  //const double Z = 9.153006e-01 ;
+  //const double Z = 9.530678e-01 ;
+  //const double Z = 9.914530e-01 ;
+  //const double Z = 1.069983e+00 ;
+    const double Z = 1.151280e+00 ;
+    //const double Z = 1.322647e+00 ;
     #else
     const double Z = 0.703507 ;
     #endif
@@ -258,7 +269,12 @@ HLBL_analysis( struct input_params *Input )
   const double fpirat = 1.288225 ;
   //const double fpirat = 1.659523650625 ;
     #ifdef CHARMZV
-    const double Z = 1.20324 ;
+  //const double Z = 8.270813e-01 ;
+  //const double Z = 8.858063e-01 ;
+  //const double Z = 9.461044e-01 ;
+  //const double Z = 1.007931e+00 ;
+    const double Z = 1.071593e+00 ;
+    //const double Z = 1.20324 ; // g-2 PAP value
     #else
     const double Z = 0.71562 ;
     #endif
@@ -269,14 +285,14 @@ HLBL_analysis( struct input_params *Input )
   #elif (defined U102)
   const double Z = 0.71226 ;
   #elif (defined H105) || (defined U101)
-  //const double fpirat = 1 ;
+  const double fpirat = 1 ;
   //const double fpirat = 1.0197996401467917 ;
-  const double fpirat = 1.0399913060435257 ;
+  //const double fpirat = 1.0399913060435257 ;
   const double Z = 0.70908 ;
   #elif (defined C101)
-  //const double fpirat = 1 ;
+  const double fpirat = 1 ;
   //const double fpirat = 0.9728698738732318 ;
-  const double fpirat = 0.9464757914901178 ;
+  //const double fpirat = 0.9464757914901178 ;
   const double Z = 0.70717 ;
   #endif
 #elif (defined B346)
@@ -284,7 +300,12 @@ HLBL_analysis( struct input_params *Input )
   const double a = 0.07634 ;
   #if (defined B450)
     #ifdef CHARMZV
-    const double Z = 1.12972 ;
+    const double Z = 8.197728e-01 ;
+    //const double Z = 8.685114e-01 ;
+    //const double Z = 9.184234e-01 ;
+    //const double Z = 9.694756e-01 ;
+    //const double Z = 1.021638e+00 ;
+    //const double Z = 1.12972 ; // g-2 paper
     #else
     const double Z = 0.72647 ;
     #endif
@@ -302,7 +323,12 @@ HLBL_analysis( struct input_params *Input )
     #endif
   #elif (defined N202)
     #ifdef CHARMZV
-    const double Z = 1.04843 ;
+    //const double Z = 8.132188e-01 ;
+    //const double Z = 8.509598e-01 ;
+    //const double Z = 8.895498e-01 ;
+    //const double Z = 9.288259e-01 ;
+    const double Z = 9.677787e-01 ;
+    //const double Z = 1.04843 ; // "physical Ds" g-2 paper
     #else
     const double Z = 0.74028 ;
     #endif
@@ -332,10 +358,25 @@ HLBL_analysis( struct input_params *Input )
   const double amu = 0.02667067466996327 ;
   const double a = 0.04981 ;
   #ifdef CHARMZV
-  const double Z = 0.97722 ;
+  //const double Z = 8.111842e-01 ;
+  //const double Z = 8.379414e-01 ;
+  //const double Z = 8.650583e-01 ;
+  //const double Z = 8.925378e-01 ;
+  const double Z = 9.204328e-01 ;
+  //const double Z = 0.97722 ; // physical Ds g-2 paper
   #else
   const double Z = 0.75909 ;
   #endif
+#elif (defined B385)
+  const double amu = 0.020936025425789363 ;
+  const double a = 0.0391 ;
+    #ifdef CHARMZV
+  //const double Z = 8.126588e-01 ;
+  //const double Z = 8.324016e-01 ;
+  //const double Z = 8.522841e-01 ;
+  const double Z = 8.724131e-01 ;
+  //const double Z = 8.927380e-01 ;
+    #endif
 #else
   fprintf( stderr , "I do not understand your selected beta\n" ) ;
   return FAILURE ;

@@ -23,12 +23,12 @@ equate( struct resampled *a ,
 void
 equate_constant( struct resampled *a ,
 		 const double constant ,
-		 const int NSAMPLES ,
+		 const size_t NSAMPLES ,
 		 const resample_type restype ) ;
 
 struct resampled
 init_dist( const struct resampled *d , 
-	   const int NSAMPLES , 
+	   const size_t NSAMPLES , 
 	   const resample_type restype ) ;
 
 void

@@ -9,6 +9,41 @@
 #include "resampled_ops.h"
 #include "fit_and_plot.h"
 
+static int
+write_evalues( struct resampled *evalues ,
+	       const size_t Ndata ,
+	       const size_t N ,
+	       const size_t t0 )
+{
+  size_t i , j = 0 , k ;
+  for( i = 0 ; i < N ; i++ ) {
+    char str[ 256 ] ;
+    sprintf( str , "Evalue.%zu.flat" , i ) ;
+    FILE *file = fopen( str , "w" ) ;
+
+    fprintf( file , "%u\n" , evalues[ Ndata*i ].restype ) ;
+    fprintf( file , "%zu\n" , Ndata ) ;
+    
+    for( j = 0 ; j < Ndata ; j++ ) {
+      compute_err( &evalues[ j + Ndata*i ] ) ;
+      printf( "%zu %e %e\n" , j ,
+	      evalues[ j + Ndata*i ].avg ,
+	      evalues[ j + Ndata*i ].err ) ;
+
+      // write out the eigenvalues
+      fprintf( file , "%zu\n" , evalues[ j + Ndata*i ].NSAMPLES ) ;
+      for( k = 0 ; k < evalues[ j + Ndata*i ].NSAMPLES ; k++ ) {
+	fprintf( file , "%f %1.15e\n" , (double)j-t0 , evalues[ j + Ndata*i ].resampled[k] ) ;
+      }
+      //
+      fprintf( file , "AVG %f %1.15e\n" , (double)j-t0 , evalues[ j + Ndata*i ].avg ) ;
+    }
+    fclose( file ) ;
+  }
+
+  return SUCCESS ;
+}
+
 // pencil of functions looks like
 // C(t)   C(t+1)   .. C(t+N)
 // C(t+1) C(t+2)   .. C(t+N+1)
@@ -52,6 +87,10 @@ pof_analysis( struct input_params *Input )
 					  Input -> Fit.N ,
 					  Input -> Fit.M ,
 					  t0 , t0+1 ) ;
+
+  // write them out
+  write_evalues( evalues , Input -> Data.Ndata[0] , Input -> Fit.N , t0 ) ;
+  
   // set input to the first evalue
   size_t i , j ;
   for( i = 0 ; i < 1; i++ ) {
