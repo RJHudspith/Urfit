@@ -178,7 +178,7 @@ correlator_analysis( struct input_params *Input )
 #endif
   
   // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , ACOSH_ITERATIVE_EFFMASS ) ;
 
 #ifdef FIT_EFFMASS
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {

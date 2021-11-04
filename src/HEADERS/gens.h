@@ -31,7 +31,7 @@ typedef enum {
 // effective mass types
 typedef enum {
   LOG_EFFMASS , LOGFWD_EFFMASS , LOGBWD_EFFMASS , LOG2_EFFMASS ,
-  ACOSH_EFFMASS , ASINH_EFFMASS , ATANH_EFFMASS ,
+  ACOSH_EFFMASS , ASINH_EFFMASS , ATANH_EFFMASS , ACOSH_ITERATIVE_EFFMASS ,
   EVALUE_EFFMASS } effmass_type ;
 
 // fit types

@@ -9,6 +9,7 @@
 #include "gens.h"
 #include "fitfunc.h"
 #include "make_xmgrace.h"
+#include "stats.h"
 #include "resampled_ops.h"
 
 #define EFFMASSTOL 1E-30
@@ -164,6 +165,59 @@ asinh_effmass( struct resampled *effmass ,
   return ;
 }
 
+// newton's method to solve
+// c(t)/c(t+1) - (e^{-meff*t}+e^{-meff*(T-t)})/(e^{-meff*(t+1)}+e^{-meff*(T-t-1)) == 0
+static inline double
+f( const double meff , const double ct , const double ct1 , const double t , const double t1 , const double Lt )
+{
+  return ct/ct1 - (exp( -meff*t ) + exp( -meff*(Lt-t) ))/( exp( -meff*t1 ) + exp( -meff*(Lt-t1) ) ) ;
+}
+
+static double
+newton_coshmeff( const double initialguess ,
+		 const double ct ,
+		 const double ct1 ,
+		 const int t ,
+		 const int t1 ,
+		 const int Lt )
+{
+  size_t iter = 0 ;
+  double meff = initialguess , tol = 1 , dh = 1E-8;
+  while( tol > 1E-8 && iter < 20 ) {
+    const double num = f(meff,ct,ct1,(double)t,(double)t1,(double)Lt) ;
+    const double den = ( f(meff+dh,ct,ct1,(double)t,(double)t1,(double)Lt)
+			 - f(meff-dh,ct,ct1,(double)t,(double)t1,(double)Lt) )/(2.*dh);    
+    meff -= num/den ;
+    tol = fabs( num ) ;
+    iter++ ;
+  }
+  if( isnan( meff ) || isinf( meff ) || iter == 20 ) {
+    fprintf( stderr , "Newton coshmeff failed %e %zu\n" , meff , iter ) ;
+    exit(1) ;
+  }
+  return meff ;
+}
+
+// log effective mass
+static void
+iterative_effmass( struct resampled *effmass ,
+		   struct resampled y1 , struct resampled y2 ,
+		   struct resampled x1 , struct resampled x2 ,
+		   const int LT )
+{
+  if( y2.avg == 0.0 ) { zero_effmass( effmass , y2 ) ; return ; }
+  if( y1.avg == 0.0 ) { zero_effmass( effmass , y1 ) ; return ; }
+
+  // do the avg first
+  effmass -> avg = newton_coshmeff( 0.5 , y1.avg , y2.avg , x1.avg , x2.avg , LT ) ;
+  for( size_t k = 0 ; k < effmass -> NSAMPLES ; k++ ) {
+    effmass -> resampled[k] = newton_coshmeff( effmass -> avg ,
+					       y1.resampled[k] , y2.resampled[k] ,
+					       x1.resampled[k] , x2.resampled[k] , LT ) ;
+  }
+  compute_err( effmass ) ;
+}
+
 // computes the effective mass and plots a graph of it
 struct resampled *
 effective_mass( struct input_params *Input ,
@@ -177,6 +231,8 @@ effective_mass( struct input_params *Input ,
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
 
+      effmass[j].NSAMPLES = Input -> Data.y[j].NSAMPLES ;
+      effmass[j].restype  = Input -> Data.y[j].restype ;
       effmass[j].resampled = malloc( Input -> Data.y[j].NSAMPLES * sizeof( double ) ) ;
 
       if( j == shift ) {
@@ -212,6 +268,12 @@ effective_mass( struct input_params *Input ,
 			 Input -> Data.y[j-1] ,
 			 Input -> Data.y[j] ,
 			 Input -> Data.y[j+1] ) ;
+	  break ;
+	case ACOSH_ITERATIVE_EFFMASS :
+	  iterative_effmass( &effmass[j] ,
+			     Input -> Data.y[j] , Input -> Data.y[j+1] ,
+			     Input -> Data.x[j] , Input -> Data.x[j+1] ,
+			     Input -> Traj[i].Dimensions[3] ) ;
 	  break ;
 	case ASINH_EFFMASS :
 	  asinh_effmass( &effmass[j] ,
