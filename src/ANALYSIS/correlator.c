@@ -19,7 +19,7 @@
 //#define FIT_EFFMASS
 //#define PADE_LAPLACE
 
-//#define CDIV
+#define CDIV
 
 void 
 my_little_prony( const struct input_params *Input )
@@ -178,7 +178,7 @@ correlator_analysis( struct input_params *Input )
 #endif
   
   // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ACOSH_ITERATIVE_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , LOG_EFFMASS ) ; //ACOSH_ITERATIVE_EFFMASS ) ;
 
 #ifdef FIT_EFFMASS
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
@@ -193,8 +193,15 @@ correlator_analysis( struct input_params *Input )
 
 
   #ifdef CDIV
+  double max = 1. ;
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
-    divide_constant( &Input -> Data.y[i] , 1E14 ) ;
+    if( Input -> Data.y[i].avg > max ) {
+      max = Input -> Data.y[i].avg ;
+    }
+  }
+  fprintf( stdout , "[CORRELATOR] new max %e\n" , max ) ;
+  for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
+    divide_constant( &Input -> Data.y[i] , max ) ;
   }
   #endif
 
@@ -272,10 +279,12 @@ correlator_analysis( struct input_params *Input )
   if( Input -> Fit.Fitdef == EXP ||
       Input -> Fit.Fitdef == COSH ||
       Input -> Fit.Fitdef == SINH ) {
-    //write_flat_single( &Fit[1] , "Mass.flat" ) ;
+    
     struct resampled mpi2 = init_dist( NULL ,
 				       Fit[1].NSAMPLES ,
 				       Fit[1].restype ) ;
+    write_flat_dist( &Fit[1] , &mpi2 , 1 , "Mass_0.flat" ) ;
+#if 0
     size_t shift = 0 , j ;
     for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
       for( j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
@@ -315,6 +324,7 @@ correlator_analysis( struct input_params *Input )
     fprintf( stdout , "ainverse %f %f\n" , Omega.avg , Omega.err ) ; 
     
     free( Omega.resampled ) ;
+    #endif
   }
 
   /*

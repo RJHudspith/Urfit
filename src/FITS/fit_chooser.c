@@ -89,7 +89,7 @@ get_Nparam( const struct fit_info Fit )
  case POLY : return Fit.N + 1 ;
  case PPAA : return 3*Fit.N ;
  case PEXP : return 1+2*Fit.N ;
- case PP_AA : return 4 ;
+ case PP_AA : return 5 ;
  case PP_AA_EXP : return 5 ;
  case PP_AA_WW : return 5 ;
  case PP_AA_WW_R2 : return 5 + 2*Fit.N ;
@@ -101,7 +101,7 @@ get_Nparam( const struct fit_info Fit )
  case SUN_CONT : return 3 ;
  case ZV_EXP : return 2 ;
  case NRQCD_EXP : return 2 ;
- case NRQCD_EXP2 : return 4 ;
+ case NRQCD_EXP2 : return 5 ;
  case SOL : return 5 ;
  case SU2_SHITFIT : return 2 ;
  case NOFIT : return 0 ;

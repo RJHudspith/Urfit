@@ -13,8 +13,8 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
-static const int t0 = 1 ;
-static const int td = 3 ;
+static const int t0 = 2 ;
+static const int td = 4 ;
 
 static int
 write_fitmass_graph( FILE *file , 
@@ -41,7 +41,7 @@ write_evalues( struct resampled *evalues ,
     sprintf( str , "Evalue.%zu.flat" , i ) ;
     FILE *file = fopen( str , "w" ) ;
 
-    fprintf( file , "%u\n" , evalues[ j + Ndata*i ].restype ) ;
+    fprintf( file , "%u\n" , evalues[ 0 ].restype ) ;
     fprintf( file , "%zu\n" , Ndata ) ;
     
     for( j = 0 ; j < Ndata ; j++ ) {
