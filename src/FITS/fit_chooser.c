@@ -81,7 +81,7 @@ get_Nparam( const struct fit_info Fit )
    // these have independent amounts
  case EXP_PLUSC : return 2*Fit.N+1 ;
  case FVOLCC : return 4 + 4 ;
- case FVOL1 : return 2 ;
+ case FVOL1 : return 3 ;
  case FVOL2 : return 9 ; //return 4 ;
  case FVOL3 : return 5 ;
  case PADE : return Fit.N + Fit.M ;
@@ -101,7 +101,7 @@ get_Nparam( const struct fit_info Fit )
  case SUN_CONT : return 3 ;
  case ZV_EXP : return 2 ;
  case NRQCD_EXP : return 2 ;
- case NRQCD_EXP2 : return 4 ;
+ case NRQCD_EXP2 : return 5 ;
  case SOL : return 5 ;
  case SU2_SHITFIT : return 2 ;
  case NOFIT : return 0 ;
@@ -126,18 +126,18 @@ init_fit( const struct data_info Data ,
     fdesc.guesses    = alpha_D0_guesses ;
     break ;
   case ALPHA_D0_MULTI :
-    /*
     fdesc.func       = falpha_D0_multi ;
     fdesc.F          = alpha_D0_multi_f ;
     fdesc.dF         = alpha_D0_multi_df ;
     fdesc.d2F        = alpha_D0_multi_d2f ;
     fdesc.guesses    = alpha_D0_multi_guesses ;
-    */
+    /*
     fdesc.func       = falpha_D0_multi2 ;
     fdesc.F          = alpha_D0_multi2_f ;
     fdesc.dF         = alpha_D0_multi2_df ;
     fdesc.d2F        = alpha_D0_multi2_d2f ;
     fdesc.guesses    = alpha_D0_multi2_guesses ;
+    */
     break ;
   case ADLERALPHA_D0 :
     fdesc.func       = fadleralpha_D0 ;

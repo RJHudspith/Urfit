@@ -173,21 +173,28 @@ f( const double meff , const double ct , const double ct1 , const double t , con
   return ct/ct1 - (exp( -meff*t ) + exp( -meff*(Lt-t) ))/( exp( -meff*t1 ) + exp( -meff*(Lt-t1) ) ) ;
 }
 
+// newton iteration
 static double
 newton_coshmeff( const double initialguess ,
 		 const double ct ,
 		 const double ct1 ,
-		 const int t ,
-		 const int t1 ,
+		 const double t ,
+		 const double t1 ,
 		 const int Lt )
 {
   size_t iter = 0 ;
-  double meff = initialguess , tol = 1 , dh = 1E-8;
+  double meff = initialguess , tol = 1 , dh = 1E-8 ;
+
+  if( fabs(t-t1) < 1E-14 ) {
+    fprintf( stderr , "Newton coshmeff will fail 1 %e ~= t1 %e\n" , t , t1 ) ;
+    exit(1) ;
+  }
+  
   while( tol > 1E-8 && iter < 20 ) {
-    const double num = f(meff,ct,ct1,(double)t,(double)t1,(double)Lt) ;
-    const double den = ( f(meff+dh,ct,ct1,(double)t,(double)t1,(double)Lt)
-			 - f(meff-dh,ct,ct1,(double)t,(double)t1,(double)Lt) )/(2.*dh);    
-    meff -= num/den ;
+    const double num = f(meff,ct,ct1,t,t1,(double)Lt) ;
+    const double den = ( f(meff+dh,ct,ct1,t,t1,(double)Lt)
+			 - f(meff-dh,ct,ct1,t,t1,(double)Lt) )/(2.*dh);    
+    meff -= num/(den) ;
     tol = fabs( num ) ;
     iter++ ;
   }
@@ -207,8 +214,7 @@ iterative_effmass( struct resampled *effmass ,
 {
   if( y2.avg == 0.0 ) { zero_effmass( effmass , y2 ) ; return ; }
   if( y1.avg == 0.0 ) { zero_effmass( effmass , y1 ) ; return ; }
-
-  // do the avg first
+  // do the avg first --> need a more educated guess
   effmass -> avg = newton_coshmeff( 0.5 , y1.avg , y2.avg , x1.avg , x2.avg , LT ) ;
   for( size_t k = 0 ; k < effmass -> NSAMPLES ; k++ ) {
     effmass -> resampled[k] = newton_coshmeff( effmass -> avg ,

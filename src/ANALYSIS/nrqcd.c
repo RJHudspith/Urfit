@@ -4,6 +4,7 @@
 #include "fit_and_plot.h"
 #include "init.h" // free_fitparams
 #include "nrqcd_exp2.h" // set_psq_nrqcd2()
+#include "write_flat.h"
 
 #include "resampled_ops.h"
 
@@ -46,14 +47,12 @@ nrqcd_analysis( struct input_params *Input )
   struct resampled temp2 = init_dist( NULL , fit[0].NSAMPLES , fit[0].restype ) ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
 
+    // p4amp version
     equate( &temp , fit[1] ) ;
-    raise( &temp , 2 ) ;
-    
     equate( &temp2 , fit[2] ) ;
-    mult_constant( &temp2 , p2[i] ) ;
-
+    raise( &temp2 , -1 ) ;
+    mult_constant( &temp2 , p2[i]/2. ) ;
     add( &temp , temp2 ) ;
-    root( &temp ) ;
 
     fprintf( file , "%f %f\n" , Input->Traj[i].Fit_Low , temp.err_hi ) ;
     fprintf( file , "%f %f\n\n" , Input->Traj[i].Fit_High , temp.err_hi ) ;
@@ -75,18 +74,10 @@ nrqcd_analysis( struct input_params *Input )
   }
 
   fprintf( stdout , "Writing mass to %s \n" , str ) ;
+  struct resampled mx = init_dist( NULL , fit[2].NSAMPLES , fit[2].restype ) ;
+  write_flat_dist( &fit[2] , &mx , 1 , str ) ;
 
-  FILE *outfile = fopen( str , "w" ) ;
-  fprintf( outfile , "%d\n" , fit[2].restype ) ;
-  fprintf( outfile , "1\n" ) ;
-  fprintf( outfile , "%zu\n" , fit[2].NSAMPLES ) ;
-  
-  for( i = 0 ; i < fit[2].NSAMPLES ; i++ ) {
-    fprintf( outfile , "%1.15e %1.15e\n" , bare_mass , fit[2].resampled[i] ) ;
-  }
-  fprintf( outfile , "AVG %1.15e %1.15e\n" , bare_mass , fit[2].avg ) ;
-  
-  fclose( outfile ) ;
+  write_flat_dist( &fit[1] , &mx , 1 , "Mass.flat" ) ;
   
   free_fitparams( fit , Input -> Fit.Nlogic ) ;
   

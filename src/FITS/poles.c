@@ -17,8 +17,8 @@ fpoles( const struct x_desc X , const double *fparams , const size_t Npars )
   for( i = 0 ; i < X.M+1 ; i++ ) {
     sum += fparams[ X.N + i ] * pow( X.X , i ) ;
   }
-  //return sum ;
-  return fparams[0]/(X.X) + fparams[1] + fparams[2]*X.X ;
+  return sum ;
+  //return fparams[0]/(X.X) + fparams[1] + fparams[2]*X.X ;
 }
 
 void
@@ -43,12 +43,16 @@ void
 poles_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
-  size_t i ;
+  size_t i , j ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
-    const double X = DATA -> x[i] ;
-    df[DATA -> map[i].p[0]][i] = 1/(X) ;
-    df[DATA -> map[i].p[1]][i] = 1 ;
-    df[DATA -> map[i].p[2]][i] = X ;
+    struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
+			DATA -> N , DATA -> M } ;
+    for( j = 0 ; j < X.N ; j++ ) {
+      df[ DATA -> map[i].p[j] ][i] = fparams[ j ] * pow( X.X , -(int)X.N + (int)j ) ; 
+    }
+    for( j = 0 ; j < X.M+1 ; j++ ) {
+      df[ DATA -> map[i].p[j+X.N] ][i] = fparams[ j+X.N ] * pow( X.X , (int)X.N + (int)j ) ; 
+    }
   }
   return ;
 }

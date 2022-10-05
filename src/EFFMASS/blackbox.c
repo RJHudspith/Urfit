@@ -326,7 +326,7 @@ blackboxT( double complex *x ,
   gsl_eigen_nonsymm( C , eval , w ) ;
 
   for( i = 0 ; i < Nstates ; i++ ) {
-    x[i] = GSL_REAL( gsl_vector_complex_get( eval , i ) ) + I * GSL_IMAG( gsl_vector_complex_get( eval , i ) ) ;
+    x[i] = gsl_vector_complex_get( eval , i ) ;
   }
 
   gsl_matrix_free( A ) ;

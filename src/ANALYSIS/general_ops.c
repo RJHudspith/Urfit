@@ -34,9 +34,7 @@ do_op( const struct resampled A ,
   //write_flat_single( res , str ) ;
 
   struct resampled mpi2 = init_dist( NULL , A.NSAMPLES , A.restype ) ;
-
   equate_constant( &mpi2 , x , A.NSAMPLES , A.restype ) ;
-
   write_flat_dist( &res , &mpi2 , 1 , str ) ;
 
   free( str ) ;
@@ -79,6 +77,12 @@ gen_ops( struct input_params *Input )
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
 	     divide , "Div" , mpi2 , j ) ;
+
+      /*
+      do_op( Input -> Data.y[j] ,
+	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
+	     phi4_comb , "Phi4_comb" , mpi2 , j ) ;
+      */
       
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,

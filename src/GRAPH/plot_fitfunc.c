@@ -107,7 +107,7 @@ plot_fitfunction_HACK( const struct resampled *f ,
 
   size_t h , i ;
 
-  const size_t MAX = 7 ; //fvol2_NMAX( ) ;
+  const size_t MAX = 13 ; //fvol2_NMAX( ) ;
   //const size_t MAX = 15 ; //fvol3_NMAX( ) ;
 
   // loop over the simultaneous parameters
@@ -118,8 +118,8 @@ plot_fitfunction_HACK( const struct resampled *f ,
       //const double xmin = 0.018225 ;
       //const double xmax = 0.18 ;
 
-      const double xmin = 0.11233596051497033 ;
-      const double xmax = 0.55;
+      const double xmin = 0.07822077018599871;
+      const double xmax = 0.8;
       
       //const double xmin = 0.225981 ;
       //const double xmax = 0.0 ;

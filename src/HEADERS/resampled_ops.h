@@ -78,4 +78,8 @@ void
 subtract_constant( struct resampled *a , 
 		   const double b ) ;
 
+void
+phi4_comb( struct resampled *a , 
+	   const struct resampled b ) ;
+
 #endif

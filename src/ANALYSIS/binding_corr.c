@@ -130,7 +130,6 @@ binding_corr_analysis2( struct input_params *Input )
   const size_t N = Input -> Fit.N ;
   const size_t LT = Input -> Data.Ndata[0] ;
   
-  const size_t shift = Input -> Data.Nsim-2 ;
   for( j = 0 ; j < LT ; j++ ) {  
     divide( &Input -> Data.y[ j ] ,
 	    Input -> Data.y[ j+LT ] ) ;

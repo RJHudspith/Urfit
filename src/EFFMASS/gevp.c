@@ -21,14 +21,23 @@
 
 #define OPTIMISED_CORRELATOR
 
+//#define SYMMETRIC_GEVP
+
 struct GEVP_temps {
   gsl_matrix *a ;
   gsl_matrix *b ;
+#ifdef SYMMETRIC_GEVP
+  gsl_eigen_gensymmv_workspace *work ;
+  double *ev ;
+  gsl_matrix *evec ;
+  gsl_vector *eval ;
+#else
   gsl_eigen_genv_workspace *work ;
   gsl_vector_complex *alpha ;
   gsl_vector *beta ;
   gsl_matrix_complex *evec ;
   double complex *ev ;
+#endif
   double *evec_norm ;
   size_t N ;
 } ;
@@ -120,7 +129,6 @@ optimised_correlator( struct GEVP_temps *G ,
 		      const size_t td )
 {
   // check diagonalisation with V^\dag C(t) V
-  double complex D[N][N] ;
   double C0[ N*M ] ;
   size_t i , j , a , b , c , d ;
   for( j = 0 ; j < Ndata ; j++ ) {    
@@ -134,19 +142,34 @@ optimised_correlator( struct GEVP_temps *G ,
       }
       shift += Ndata ;
     }
+    #ifdef SYMMETRIC_GEVP
+    for( a = 0 ; a < N ; a++ ) {
+      register double Sum1 = 0. ;
+      for( b = 0 ; b < N ; b++ ) {
+	const double A = gsl_matrix_get( G[td].evec , b , a ) ;
+	for( c = 0 ; c < N ; c++ ) {
+	  const double B = gsl_matrix_get( G[td].evec , c , a ) ;
+	  Sum1 += A * B * C0[ c + N*b ] ;
+	}
+      }
+      G[j].ev[a] = Sum1 ;
+    }
+    #else
     for( a = 0 ; a < N ; a++ ) {
       register double complex Sum1 = 0. ;
       for( b = 0 ; b < N ; b++ ) {
 	const gsl_complex A = gsl_matrix_complex_get( G[td].evec , b , a ) ;
-	const double complex AC = A.dat[0] - I*A.dat[1] ;
+	//const double complex AC = A.dat[0] - I*A.dat[1] ;
+	const double complex AC = conj( A ) ; //A.dat[0] - I*A.dat[1] ;
 	for( c = 0 ; c < N ; c++ ) {
 	  const gsl_complex B = gsl_matrix_complex_get( G[td].evec , c , a ) ;
-	  const double complex BC = B.dat[0] + I*B.dat[1] ;
+	  const double complex BC = B ; //B.dat[0] + I*B.dat[1] ;
 	  Sum1 += AC * BC * C0[ c + N*b ] ;
 	}
       }
       G[j].ev[a] = creal( Sum1 ) ;
     }
+    #endif
   }
   return ;
 }
@@ -163,10 +186,10 @@ optimised_correlator2( struct GEVP_temps *G1 ,
     register double complex Sum1 = 0. ;
     for( b = 0 ; b < N ; b++ ) {
       const gsl_complex A = gsl_matrix_complex_get( G2.evec , b , a ) ;
-      const double complex AC = A.dat[0] - I*A.dat[1] ;
+      const double complex AC = conj( A ) ; //A.dat[0] - I*A.dat[1] ;
       for( c = 0 ; c < N ; c++ ) {
 	const gsl_complex B = gsl_matrix_complex_get( G2.evec , c , a ) ;
-	const double complex BC = B.dat[0] + I*B.dat[1] ;
+	const double complex BC = B ; //B.dat[0] + I*B.dat[1] ;
 	Sum1 += AC * BC * C0[ c + N*b ] ;
       }
     }
@@ -189,9 +212,13 @@ gevp2( struct GEVP_temps *G ,
   int flag = SUCCESS ;
   
   // perform decomposition
+#ifdef SYMMETRIC_GEVP
+  const int err = gsl_eigen_gensymmv( G[t].a , G[t].b ,
+				      G[t].eval , G[t].evec , G[t].work ) ;
+#else
   const int err = gsl_eigen_genv( G[t].a , G[t].b , G[t].alpha ,
 				  G[t].beta , G[t].evec , G[t].work ) ;
-
+#endif
   if( err != 0 ) {
     fprintf( stderr , "%s\n" , gsl_strerror( err ) ) ;
     fprintf( stderr , "GEVP Aborting\n" ) ;
@@ -202,9 +229,11 @@ gevp2( struct GEVP_temps *G ,
   // set the ev
   size_t i ;
   for( i = 0 ; i < G -> N ; i++ ) {
-    G[t].ev[i] = ( gsl_vector_complex_get( G[t].alpha , i ).dat[0] 
-		   + I*gsl_vector_complex_get( G[t].alpha , i ).dat[1] )
-      / gsl_vector_get( G[t].beta , i ) ;
+    G[t].ev[i] = gsl_vector_complex_get( G[t].alpha , i )/gsl_vector_complex_get( G[t].alpha , i ) ;
+    /*
+    ( gsl_vector_complex_get( G[t].alpha , i ).dat[0] 
+      + I*gsl_vector_complex_get( G[t].alpha , i ).dat[1] ) / gsl_vector_get( G[t].beta , i ) ;
+    */
     if( creal( G[t].ev[i] ) < 0.0 ) {
       G[t].ev[i] = 1E-16 ;
     }
@@ -316,6 +345,13 @@ allocate_G( struct GEVP_temps *G ,
   // set the data
   G -> a = gsl_matrix_alloc( N , N ) ;
   G -> b = gsl_matrix_alloc( N , N ) ;
+#ifdef SYMMETRIC_GEVP
+  G -> work  = gsl_eigen_gensymmv_alloc( N ) ;
+  G -> evec  = gsl_matrix_alloc( N , N ) ;
+  G -> evec_norm = malloc( N*sizeof(double) ) ;
+  G -> eval = gsl_vector_alloc( N ) ;
+  G -> ev = malloc( N*sizeof(double) ) ;
+#else
   // allocations for GSL
   G -> work  = gsl_eigen_genv_alloc( N ) ;
   G -> alpha = gsl_vector_complex_alloc( N ) ;
@@ -323,12 +359,19 @@ allocate_G( struct GEVP_temps *G ,
   G -> evec  = gsl_matrix_complex_alloc( N , N ) ;
   G -> evec_norm = malloc( N*sizeof(double) ) ;
   G -> ev = malloc( N*sizeof( double complex ) ) ;
+#endif
   G -> N = N ;
 }
 
 static void
 free_G( struct GEVP_temps *G )
 {
+#ifdef SYMMETRIC_GEVP
+  gsl_matrix_free( G -> evec ) ;
+  gsl_eigen_gensymmv_free( G-> work ) ;
+  gsl_vector_free( G->eval ) ;
+  free( G -> evec_norm ) ;
+#else
   gsl_matrix_complex_free( G -> evec ) ;
   gsl_vector_complex_free( G -> alpha ) ;
   gsl_vector_free( G -> beta ) ;
@@ -337,6 +380,7 @@ free_G( struct GEVP_temps *G )
   gsl_matrix_free( G -> b ) ;
   free( G -> ev ) ;
   free( G -> evec_norm ) ;
+#endif
 }
 
 // solve the GEVP
@@ -348,11 +392,14 @@ solve_GEVP( const struct resampled *y ,
 	    const size_t t0 ,
 	    const size_t td )
 {
+  fprintf( stdout , "GEVP solver ----> " ) ;
+  
   if( N > M ) {
     fprintf( stderr , "[GEVP] cannot solve when N states "
 	     "are less than M correlators\n" ) ;
     return NULL ;
   }
+
   
   // initialise the generalised eigenvalues
   struct resampled *evalues = malloc( Ndata*N*
@@ -365,6 +412,7 @@ solve_GEVP( const struct resampled *y ,
     evalues[j].NSAMPLES = y[0].NSAMPLES ;
   }
 
+
   struct GEVP_temps *G = malloc( Ndata*sizeof( struct GEVP_temps ) ) ;
 
   double C0[ N*M ] , C1[ N*M ] ;
@@ -373,7 +421,7 @@ solve_GEVP( const struct resampled *y ,
   for( j = 0 ; j < Ndata ; j++ ) {
     allocate_G( &G[j] , N );
   }
-
+  
   // loop resamples
   for( k = 0 ; k < y[0].NSAMPLES ; k++ ) {
     
@@ -404,7 +452,11 @@ solve_GEVP( const struct resampled *y ,
     for( j = 0 ; j < Ndata ; j++ ) {
       // poke into solution
       for( i = 0 ; i < N ; i++ ) {
+	#ifdef SYMMETRIC_GEVP
+	evalues[j+Ndata*i].resampled[ k ] = gsl_vector_get( G[j].eval , i ) ;
+	#else
 	evalues[j+Ndata*i].resampled[ k ] = creal( G[j].ev[i] ) ;
+	#endif
       }
       //
     }
@@ -435,7 +487,11 @@ solve_GEVP( const struct resampled *y ,
   for( j = 0 ; j < Ndata ; j++ ) {
     // poke into solution
     for( i = 0 ; i < N ; i++ ) {
+      #ifdef SYMMETRIC_GEVP
+      evalues[j+Ndata*i].avg = gsl_vector_get( G[j].eval , i ) ;
+      #else
       evalues[j+Ndata*i].avg = creal( G[j].ev[i] ) ;
+      #endif
       compute_err( &evalues[j+Ndata*i] ) ;
     }
   }

@@ -340,3 +340,22 @@ subtract_constant( struct resampled *a ,
   compute_err( a ) ;
   return ;
 }
+
+// assumes a is mpi
+void
+phi4_comb( struct resampled *a , 
+	   const struct resampled b )
+{
+  if( a->avg > b.avg ) {
+    fprintf( stderr , "[resampled_ops] phi4_comb a>b\n" ) ;
+    exit(1) ;
+  }
+  size_t i ;
+  for( i = 0 ; i < a -> NSAMPLES ; i++ ) {
+    a -> resampled[i] =
+      0.5*(a -> resampled[i])*(a -> resampled[i])
+      + b.resampled[i]*b.resampled[i] ;
+  }
+  a -> avg = 0.5*(a->avg)*(a->avg) + b.avg*b.avg ;
+  compute_err( a ) ;
+}

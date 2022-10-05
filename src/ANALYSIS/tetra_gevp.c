@@ -13,8 +13,8 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
-static const int t0 = 1 ;
-static const int td = 3 ;
+static const int t0 = 2 ;
+static const int td = 4 ;
 
 static int
 write_fitmass_graph( FILE *file , 
@@ -35,16 +35,17 @@ write_evalues( struct resampled *evalues ,
 	       const size_t N ,
 	       const size_t t0 )
 {
-  size_t i , j = 0 , k ;
+  size_t i , k ;
   for( i = 0 ; i < N ; i++ ) {
     char str[ 256 ] ;
     sprintf( str , "Evalue.%zu.flat" , i ) ;
     FILE *file = fopen( str , "w" ) ;
 
-    fprintf( file , "%u\n" , evalues[ j + Ndata*i ].restype ) ;
+    // assumes (correctly) that they all have the same restype
+    fprintf( file , "%u\n" , evalues[0].restype ) ;
     fprintf( file , "%zu\n" , Ndata ) ;
     
-    for( j = 0 ; j < Ndata ; j++ ) {
+    for( size_t j = 0 ; j < Ndata ; j++ ) {
       compute_err( &evalues[ j + Ndata*i ] ) ;
       printf( "%zu %e %e\n" , j ,
 	      evalues[ j + Ndata*i ].avg ,
@@ -94,7 +95,7 @@ tetra_gevp_analysis( struct input_params *Input )
     goto end ;
   }
 
-  printf( "Solving GEVP ...\n" ) ;
+  fprintf( stdout , "Solving GEVP here ...\n" ) ;
   
   // compute evalues
   struct resampled *evalues = solve_GEVP( Input -> Data.y ,
@@ -232,7 +233,7 @@ tetra_gevp_fixed_delta_analysis( struct input_params *Input )
     goto end ;
   }
 
-  printf( "Solving GEVP ...\n" ) ;
+  printf( "Solving GEVP fixed ...\n" ) ;
   
   // compute evalues
   struct resampled *evalues = solve_GEVP_fixed( Input -> Data.y ,

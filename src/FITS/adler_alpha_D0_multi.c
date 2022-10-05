@@ -21,14 +21,13 @@
 
 static double mu = 2.0 ;
 
-/*
 static const double a2[ 9 ] = { 0.04949440885942718 , 0.04949440885942718 , 0.04949440885942718 ,
 				0.07684254741528086 , 0.07684254741528086 , 0.07684254741528086 ,
 				0.16601189178800163 , 0.16601189178800163 , 0.16601189178800163 } ;
-*/
-static const double m[ 9 ] = { 2.9 , 3 , 3.1 ,
-			       2.9 , 3 , 3.1 ,
-			       2.9 , 3 , 3.1 } ;
+
+static const double m[ 9 ] = { 1.9 , 2.0 , 2.1 ,
+			       1.9 , 2.0 , 2.1 ,
+			       1.9 , 2.0 , 2.1 } ;
 
 // beta parameters
 #if LOOPS > 1
@@ -99,21 +98,15 @@ set_mu_multi_adler( const double munew )
 double
 fadleralpha_D0_multi( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  double a2inv = fparams[4+Npars/3] * fparams[4+Npars/3] ;
+  const double t = log( X.X / ( mu * mu ) ) ;
 
-  //printf( "A2INV %zu %e \n" , Npars , sqrt( a2inv) ) ;
-  
-  const double t = log( a2inv * X.X / ( m[ Npars ] * m[ Npars ] ) ) ;
+  const double corrections =
+    fparams[1] * a2[ Npars ] * ( X.X ) + 
+    fparams[2] * a2[ Npars ] * a2[ Npars ] * ( X.X * X.X ) ;
   
   // Idea is to run alpha at mu to the other scale "m" and use that in the fit
-  const double a_pi = rescale_alpha( fparams[0] / M_PI , mu , m[ Npars ] ) ;
-  
-  // momentum corrections
-  double corrections =
-    fparams[3] / a2inv +
-    fparams[1] * ( X.X ) +
-    fparams[2] * ( X.X * X.X ) +
-    fparams[10] * ( X.X * X.X * X.X ) ;
+  const double a_pi = rescale_alpha( fparams[0] * ( fparams[3] * a2[ Npars ] + 1 ) / M_PI , mu , m[ Npars ] ) ;
+
  
   // delta from D=0 OPE
   register double PT = 0.0 ;
@@ -122,9 +115,7 @@ fadleralpha_D0_multi( const struct x_desc X , const double *fparams , const size
     PT = a_pi * ( loop[ loops-1 ](t,D5) + PT ) ;
   }
 
-  //const double ZV = ( 1. - fparams[7] / a2inv ) ;
-  const double ZV = fparams[7+Npars/3] ;
-  return ZV * ZV * ( PT + corrections ) ;
+  return ( PT + corrections ) ;
 }
 
 // D0_multi function evaluation

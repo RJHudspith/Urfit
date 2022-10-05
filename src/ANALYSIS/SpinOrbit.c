@@ -23,7 +23,7 @@ SO_split0( const struct resampled mP ,
   free( temp.resampled ) ;
 }
 
-// does (3*mV+mP )/4.
+// does mV-mP
 void
 hyperfine1( const struct resampled mP ,
 	    const struct resampled mV ,

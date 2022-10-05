@@ -14,7 +14,7 @@ sol_analysis( struct input_params *Input )
   size_t i ;
 
   // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , LOG_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
   
   // free effective mass
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {

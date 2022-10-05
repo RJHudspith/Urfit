@@ -10,16 +10,13 @@
 static double
 b2sgl( const double Q4 , const double Q2 )
 {
-  return (Q4-3*Q2*Q2); ///(48*12*Q2) ;
-  //return -(Q4 - 3*Q2*Q2)/(12.*Q2) ;
-  //return -(Q4 - Q2*Q2 )/(12.*Q2) ;
+  return (Q4+3*Q2*Q2)/(12*Q2) ;
 }
 
 static double
 b4sgl( const double Q6 , const double Q4 , const double Q2 )
 {
-  return (Q6 - 15*Q2*Q4 + 30*Q2*Q2*Q2);///(360.*Q2) ;
-  //return (48*Q6 - 15*Q2*4*Q4 + 30*Q2*Q2*Q2)/(360.*Q2) ;
+  return (Q6 - 15*Q2*Q4 + 30*Q2*Q2*Q2)/(180*360.*Q2) ;
 }
 
 static void
@@ -64,19 +61,9 @@ Qmoments( struct input_params *Input )
   }
   
   for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
-    if( j!=0 ) {
-      //divide( &Input -> Data.y[j] , Input -> Data.y[0] ) ;
+    if( j!=2 ) {
+      divide( &Input -> Data.y[j] , Input -> Data.y[2] ) ;
     }
-  }
-
-  for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
-    //divide_constant( &Input -> Data.y[j] , 360 ) ;
-  }
-  
-  for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
-    printf( "[QMOM] QNORM_%zu %e %e \n" , j ,
-	    Input -> Data.y[j].avg ,
-	    Input -> Data.y[j].err ) ;
   }
 
   // perform a fit
@@ -85,43 +72,30 @@ Qmoments( struct input_params *Input )
   
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;
 
-  // write out some files
-  for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
-    char str[ 256 ] ;
-    sprintf( str , "Qmoment.%zu.L%zu.flat" ,
-	     j , Input -> Traj[0].Dimensions[0] ) ;
-    const double a2 = 10. * 10. /
-      ( Input -> Traj[0].Dimensions[0] *
-	Input -> Traj[0].Dimensions[0] ) ;
-    
-    struct resampled x = init_dist( NULL ,
-				    Input -> Data.y[j].NSAMPLES ,
-				    Input -> Data.y[j].restype ) ;
-    equate_constant( &x , a2 , x.NSAMPLES , x.restype ) ;
-    write_flat_dist( &Input -> Data.y[j] , &x , 1 , str ) ;
-
-    free( x.resampled ) ;
-  }
-  
   return SUCCESS ;
 }
 
 // using the moments of the Q^2 distribution we compute the cumulants
 int
 CumFromMom( struct input_params *Input )
-{  
+{
   struct resampled tmp = init_dist( NULL ,
 				    Input -> Data.y[0].NSAMPLES ,
 				    Input -> Data.y[0].restype ) ;
-  compute_b4( &tmp , Input->Data.y[4] , Input->Data.y[2] , Input->Data.y[0] ) ;
+
+  compute_b4( &tmp , Input->Data.y[6] , Input->Data.y[4] , Input->Data.y[2] ) ;
+
+  printf( "Q2 Q4 Q6 :: %f %f %f\n" , Input -> Data.y[0].avg , Input -> Data.y[2].avg , Input -> Data.y[4].avg ) ;
+
+  
   printf( "Result b4 :: %e +/- %e\n" , tmp.avg , tmp.err ) ;
   
-  compute_b2( &tmp , Input->Data.y[2] , Input->Data.y[0] ) ;
+  compute_b2( &tmp , Input->Data.y[4] , Input->Data.y[2] ) ;
   printf( "Result b2 :: %e +/- %e\n" , tmp.avg , tmp.err ) ;
 
   printf( "Result chi :: %e +/- %e\n" ,
 	  Input->Data.y[0].avg , Input->Data.y[0].err ) ;
-
+  
   return SUCCESS ;
 }
 

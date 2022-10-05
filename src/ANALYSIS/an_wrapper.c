@@ -50,7 +50,7 @@ an_wrapper( struct input_params *Input )
   case Beta_crit :
     return beta_crit( Input ) ;
   case Binding_Corr :
-    return binding_corr_analysis( Input ) ;
+    return binding_corr_analysis2( Input ) ;
   case Correlator :
     return correlator_analysis( Input ) ;
   case Exceptional :
@@ -73,9 +73,9 @@ an_wrapper( struct input_params *Input )
     return pof_analysis( Input ) ;
   case Qcorr :
     //return fit_Qcorr( Input ) ;
-    //return Qmoments( Input ) ;
+    return Qmoments( Input ) ;
     //return TraditionalQ( Input ) ;
-    return CumFromMom( Input ) ;
+    //return CumFromMom( Input ) ;
   case Qsusc :
     return fit_Qsusc( Input ) ;
   case Qslab :

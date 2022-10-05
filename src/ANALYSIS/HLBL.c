@@ -12,7 +12,7 @@
 #include "write_flat.h"
 
 // power of local current renormalisation
-#define PL (3)
+#define PL (4)
 
 //#define NINT_HLBL
 #define PUT_ZERO
@@ -24,15 +24,17 @@
 #endif
 
 // beta value of the ensemble of interest
-#define J500
 #define B385
+#define J500
 #define CONNECTED
 
 //#define STRANGE
-//#define LS
 #define CHARM
 #define CHARMZV
+
+//#define LS
 //#define LC
+//#define CC
 
 static const double lerp_pt = 1 ;
 
@@ -201,7 +203,7 @@ HLBL_analysis( struct input_params *Input )
   #ifdef CONNECTED
   const double NUM[2] = { 16 , 16 } ;
   #elif (defined LC)
-  const double NUM[2] = { -20 , -20 } ;
+  const double NUM[2] = { -24 , -24 } ;
   #else
   const double NUM[2] = { -16 , -16 } ;
   #endif
@@ -254,8 +256,8 @@ HLBL_analysis( struct input_params *Input )
   //const double Z = 9.530678e-01 ;
   //const double Z = 9.914530e-01 ;
   //const double Z = 1.069983e+00 ;
-    const double Z = 1.151280e+00 ;
-    //const double Z = 1.322647e+00 ;
+  //const double Z = 1.151280e+00 ;
+  const double Z = 1.322647e+00 ; // "physical Ds"
     #else
     const double Z = 0.703507 ;
     #endif
@@ -273,8 +275,8 @@ HLBL_analysis( struct input_params *Input )
   //const double Z = 8.858063e-01 ;
   //const double Z = 9.461044e-01 ;
   //const double Z = 1.007931e+00 ;
-    const double Z = 1.071593e+00 ;
-    //const double Z = 1.20324 ; // g-2 PAP value
+  //const double Z = 1.071593e+00 ;
+    const double Z = 1.20324 ; // g-2 PAP value
     #else
     const double Z = 0.71562 ;
     #endif
@@ -300,12 +302,12 @@ HLBL_analysis( struct input_params *Input )
   const double a = 0.07634 ;
   #if (defined B450)
     #ifdef CHARMZV
-    const double Z = 8.197728e-01 ;
+    //const double Z = 8.197728e-01 ;
     //const double Z = 8.685114e-01 ;
     //const double Z = 9.184234e-01 ;
     //const double Z = 9.694756e-01 ;
     //const double Z = 1.021638e+00 ;
-    //const double Z = 1.12972 ; // g-2 paper
+    const double Z = 1.12972 ; // g-2 paper
     #else
     const double Z = 0.72647 ;
     #endif
@@ -327,8 +329,8 @@ HLBL_analysis( struct input_params *Input )
     //const double Z = 8.509598e-01 ;
     //const double Z = 8.895498e-01 ;
     //const double Z = 9.288259e-01 ;
-    const double Z = 9.677787e-01 ;
-    //const double Z = 1.04843 ; // "physical Ds" g-2 paper
+    //const double Z = 9.677787e-01 ;
+    const double Z = 1.04843 ; // "physical Ds" g-2 paper
     #else
     const double Z = 0.74028 ;
     #endif
@@ -362,8 +364,8 @@ HLBL_analysis( struct input_params *Input )
   //const double Z = 8.379414e-01 ;
   //const double Z = 8.650583e-01 ;
   //const double Z = 8.925378e-01 ;
-  const double Z = 9.204328e-01 ;
-  //const double Z = 0.97722 ; // physical Ds g-2 paper
+  //const double Z = 9.204328e-01 ;
+  const double Z = 0.97722 ; // physical Ds g-2 paper
   #else
   const double Z = 0.75909 ;
   #endif
@@ -373,8 +375,8 @@ HLBL_analysis( struct input_params *Input )
     #ifdef CHARMZV
   //const double Z = 8.126588e-01 ;
   //const double Z = 8.324016e-01 ;
-  //const double Z = 8.522841e-01 ;
-  const double Z = 8.724131e-01 ;
+  const double Z = 8.522841e-01 ;
+  //const double Z = 8.724131e-01 ;
   //const double Z = 8.927380e-01 ;
     #endif
 #else

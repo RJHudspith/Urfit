@@ -104,10 +104,10 @@ pof_analysis( struct input_params *Input )
   }
 
   // compute an effective mass
-  struct resampled *effmass = effective_mass( Input , LOG_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
 
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
-    divide_constant( &Input -> Data.y[ i ] , 1E14 ) ;
+    //divide_constant( &Input -> Data.y[ i ] , 1E14 ) ;
     free( effmass[i].resampled ) ;
   }
   free( effmass ) ;

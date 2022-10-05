@@ -23,7 +23,7 @@ compute_chisq( const struct ffunction f ,
   case UNCORRELATED : Nsum = f.N ; break ;
   case CORRELATED : Nsum = f.N * f.N ; break ;
   }
-  y = malloc( Nsum * sizeof( double ) ) ;
+  y = calloc( Nsum , sizeof( double ) ) ;
   t = y ;
 
   // compute the chisq within the switch

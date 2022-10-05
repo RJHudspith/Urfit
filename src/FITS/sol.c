@@ -10,7 +10,7 @@ static double psq[ 25 ] = { 0 } ;
 
 #define P4
 
-#define EXP
+//#define EXP
 
 void
 set_psq_nrqcd2( const double *p2 ,

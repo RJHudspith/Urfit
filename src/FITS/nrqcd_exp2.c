@@ -10,13 +10,13 @@ static double psq[ 25 ] = { 0 } ;
 
 //#define SQRT
 //#define TAYLOR
-//#define P4_AMP
+#define P4_AMP
 //#define P4_EXP
 //#define P4_EXP2
 //#define P4_EXPAMP2
 //#define P4_EXPAMP
 
-#define SOL
+//#define SOL
 
 void
 set_psq_nrqcd2( const double *p2 ,
