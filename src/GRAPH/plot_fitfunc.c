@@ -56,6 +56,32 @@ extrap_fitfunc( const struct resampled *f ,
   return data ;
 }
 
+double
+bisect_fitfunc( const struct resampled *f ,
+		const struct data_info Data ,
+		const struct fit_info Fit ,
+		const double xlo ,
+		const double target ,
+		const double xhi ,
+		const size_t shift )
+{
+  struct resampled tavg = init_dist( NULL , f[0].NSAMPLES , f[0].restype ) ;
+  double x1 = xlo , x2 = xhi , tol = 1 , xmid = 0.0 ;
+  while( tol > 1E-5 ) {
+    xmid = 0.5*(x1+x2) ;
+    tavg = extrap_fitfunc( f , Data , Fit , xmid , 0 ) ;
+    if( tavg.avg > target ) {
+      x2 = xmid ;
+    } else {
+      x1 = xmid ;
+    }
+    tol = fabs(x2-x1) ;
+    //fprintf( stdout , "(%f,%f,%f) ----> %f\n", target, tavg.avg, tol, xmid ) ;
+  }
+  free( tavg.resampled ) ;
+  return xmid ;
+}
+
 static struct resampled
 extrap_fitfunc_HACK( const struct resampled *f ,
 		     const struct data_info Data ,

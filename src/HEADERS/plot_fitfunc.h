@@ -8,6 +8,15 @@ extrap_fitfunc( const struct resampled *f ,
 		const double xpos ,
 		const size_t shift ) ;
 
+double
+bisect_fitfunc( const struct resampled *f ,
+		const struct data_info Data ,
+		const struct fit_info Fit ,
+		const double xlo ,
+		const double target ,
+		const double xhi ,
+		const size_t shift ) ;
+
 void
 plot_fitfunction_HACK( const struct resampled *f ,
 		       const struct data_info Data ,
