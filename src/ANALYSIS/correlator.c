@@ -306,8 +306,8 @@ correlator_analysis( struct input_params *Input )
     #endif
 
     FILE *massfile = fopen( "massfits.dat" , "w+a" ) ;
-    for( int i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-      for( int j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
+    for( size_t i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+      for( size_t j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
 	write_fitmass_graph( massfile , Fit[j+1+i*2*Input -> Fit.N] ,
 			     Input -> Traj[i].Fit_Low ,
 			     Input -> Traj[i].Fit_High ) ;
@@ -325,13 +325,7 @@ correlator_analysis( struct input_params *Input )
     fprintf( stdout , "ainverse %f %f\n" , Omega.avg , Omega.err ) ; 
     
     free( Omega.resampled ) ;
-    #endif
   }
-
-  /*
-  subtract( &Fit[3] , Fit[1] ) ;
-  printf( "%f +/- %f \n" , Fit[3].avg , Fit[3].err ) ;
-  */
 
     // write out a flat file
   if( Input -> Fit.Fitdef == PEXP ) {
