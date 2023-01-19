@@ -14,6 +14,7 @@
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_eigen.h>
+#include <gsl/gsl_version.h>
 
 #include "stats.h"
 
@@ -130,7 +131,7 @@ optimised_correlator( struct GEVP_temps *G ,
 {
   // check diagonalisation with V^\dag C(t) V
   double C0[ N*M ] ;
-  size_t i , j , a , b , c , d ;
+  size_t i , j , a , b , c ;
   for( j = 0 ; j < Ndata ; j++ ) {    
     // put these in the linearised matrices
     size_t shift = 0 ;
@@ -159,11 +160,18 @@ optimised_correlator( struct GEVP_temps *G ,
       register double complex Sum1 = 0. ;
       for( b = 0 ; b < N ; b++ ) {
 	const gsl_complex A = gsl_matrix_complex_get( G[td].evec , b , a ) ;
-	//const double complex AC = A.dat[0] - I*A.dat[1] ;
-	const double complex AC = conj( A ) ; //A.dat[0] - I*A.dat[1] ;
+	#if GSL_MINOR_VERSION > 6
+	const double complex AC = conj( A ) ;
+	#else
+	const double complex AC = A.dat[0] - I*A.dat[1] ;
+	#endif
 	for( c = 0 ; c < N ; c++ ) {
 	  const gsl_complex B = gsl_matrix_complex_get( G[td].evec , c , a ) ;
-	  const double complex BC = B ; //B.dat[0] + I*B.dat[1] ;
+          #if GSL_MINOR_VERSION > 6
+	  const double complex BC = B ;
+          #else
+	  const double complex BC = B.dat[0] + I*B.dat[1] ;
+          #endif
 	  Sum1 += AC * BC * C0[ c + N*b ] ;
 	}
       }
@@ -186,10 +194,18 @@ optimised_correlator2( struct GEVP_temps *G1 ,
     register double complex Sum1 = 0. ;
     for( b = 0 ; b < N ; b++ ) {
       const gsl_complex A = gsl_matrix_complex_get( G2.evec , b , a ) ;
-      const double complex AC = conj( A ) ; //A.dat[0] - I*A.dat[1] ;
+      #if GSL_MINOR_VERSION > 6
+      const double complex AC = conj( A ) ;
+      #else
+      const double complex AC = A.dat[0] - I*A.dat[1] ;
+      #endif
       for( c = 0 ; c < N ; c++ ) {
 	const gsl_complex B = gsl_matrix_complex_get( G2.evec , c , a ) ;
-	const double complex BC = B ; //B.dat[0] + I*B.dat[1] ;
+        #if GSL_MINOR_VERSION > 6
+	const double complex BC = B ;
+        #else
+	const double complex BC = B.dat[0] + I*B.dat[1] ;
+        #endif
 	Sum1 += AC * BC * C0[ c + N*b ] ;
       }
     }
@@ -246,7 +262,7 @@ gevp2( struct GEVP_temps *G ,
     insertion_sort( &G[t] , comp_desc ) ;
   }
 
-    size_t j ;
+  size_t j ;
   for( j = 0 ; j < G -> N ; j++ ) {
     if( write_evalues ) {
       // if we want them written

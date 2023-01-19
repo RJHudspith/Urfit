@@ -13,6 +13,7 @@
 #include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_eigen.h>
+#include <gsl/gsl_version.h>
 
 #include "gens.h"
 
@@ -43,7 +44,6 @@ blackboxT( double complex *x ,
   gsl_vector *beta  = gsl_vector_alloc( Nt ) ;
   gsl_vector *delta = gsl_vector_alloc( Nstates ) ;
 
-  
   for( i = 0 ; i < Nt ; i++ ) {
     for( j = 0 ; j < Nstates ; j++ ) {
       const size_t didx = ( t + i + j )%Ndata ;
@@ -326,7 +326,12 @@ blackboxT( double complex *x ,
   gsl_eigen_nonsymm( C , eval , w ) ;
 
   for( i = 0 ; i < Nstates ; i++ ) {
+#if GSL_MINOR_VERSION > 6
     x[i] = gsl_vector_complex_get( eval , i ) ;
+#else
+    const gsl_complex tmp = gsl_vector_complex_get( eval , i ) ;
+    x[i] = tmp.dat[0] + I * tmp.dat[1] ;
+#endif
   }
 
   gsl_matrix_free( A ) ;
