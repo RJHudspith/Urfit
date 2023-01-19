@@ -85,10 +85,8 @@ an_wrapper( struct input_params *Input )
     return fit_Qslab_fixed( Input ) ;
   case Ren_Rats :
     return renormalise_rats( Input ) ;
-    /*
   case SpinOrbit :
-    return SpinOrbit( Input ) ;
-    */
+    return spin_orbit( Input ) ;
   case Sol :
     return sol_analysis( Input ) ;
   case StaticPotential :

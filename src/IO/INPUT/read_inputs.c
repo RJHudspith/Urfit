@@ -227,6 +227,8 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = TetraGEVP ;
     } else if( are_equal( Flat[ an_tag ].Value , "TetraGEVP_Fixed" ) ) {
       Input -> Analysis = TetraGEVP_Fixed ;
+    } else if( are_equal( Flat[ an_tag ].Value , "SpinOrbit" ) ) {
+      Input -> Analysis = SpinOrbit ;
     } else if( are_equal( Flat[ an_tag ].Value , "StaticPotential" ) ) {
       Input -> Analysis = StaticPotential ;
     } else if( are_equal( Flat[ an_tag ].Value , "ZV" ) ) {

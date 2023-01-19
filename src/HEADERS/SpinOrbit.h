@@ -2,6 +2,6 @@
 #define SPIN_ORBIT_H
 
 int
-SpinOrbit( struct input_params *Input ) ;
+spin_orbit( struct input_params *Input ) ;
 
 #endif

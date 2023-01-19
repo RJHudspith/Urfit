@@ -101,7 +101,7 @@ SO_split3( const struct resampled mI ,
 }
 
 int
-SpinOrbit( struct input_params *Input )
+spin_orbit( struct input_params *Input )
 {
   if( Input -> Data.Nsim != 5 ) {
     fprintf( stdout , "[SpinOrbit] requires 5 arguments: eta_c, j_psi, scalar, axial, tensor\n" ) ;    
