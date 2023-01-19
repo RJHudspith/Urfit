@@ -108,18 +108,20 @@ SpinOrbit( struct input_params *Input )
     return FAILURE ;
   }
 
-  //const double ainv = (0.19733/0.09929) ;
-  //const double ainv = (0.19733/0.08636) ;
-  const double ainv = (0.19733/0.07634) ;
-  //const double ainv = (0.19733/0.06426) ;
+  const double hc = 0.1973269804 ; 
+  //const double ainv = (hc/0.09929) ;
+  //const double ainv = (hc/0.08636) ;
+  //const double ainv = (hc/0.07634) ;
+  //const double ainv = (hc/0.06426) ;
+  const double ainv = (hc/0.04981) ;
 
   // print the results
   fprintf(stdout , "\nMASSES\n" ) ;
   fprintf( stdout , "Metac %e %e\n" , Input -> Data.y[0].avg*ainv , Input -> Data.y[0].err*ainv ) ;
   fprintf( stdout , "MJPsi %e %e\n" , Input -> Data.y[1].avg*ainv , Input -> Data.y[1].err*ainv ) ;
-  fprintf( stdout , "MI %e %e\n" , Input -> Data.y[2].avg*ainv , Input -> Data.y[2].err*ainv ) ;
-  fprintf( stdout , "MAi %e %e\n" , Input -> Data.y[3].avg*ainv , Input -> Data.y[3].err*ainv ) ;
-  fprintf( stdout , "MT %e %e\n" , Input -> Data.y[4].avg*ainv , Input -> Data.y[4].err*ainv ) ;
+  fprintf( stdout , "Mc0 %e %e\n" , Input -> Data.y[2].avg*ainv , Input -> Data.y[2].err*ainv ) ;
+  fprintf( stdout , "Mc1 %e %e\n" , Input -> Data.y[3].avg*ainv , Input -> Data.y[3].err*ainv ) ;
+  fprintf( stdout , "Mc2 %e %e\n" , Input -> Data.y[4].avg*ainv , Input -> Data.y[4].err*ainv ) ;
 
   // spin averages
   fprintf(stdout , "\nSPINAVG\n" ) ;

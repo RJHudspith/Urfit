@@ -63,6 +63,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = C4C7 ;
   } else if( are_equal( Flat[tag].Value , "CORNELL" ) ) {
     Input -> Fit.Fitdef = CORNELL ;
+  } else if( are_equal( Flat[tag].Value , "CORNELL_V2" ) ) {
+    Input -> Fit.Fitdef = CORNELL_V2 ;
   } else if( are_equal( Flat[tag].Value , "COSH" ) ) {
     Input -> Fit.Fitdef = COSH ;
   } else if( are_equal( Flat[tag].Value , "COSH_PLUSC" ) ) {
@@ -85,6 +87,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = HALEXP ;
   } else if( are_equal( Flat[tag].Value , "HLBL_CONT" ) ) {
     Input -> Fit.Fitdef = HLBL_CONT ;
+  } else if( are_equal( Flat[tag].Value , "LARGENB" ) ) {
+    Input -> Fit.Fitdef = LARGENB ;
   } else if( are_equal( Flat[tag].Value , "NRQCD_EXP" ) ) {
     Input -> Fit.Fitdef = NRQCD_EXP ;
   } else if( are_equal( Flat[tag].Value , "NRQCD_EXP2" ) ) {
@@ -178,8 +182,10 @@ get_fitMin( struct input_params *Input ,
   } else if( are_equal( Flat[tag].Value , "GA" ) ) {
     Input -> Fit.Minimize = ga_iter ;
   } else if( are_equal( Flat[tag].Value , "GLS" ) ) {
-    if( Input -> Fit.Fitdef == POLY || Input -> Fit.Fitdef == NOFIT ||
-	Input -> Fit.Fitdef == POLES ) {
+    if( Input -> Fit.Fitdef == POLY ||
+	Input -> Fit.Fitdef == NOFIT ||
+	Input -> Fit.Fitdef == POLES ||
+	Input -> Fit.Fitdef == LARGENB ) {
       Input -> Fit.Minimize = gls_iter ;
     } else {
       fprintf( stderr , "[INPUTS] GLS only supports POLY/POLES type fit\n" ) ;

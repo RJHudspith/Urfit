@@ -6,8 +6,13 @@
 
 #include "effmass.h"
 #include "gevp.h"
+#include "stats.h"
 #include "resampled_ops.h"
 #include "fit_and_plot.h"
+
+
+static const int t0 = 1 ;
+static const int tp = 2 ;
 
 static int
 write_evalues( struct resampled *evalues ,
@@ -56,7 +61,6 @@ pof_analysis( struct input_params *Input )
 {
   const size_t N = Input -> Fit.N ;
   
-  const int t0 = 1 ;
   struct resampled *y = malloc( Input -> Data.Ndata[0] * ( Input -> Fit.N*Input -> Fit.M )*sizeof( struct resampled ) ) ;
 
   size_t t , m , n , idx = 0 ;
@@ -81,28 +85,33 @@ pof_analysis( struct input_params *Input )
     }
   }
 
+  fprintf( stdout , "Solving GEVP\n" ) ;
+
   // compute evalues
   struct resampled *evalues = solve_GEVP( y ,
 					  Input -> Data.Ndata[0] ,
 					  Input -> Fit.N ,
 					  Input -> Fit.M ,
-					  t0 , t0+1 ) ;
+					  t0 , tp ) ;
 
   // write them out
   write_evalues( evalues , Input -> Data.Ndata[0] , Input -> Fit.N , t0 ) ;
   
   // set input to the first evalue
   size_t i , j ;
-  for( i = 0 ; i < 1; i++ ) {
+  for( i = 0 ; i < 1 ; i++ ) {
     for( size_t j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
       equate( &Input -> Data.y[ j+i*Input->Data.Ndata[0] ] ,
 	      evalues[ j + i*Input->Data.Ndata[0] ] ) ;
-      printf( "TEST %e %e \n" ,
+      printf( "Evalue_%zu %e %e \n" , i ,
 	      Input -> Data.y[j+i*Input->Data.Ndata[0]].avg ,
 	      Input -> Data.y[j+i*Input->Data.Ndata[0]].err ) ;
     }
+    printf( "\n" ) ;
   }
 
+  fprintf( stdout , "Effective mass\n") ;
+  
   // compute an effective mass
   struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
 
@@ -116,6 +125,8 @@ pof_analysis( struct input_params *Input )
     free( y[i].resampled ) ;
   }
   free( y ) ;
+
+  fprintf( stdout , "Fit?\n") ;
 
   // perform a fit ?
   const size_t Nsim_prev = Input -> Data.Nsim , Ntot_prev = Input -> Data.Ntot ;

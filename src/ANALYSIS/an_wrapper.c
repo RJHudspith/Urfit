@@ -71,6 +71,7 @@ an_wrapper( struct input_params *Input )
     //return nrqcd_slope_analysis( Input ) ;
   case Pof :
     return pof_analysis( Input ) ;
+    //return pof_analysis_fixed( Input ) ;
   case Qcorr :
     //return fit_Qcorr( Input ) ;
     return Qmoments( Input ) ;
@@ -84,8 +85,14 @@ an_wrapper( struct input_params *Input )
     return fit_Qslab_fixed( Input ) ;
   case Ren_Rats :
     return renormalise_rats( Input ) ;
+    /*
+  case SpinOrbit :
+    return SpinOrbit( Input ) ;
+    */
+  case Sol :
+    return sol_analysis( Input ) ;
   case StaticPotential :
-    return statpot_analysis( Input ) ;
+    return statpot_analysis_v2( Input ) ;
   case TetraGEVP :
     return tetra_gevp_analysis( Input ) ;
   case TetraGEVP_Fixed :
@@ -95,8 +102,6 @@ an_wrapper( struct input_params *Input )
     return sun_set( Input ) ;
   case ZV :
     return ZV_analysis( Input ) ;
-  case Sol :
-    return sol_analysis( Input ) ;
   case Fit :
     return nrqcd_baremass_analysis( Input ) ;
     //return c4c7_analysis( Input ) ;
@@ -104,7 +109,6 @@ an_wrapper( struct input_params *Input )
     //return HAL_analysis( Input ) ;
     //return sol_analysis( Input ) ;
     //return binding_corr_analysis2( Input ) ;
-    //return SpinOrbit( Input ) ;
   default :
     if( fit_and_plot( *Input , &chi ) == NULL ) {
       return FAILURE ;

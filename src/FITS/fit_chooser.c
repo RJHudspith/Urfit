@@ -10,6 +10,7 @@
 #include "adler_alpha_D0.h"
 #include "adler_alpha_D0_multi.h"
 #include "cornell.h"
+#include "cornell_v2.h"
 #include "cosh.h"
 #include "cosh_plusc.h"
 #include "exp.h"
@@ -23,6 +24,7 @@
 #include "c4c7.h"
 #include "HALexp.h"
 #include "HLBL_cont.h"
+#include "LargeNB.h"
 #include "nrqcd_exp.h"
 #include "nrqcd_exp2.h"
 #include "pade.h"
@@ -65,8 +67,11 @@ get_Nparam( const struct fit_info Fit )
    // fall through as they are all the same, multi-exp,cosh or sinh
  case C4C7 :
    return 3 ;
- case CORNELL : return 6 ;
+   //case CORNELL : return 6 ;
+ case CORNELL : return 3 ;
+ case CORNELL_V2 : return 4 ;
  case HLBL_CONT : return 6 ;
+ case LARGENB : return 5 ;
  case TANH : return 2 ;
  case COSH :
  case SINH :
@@ -81,7 +86,7 @@ get_Nparam( const struct fit_info Fit )
    // these have independent amounts
  case EXP_PLUSC : return 2*Fit.N+1 ;
  case FVOLCC : return 4 + 4 ;
- case FVOL1 : return 3 ;
+ case FVOL1 : return 3 ; //return 3 ;
  case FVOL2 : return 9 ; //return 4 ;
  case FVOL3 : return 5 ;
  case PADE : return Fit.N + Fit.M ;
@@ -167,6 +172,13 @@ init_fit( const struct data_info Data ,
     fdesc.d2F        = cornell_d2f ;
     fdesc.guesses    = cornell_guesses ;
     break ;
+  case CORNELL_V2 :
+    fdesc.func       = fcornellv2 ;
+    fdesc.F          = cornellv2_f ;
+    fdesc.dF         = cornellv2_df ;
+    fdesc.d2F        = cornellv2_d2f ;
+    fdesc.guesses    = cornellv2_guesses ;
+    break ;
   case COSH : 
     fdesc.func       = fcosh ;
     fdesc.F          = cosh_f ;
@@ -242,6 +254,14 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = HLBL_cont_df ;
     fdesc.d2F        = HLBL_cont_d2f ;
     fdesc.guesses    = HLBL_cont_guesses ;
+    break ;
+  case LARGENB :
+    fdesc.func       = fLargeNB ;
+    fdesc.F          = LargeNB_f ;
+    fdesc.dF         = LargeNB_df ;
+    fdesc.d2F        = LargeNB_d2f ;
+    fdesc.guesses    = LargeNB_guesses ;
+    fdesc.linmat     = LargeNB_linmat ;
     break ;
   case NRQCD_EXP :
     fdesc.func       = fnrqcd_exp ;

@@ -1,4 +1,4 @@
-AC_INIT([URFIT], [0.1], [renwick.james.hudspith@gmail.com])
+AC_INIT([URFIT],[0.1],[renwick.james.hudspith@gmail.com])
 AM_INIT_AUTOMAKE([-Wall subdir-objects])
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -34,8 +34,7 @@ LDFLAGS="$LDFLAGS -lm" ])
 ## code needs gsl
 gsl=false 
 AC_ARG_WITH([gsl],
-	AC_HELP_STRING([--with-gsl=<name>],
-		       [Specify GSL location for the GF]),
+	AS_HELP_STRING([--with-gsl=<name>],[Specify GSL location for the GF]),
             [GSL=${with_gsl}
 	    ## test to see if something is there ...
 	    if [ test -a ${GSL}include/gsl/gsl_rng.h ]; then
@@ -66,8 +65,7 @@ AC_SUBST(GSL)
 ## Look for fftw in the useer specified place
 fftw=false 
 AC_ARG_WITH([fftw],
-	AC_HELP_STRING([--with-fftw=<name>],
-		       [Specify FFTW location for the GF]),
+	AS_HELP_STRING([--with-fftw=<name>],[Specify FFTW location for the GF]),
             [
 	    ## see if we already have it	
 	    AC_CHECK_HEADERS([fftw3.h],[local_fftw=true],[local_fftw=false])
@@ -133,6 +131,18 @@ AC_ARG_WITH([fftw],
 )
 AM_CONDITIONAL([DEFFFTW],[$fftw])
 AC_SUBST(FFTW)
+
+## QDP_GAMMA_CONVENTIONS
+AC_ARG_ENABLE([QDP_GAMMA_CONVENTION],
+	[--enable-QDP_GAMMA_CONVENTION],
+	[case "${enableval}" in
+	yes) 
+	     	AC_MSG_NOTICE([Using QDP++ gamma labelling convention])
+	     	AC_DEFINE([QDP_GAMMA_CONVENTION],[],[QDP++ gamma conventions])
+	     ;;
+	*) AC_MSG_ERROR([bad value ${enableval} for --enable-QDP_GAMMA_CONVENTION]) ;;
+	esac
+	],[])
 
 ## Some compiler checks
 ## My code is littered with consts

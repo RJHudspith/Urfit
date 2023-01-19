@@ -203,15 +203,17 @@ fit_and_plot( struct input_params Input ,
     shift += Input.Data.Ndata[i] ;
   }
 
+  printf( "plot did\n") ;
+  
   if( fitparams != NULL ) {
-    //plot_fitfunction( fitparams , Data , Input.Fit ) ;
-    plot_fitfunction_HACK( fitparams , Data , Input.Fit ) ;
+    plot_fitfunction( fitparams , Data , Input.Fit ) ;
+    //plot_fitfunction_HACK( fitparams , Data , Input.Fit ) ;
     plot_feffmass( fitparams , Data , Input.Fit ) ;
   }
 
   if( fitparams != NULL ) {
-    double targets[6] = { 2.5 , 5 , 7, 10, 18, 35 } ;
-    for( int l = 0 ; l < 6 ; l++ ) {
+    double targets[9] = { 3 , 4 , 5 , 7, 10, 14, 18, 26.5 , 35 } ;
+    for( int l = 0 ; l < 9 ; l++ ) {
       fprintf( stdout , "(t0mk^2)^1/2 %f :: %f\n" , targets[l] ,
 	       bisect_fitfunc( fitparams , Data , Input.Fit ,
 			       Input.Traj[0].Fit_Low , targets[l] ,

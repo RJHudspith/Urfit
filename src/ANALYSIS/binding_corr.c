@@ -7,6 +7,8 @@
 #include "make_xmgrace.h"
 #include "plot_fitfunc.h"
 #include "resampled_ops.h"
+#include "stats.h"
+#include "write_flat.h"
 
 static int
 write_fitmass_graph( FILE *file , 
@@ -130,9 +132,12 @@ binding_corr_analysis2( struct input_params *Input )
   const size_t N = Input -> Fit.N ;
   const size_t LT = Input -> Data.Ndata[0] ;
   
-  for( j = 0 ; j < LT ; j++ ) {  
-    divide( &Input -> Data.y[ j ] ,
-	    Input -> Data.y[ j+LT ] ) ;
+  for( j = 0 ; j < LT ; j++ ) {
+    struct resampled temp = init_dist( &Input -> Data.y[ j+LT ] ,
+				       Input -> Data.y[ j+LT ].NSAMPLES ,
+				       Input -> Data.y[ j+LT ].restype ) ;
+    raise( &temp , 2./2 ) ;
+    divide( &Input -> Data.y[ j ] , temp ) ;
   }
 
   // compute an effective mass 
@@ -141,6 +146,24 @@ binding_corr_analysis2( struct input_params *Input )
   // perform a fit
   double Chi ;
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
+
+    // write out a flat file
+  if( Input -> Fit.Fitdef == EXP ||
+      Input -> Fit.Fitdef == COSH ||
+      Input -> Fit.Fitdef == SINH ) {
+    
+    struct resampled mpi2 = init_dist( NULL ,
+				       Fit[1].NSAMPLES ,
+				       Fit[1].restype ) ;
+    write_flat_dist( &Fit[1] , &mpi2 , 1 , "Mass_0.flat" ) ;
+    FILE *massfile = fopen( "massfits.dat" , "w+a" ) ;
+
+    write_fitmass_graph( massfile , Fit[1] ,
+			 Input -> Traj[0].Fit_Low ,
+			 Input -> Traj[0].Fit_High , 0 ) ;
+    
+    fclose( massfile ) ;
+  }
   
   return SUCCESS ;
 }

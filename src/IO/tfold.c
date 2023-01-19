@@ -43,10 +43,17 @@ map_correlator( const struct traj Traj ,
   }
   
   const size_t *mapGs , *mapGk ;
+#ifdef QDP_GAMMA_CONVENTION
+  const size_t Vmap[3]   = { 1 , 2 , 4 } ;
+  const size_t Amap[3]   = { 14 , 13 , 11 } ;
+  const size_t Tijmap[3] = { 3 , 5 , 6 } ;
+  const size_t Titmap[3] = { 9 , 10 , 12 } ;
+#else
   const size_t Vmap[3]   = { 0 , 1 , 2 } ;
   const size_t Amap[3]   = { 6 , 7 , 8 } ;
   const size_t Tijmap[3] = { 10 , 11 , 12 } ;
   const size_t Titmap[3] = { 13 , 14 , 15 } ;
+#endif
   
   bool trigger1 = false , trigger2 = false ;
 
