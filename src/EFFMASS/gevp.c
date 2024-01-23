@@ -43,55 +43,80 @@ struct GEVP_temps {
   size_t N ;
 } ;
 
-#ifdef ABS_EVALUES
-
-static int
-comp_desc( const double complex ev1 ,
-	   const double complex ev2 )
-{
-  return cabs(ev1) < cabs(ev2) ;
-}
-
-static int
-comp_asc( const double complex ev1 ,
-	  const double complex ev2 )
-{
-  return cabs(ev1) > cabs(ev2) ;
-}
-
+#ifdef SYMMETRIC_GEVP
+  static int
+  comp_desc( const double ev1 ,
+	     const double ev2 )
+  {
+    return ev1 < ev2 ;
+  }
+  static int
+  comp_asc( const double ev1 ,
+	    const double ev2 )
+  {
+    return ev1 > ev2 ;
+  }
 #else
+  #ifdef ABS_EVALUES
+  static int
+  comp_desc( const double complex ev1 ,
+	     const double complex ev2 )
+  {
+    return cabs(ev1) < cabs(ev2) ;
+  }
 
-static int
-comp_desc( const double complex ev1 ,
-	   const double complex ev2 )
-{
-  return creal(ev1) < creal(ev2) ;
-}
-
-static int
-comp_asc( const double complex ev1 ,
-	  const double complex ev2 )
-{
-  return creal(ev1) > creal(ev2) ;
-}
-
+  static int
+  comp_asc( const double complex ev1 ,
+	    const double complex ev2 )
+  {
+    return cabs(ev1) > cabs(ev2) ;
+  }
+  #else
+  static int
+  comp_desc( const double complex ev1 ,
+	     const double complex ev2 )
+  {
+    return creal(ev1) < creal(ev2) ;
+  }
+  static int
+  comp_asc( const double complex ev1 ,
+	    const double complex ev2 )
+  {
+    return creal(ev1) > creal(ev2) ;
+  }
+  #endif
 #endif
 
 // sort by whatever I specify in comp at the moment just eigenvalues
 static void
 insertion_sort( struct GEVP_temps *G ,
+		#ifdef SYMMETRIC_GEVP
+		int (*comp)( const double ev1 ,
+			     const double ev2 )
+		#else
 		int (*comp)( const double complex ev1 ,
-			     const double complex ev2 ) )
+			     const double complex ev2 )
+		#endif
+		)
 {
+  #ifdef SYMMETRIC_GEVP
+  gsl_vector *tevec = gsl_vector_alloc( G -> N ) ;
+  #else
   gsl_vector_complex *tevec = gsl_vector_complex_alloc( G -> N ) ;
+  #endif
   
   size_t i , j ;
   for( i = 0 ; i < G -> N ; i++ ) {
 
     const double complex ev1 = G -> ev[i] ;
     for( j = 0 ; j < G -> N ; j++ ) {
+#ifdef SYMMETRIC_GEVP
+      gsl_vector_set( tevec , j , gsl_matrix_get( G->evec , j , i ) ) ;
+
+#else
       gsl_vector_complex_set( tevec , j ,
 			      gsl_matrix_complex_get( G->evec , j , i ) ) ;
+#endif
     }
     
     int hole = (int)i - 1 ;
@@ -99,20 +124,32 @@ insertion_sort( struct GEVP_temps *G ,
       // copy data
       G -> ev[hole+1] = G -> ev[hole] ;
       for( j = 0 ; j < G -> N ; j++ ) {
+#ifdef SYMMETRIC_GEVP
+        gsl_matrix_set( G->evec , j , hole+1 ,
+			gsl_matrix_get( G->evec , j , hole ) ) ;
+#else
         gsl_matrix_complex_set( G->evec , j , hole+1 ,
 				gsl_matrix_complex_get( G->evec , j , hole ) ) ;
+#endif
       }
       hole-- ;
     }
     G -> ev[hole+1] = ev1 ;
     for( j = 0 ; j < G -> N ; j++ ) {
+#ifdef SYMMETRIC_GEVP
+      gsl_matrix_set( G -> evec , j , hole+1 , gsl_vector_get( tevec , j ) ) ;
+#else
       gsl_matrix_complex_set( G -> evec , j , hole+1 ,
 			      gsl_vector_complex_get( tevec , j ) ) ;
+#endif
     }
   }
 
+#ifdef SYMMETRIC_GEVP
+  gsl_vector_free( tevec ) ;
+#else
   gsl_vector_complex_free( tevec ) ;
-  
+#endif
   return ;
 }
 
@@ -121,7 +158,7 @@ insertion_sort( struct GEVP_temps *G ,
 // compute the "optimised correlator" from the eigenvectors
 static void
 optimised_correlator( struct GEVP_temps *G ,
-		      struct resampled *y ,
+		      const struct resampled *y ,
 		      const size_t k ,
 		      const bool is_avg ,
 		      const size_t N ,
@@ -131,11 +168,21 @@ optimised_correlator( struct GEVP_temps *G ,
 {
   // check diagonalisation with V^\dag C(t) V
   double C0[ N*M ] ;
-  size_t i , j , a , b , c ;
-  for( j = 0 ; j < Ndata ; j++ ) {    
+  double complex V2[N][N][N];
+  for( size_t a = 0 ; a < N ; a++ ) {
+    for( size_t b = 0 ; b < N ; b++ ) {
+      const double complex v1 = conj( gsl_matrix_complex_get( G[td].evec , b , a ) ) ;
+      for( size_t c = 0 ; c < N ; c++ ) {
+	const double complex v2 = gsl_matrix_complex_get( G[td].evec , c , a ) ;
+	V2[a][b][c] = v1*v2 ;
+      }
+    }
+  }
+    
+  for( size_t j = 0 ; j < Ndata ; j++ ) {    
     // put these in the linearised matrices
     size_t shift = 0 ;
-    for( i = 0 ; i < N*M ; i++ ) {
+    for( size_t i = 0 ; i < N*M ; i++ ) {
       if( is_avg == true ) {
 	C0[i] = y[ j  + shift ].avg ;
       } else {
@@ -143,41 +190,17 @@ optimised_correlator( struct GEVP_temps *G ,
       }
       shift += Ndata ;
     }
-    #ifdef SYMMETRIC_GEVP
-    for( a = 0 ; a < N ; a++ ) {
-      register double Sum1 = 0. ;
-      for( b = 0 ; b < N ; b++ ) {
-	const double A = gsl_matrix_get( G[td].evec , b , a ) ;
-	for( c = 0 ; c < N ; c++ ) {
-	  const double B = gsl_matrix_get( G[td].evec , c , a ) ;
-	  Sum1 += A * B * C0[ c + N*b ] ;
-	}
+    // diagonalise
+    double complex *p1 = (double complex*)V2 ;
+    for( size_t a = 0 ; a < N ; a++ ) {
+      double *p2 = (double*)C0 ;
+      register double sum = 0.0 ;
+      for( size_t i = 0 ; i < N*N ; i++ ) {
+	sum += creal((*p1))*(*p2) ;
+	p1++ ; p2++ ;
       }
-      G[j].ev[a] = Sum1 ;
+      G[j].ev[a] = creal(sum) ;
     }
-    #else
-    for( a = 0 ; a < N ; a++ ) {
-      register double complex Sum1 = 0. ;
-      for( b = 0 ; b < N ; b++ ) {
-	const gsl_complex A = gsl_matrix_complex_get( G[td].evec , b , a ) ;
-	#if GSL_MINOR_VERSION > 6
-	const double complex AC = conj( A ) ;
-	#else
-	const double complex AC = A.dat[0] - I*A.dat[1] ;
-	#endif
-	for( c = 0 ; c < N ; c++ ) {
-	  const gsl_complex B = gsl_matrix_complex_get( G[td].evec , c , a ) ;
-          #if GSL_MINOR_VERSION > 6
-	  const double complex BC = B ;
-          #else
-	  const double complex BC = B.dat[0] + I*B.dat[1] ;
-          #endif
-	  Sum1 += AC * BC * C0[ c + N*b ] ;
-	}
-      }
-      G[j].ev[a] = creal( Sum1 ) ;
-    }
-    #endif
   }
   return ;
 }
@@ -191,25 +214,45 @@ optimised_correlator2( struct GEVP_temps *G1 ,
 {
   size_t a , b , c ;
   for( a = 0 ; a < N ; a++ ) {
+#ifdef SYMMETRIC_GEVP
+    register double Sum1 = 0. ;
+#else
     register double complex Sum1 = 0. ;
+#endif
     for( b = 0 ; b < N ; b++ ) {
-      const gsl_complex A = gsl_matrix_complex_get( G2.evec , b , a ) ;
-      #if GSL_MINOR_VERSION > 6
-      const double complex AC = conj( A ) ;
+      #ifdef SYMMETRIC_GEVP
+      register double Sum1 = 0. ;
+      const double A = gsl_matrix_get( G2.evec , b , a ) ;
+      const double AC = A ;
       #else
-      const double complex AC = A.dat[0] - I*A.dat[1] ;
+      register double complex Sum1 = 0. ;
+      const gsl_complex A = gsl_matrix_complex_get( G2.evec , b , a ) ;
+         #if GSL_MINOR_VERSION > 6
+         const double complex AC = conj( A ) ;
+         #else
+         const double complex AC = A.dat[0] - I*A.dat[1] ;
+         #endif
       #endif
       for( c = 0 ; c < N ; c++ ) {
-	const gsl_complex B = gsl_matrix_complex_get( G2.evec , c , a ) ;
-        #if GSL_MINOR_VERSION > 6
-	const double complex BC = B ;
+	#ifdef SYMMETRIC_GEVP
+	const double B = gsl_matrix_get( G2.evec , c , a ) ;
+	const double BC = B ;
         #else
-	const double complex BC = B.dat[0] + I*B.dat[1] ;
-        #endif
+	const gsl_complex B = gsl_matrix_complex_get( G2.evec , c , a ) ;
+           #if GSL_MINOR_VERSION > 6
+	   const double complex BC = B ;
+           #else
+	   const double complex BC = B.dat[0] + I*B.dat[1] ;
+           #endif
+	#endif
 	Sum1 += AC * BC * C0[ c + N*b ] ;
       }
     }
+    #ifdef SYMMETRIC_GEVP
+    G1 -> ev[a] = Sum1 ;
+    #else
     G1 -> ev[a] = creal( Sum1 ) ;
+    #endif
   }
 }
 #endif
@@ -245,14 +288,14 @@ gevp2( struct GEVP_temps *G ,
   // set the ev
   size_t i ;
   for( i = 0 ; i < G -> N ; i++ ) {
-    G[t].ev[i] = gsl_vector_complex_get( G[t].alpha , i )/gsl_vector_complex_get( G[t].alpha , i ) ;
-    /*
-    ( gsl_vector_complex_get( G[t].alpha , i ).dat[0] 
-      + I*gsl_vector_complex_get( G[t].alpha , i ).dat[1] ) / gsl_vector_get( G[t].beta , i ) ;
-    */
+    #ifdef SYMMETRIC_GEVP
+    G[t].ev[i] = gsl_vector_get( G[t].eval , i ) ;
+    #else
+    G[t].ev[i] = gsl_vector_complex_get( G[t].alpha , i )/gsl_vector_get( G[t].beta , i ) ;
     if( creal( G[t].ev[i] ) < 0.0 ) {
       G[t].ev[i] = 1E-16 ;
     }
+    #endif
   }
 
   // sort by the real part
@@ -272,9 +315,13 @@ gevp2( struct GEVP_temps *G ,
       for( nevec = 0 ; nevec < G->N ; nevec++ ) {
 	fprintf( stdout , "STATE_%zu %zu evec %zu %e %e\n" ,
 		 j , t , nevec ,
-		 ( gsl_matrix_complex_get( G -> evec , nevec , j ).dat[0] )
+		 #ifdef SYMMETRIC_GEVP
+		 ( gsl_matrix_get( G -> evec , nevec , j ) ) , 0.0 
+		 #else
+		 ( creal( gsl_matrix_complex_get( G -> evec , nevec , j ) ) )
 		 ,
-		 ( gsl_matrix_complex_get( G -> evec , j , nevec ).dat[1] )
+		 ( cimag( gsl_matrix_complex_get( G -> evec , j , nevec ) ) )
+		 #endif
 		 ) ;
       }
       //
@@ -449,7 +496,7 @@ solve_GEVP( const struct resampled *y ,
 	C0[i] = y[ j  + shift ].resampled[k] ;
 	C1[i] = y[ t0 + shift ].resampled[k] ;
 	shift += Ndata ;
-      }
+      }      
 
       // set AB by squaring the matrices, possibly
       set_ab( G[j].a , G[j].b , C0 , C1 , N , M ) ;
@@ -487,6 +534,23 @@ solve_GEVP( const struct resampled *y ,
       shift += Ndata ;
     }
 
+    // print the matrices
+    for( i = 0 ; i < N ; i++ ) {
+      for( size_t k = 0 ; k < M ; k++ ) {
+	printf( "%e ", C0[k+i*M] ) ;
+      }
+      printf( "\n" ) ;
+    }
+    printf( "\n" ) ;
+    // print the matrices
+    for( i = 0 ; i < N ; i++ ) {
+      for( size_t k = 0 ; k < M ; k++ ) {
+	printf( "%e ", C1[k+i*M] ) ;
+      }
+      printf( "\n" ) ;
+    }
+    printf( "\n" ) ;
+    
     // set AB by squaring the matrices possibly
     set_ab( G[j].a , G[j].b , C0 , C1 , N , M ) ;
 
