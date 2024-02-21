@@ -17,7 +17,7 @@ ANALYSIS_FILES=./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/nrqcd_baremass.c ./ANALYSIS/c4c7_analysis.c \
 	./ANALYSIS/su2_shit.c ./ANALYSIS/binding_corr.c ./ANALYSIS/HAL.c \
 	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c ./ANALYSIS/sol.c \
-	./ANALYSIS/Qcorr_fixed.c ./ANALYSIS/SpinOrbit.c
+	./ANALYSIS/Qcorr_fixed.c ./ANALYSIS/SpinOrbit.c ./ANALYSIS/Omega_fit.c
 
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
@@ -36,7 +36,7 @@ FITS_FILES=./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/nrqcd_exp2.c  ./FITS/c4c7.c ./FITS/su2_shitfit.c \
 	./FITS/SUN_cont.c ./FITS/HALexp.c ./FITS/cosh_plusc.c \
 	./FITS/tanh.c ./FITS/ZV_exp.c ./FITS/fvol2.c ./FITS/fvol3.c ./FITS/fsol.c	\
-	./FITS/fvolcc.c ./FITS/LargeNB.c
+	./FITS/fvolcc.c ./FITS/LargeNB.c ./FITS/fvol_delta.c
 
 GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 

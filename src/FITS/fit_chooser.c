@@ -21,6 +21,7 @@
 #include "fvol1.h"
 #include "fvol2.h"
 #include "fvol3.h"
+#include "fvol_delta.h"
 #include "c4c7.h"
 #include "HALexp.h"
 #include "HLBL_cont.h"
@@ -71,7 +72,7 @@ get_Nparam( const struct fit_info Fit )
  case CORNELL : return 3 ;
  case CORNELL_V2 : return 4 ;
  case HLBL_CONT : return 6 ;
- case LARGENB : return 5 ;
+ case LARGENB : return 7 ;
  case TANH : return 2 ;
  case COSH :
  case SINH :
@@ -86,9 +87,10 @@ get_Nparam( const struct fit_info Fit )
    // these have independent amounts
  case EXP_PLUSC : return 2*Fit.N+1 ;
  case FVOLCC : return 4 + 4 ;
- case FVOL1 : return 3 ; //return 3 ;
+ case FVOL1 : return 3 ;
  case FVOL2 : return 9 ; //return 4 ;
  case FVOL3 : return 5 ;
+ case FVOL_DELTA : return 13 ;
  case PADE : return Fit.N + Fit.M ;
  case POLES : return Fit.N + Fit.M + 1 ;
  case POLY : return Fit.N + 1 ;
@@ -240,6 +242,13 @@ init_fit( const struct data_info Data ,
     fdesc.dF         = fvol3_df ;
     fdesc.d2F        = fvol3_d2f ;
     fdesc.guesses    = fvol3_guesses ;
+    break ;
+  case FVOL_DELTA :
+    fdesc.func       = ffvol_delta ;
+    fdesc.F          = fvol_delta_f ;
+    fdesc.dF         = fvol_delta_df ;
+    fdesc.d2F        = fvol_delta_d2f ;
+    fdesc.guesses    = fvol_delta_guesses ;
     break ;
   case HALEXP :
     fdesc.func       = fHALexp ;

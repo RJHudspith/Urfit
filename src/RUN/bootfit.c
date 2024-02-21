@@ -15,6 +15,9 @@
 
 #include <gsl/gsl_cdf.h> // pvalue
 
+#include "fake.h"
+#include "fvol_delta.h"
+
 // perform a single bootstrap fit to our data
 static int
 single_fit( struct resampled *fitparams ,
@@ -128,6 +131,8 @@ perform_bootfit( const struct data_info Data ,
   if( fitparams == NULL ) goto memfree ;
 
   fprintf( stdout , "[FIT] single fit for the average\n" ) ;
+
+  //set_phi3( 0 , true ) ;
   
   // do the average first
   single_fit( fitparams , &chisq , fdesc , Data , Fit , 0 , true ) ;
@@ -141,7 +146,10 @@ perform_bootfit( const struct data_info Data ,
     
     // loop boots
     #pragma omp for private(i)
-    for( i = 0 ; i < chisq.NSAMPLES ; i++ ) { 
+    for( i = 0 ; i < chisq.NSAMPLES ; i++ ) {
+
+      //set_phi3( i , false ) ;
+      
       single_fit( fitparams , &chisq , fdesc_boot ,
 		  Data , Fit , i , false ) ;
     }

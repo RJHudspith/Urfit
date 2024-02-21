@@ -108,6 +108,7 @@ ppaa_df( double **df , const void *data , const double *fparams )
 	df[j+0][i] = -fparams[j+1] * fparams[j+1] * ( t * fwd + bck * bwd ) ;
 	// derivative wrt amplitudes
 	df[j+1][i] = 2 * fparams[j+1] * ( fwd + bwd ) ;
+	df[j+2][i] = 0.0 ;
 	break ;
       case PLAL :
 	// derivative wrt mass

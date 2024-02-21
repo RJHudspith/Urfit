@@ -57,6 +57,27 @@ map_correlator( const struct traj Traj ,
   
   bool trigger1 = false , trigger2 = false ;
 
+
+#if 0
+  if( get_correlator( C , str , 0 , Traj.Gs ,
+		      mompoint , Nlt ) == FAILURE ) {
+    return NULL ;
+  }
+  Nsum++ ;
+  double complex C2[ 256 ] = {} ;
+  if( get_correlator( C2 , str , 1 , Traj.Gs ,
+		      mompoint , Nlt ) == FAILURE ) {
+    return NULL ;
+  }
+  Nsum++ ;
+
+  // normalize C by Nsum
+  C[0] = ( C[0] + C2[0] ) ;
+  for( idx = 1 ; idx < Nlt ; idx++ ) {
+    C[idx] = ( C[idx] + C2[Nlt-idx] ) ;
+  }
+
+#else
   if( Traj.Gs == Vi  ) { mapGs = Vmap ;   trigger1 = true ; }
   if( Traj.Gs == Ai  ) { mapGs = Amap ;   trigger1 = true ; }
   if( Traj.Gs == Tij ) { mapGs = Tijmap ; trigger1 = true ; }
@@ -99,7 +120,8 @@ map_correlator( const struct traj Traj ,
     }
     Nsum++ ;
   }
-
+#endif
+  
   // normalize C by Nsum
   for( idx = 0 ; idx < Nlt ; idx++ ) {
     C[ idx ] /= Nsum ;

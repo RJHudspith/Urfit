@@ -90,10 +90,12 @@ gen_ops( struct input_params *Input )
 
       // computes x^2 y
       raise( &Input -> Data.y[j] , 2 ) ;
+      mult_constant( &Input -> Data.y[j] , 12 ) ;
+      raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
       
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     mult , "x^2.y" , mpi2 , j ) ;
+	     divide , "x^2Dy^2" , mpi2 , j ) ;
     }
   }
   return SUCCESS ;

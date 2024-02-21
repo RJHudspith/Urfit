@@ -5,19 +5,20 @@
 
 #include "Nder.h"
 
-#define V2
+#define EXPFAC
 
 const double NMAP[4] = { 3,4,5,6 } ;
 
 double
 fLargeNB( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-#ifdef V1 // not terrible
-  return (fparams[0] + ( fparams[1] + (fparams[2] + fparams[3]/X.X)/X.X)/X.X) *( NMAP[Npars] ) ;
-#elif (defined V2)
-  return (fparams[0] + ( fparams[1] + (fparams[2] + fparams[3]/X.X)/X.X)/X.X) *( 1+fparams[4]*NMAP[Npars] ) ;
+#ifdef EXPFAC
+  const double Ln = 1/(NMAP[Npars]*NMAP[Npars]) ;
+  return (fparams[0] + ( fparams[1] + fparams[5]*Ln )/X.X + fparams[2]*exp(-fparams[3]*X.X) ) *( 1+fparams[4]*NMAP[Npars] + fparams[6]*Ln ) ; 
+#elif (defined 
 #else
-  return (fparams[0] + fparams[1]/X.X + fparams[2]*exp( -fparams[3]/X.X ) )*( NMAP[Npars] ) ;
+  const double Ln = 1/(NMAP[Npars]*NMAP[Npars]) ;
+  return (fparams[0] + ( fparams[1] + fparams[5]*Ln )/X.X + fparams[2]/(X.X*X.X) + fparams[3]/(X.X*X.X*X.X) ) *( 1+fparams[4]*NMAP[Npars] + fparams[6]*Ln ) ;
 #endif
 }
 
@@ -47,31 +48,36 @@ LargeNB_df( double **df , const void *data , const double *fparams )
   for( i = 0 ; i < DATA -> n ; i++ ) {
     const double x  = DATA -> x[i] ;
 
-#ifdef V1
-    const double N = NMAP[ DATA->map[i].bnd ] ;
-    df[ DATA->map[i].p[0] ][i] = N ;
-    df[ DATA->map[i].p[1] ][i] = N/x ;
-    df[ DATA->map[i].p[2] ][i] = N/(x*x) ;
-    df[ DATA->map[i].p[3] ][i] = N/(x*x*x) ;
-#elif (defined V2)
     const double Nm = NMAP[ DATA->map[i].bnd ] ;
-    const double N = 1.+fparams[ DATA->map[i].p[4]] * Nm ;
+    const double Ln = 1/(Nm*Nm) ;
+
     const double P0 = fparams[ DATA->map[i].p[0] ] ;
     const double P1 = fparams[ DATA->map[i].p[1] ] ;
     const double P2 = fparams[ DATA->map[i].p[2] ] ;
     const double P3 = fparams[ DATA->map[i].p[3] ] ;
-    
+    const double P4 = fparams[ DATA->map[i].p[4] ] ;
+    const double P5 = fparams[ DATA->map[i].p[5] ] ;
+    const double P6 = fparams[ DATA->map[i].p[6] ] ;
+
+    const double N = 1. + P4*Nm + P6*Ln;
+
+#ifdef EXPFAC
+    const double expfac = exp(-P3*x) ;
+    df[ DATA->map[i].p[0] ][i] = N ;
+    df[ DATA->map[i].p[1] ][i] = N/x ;
+    df[ DATA->map[i].p[2] ][i] = N*expfac ; ///(x*x) ;
+    df[ DATA->map[i].p[3] ][i] = N*-x*P2*expfac ; ///(x*x*x) ;
+    df[ DATA->map[i].p[4] ][i] = Nm*( P0 + Ln*P5 + ( P1 )/x + P2*expfac ) ;
+    df[ DATA->map[i].p[5] ][i] = Ln*N/x ;
+    df[ DATA->map[i].p[6] ][i] = Ln*( P0 + Ln*P5 + ( P1 )/x + P2*expfac ) ;
+#else
     df[ DATA->map[i].p[0] ][i] = N ;
     df[ DATA->map[i].p[1] ][i] = N/x ;
     df[ DATA->map[i].p[2] ][i] = N/(x*x) ;
     df[ DATA->map[i].p[3] ][i] = N/(x*x*x) ;
-    df[ DATA->map[i].p[4] ][i] = Nm*( P0 + P1/x + P2/(x*x) + P3/(x*x*x) ) ;
-#else
-    const double N = NMAP[ DATA->map[i].bnd ] ;
-    df[ DATA->map[i].p[0] ][i] = (N) ;
-    df[ DATA->map[i].p[1] ][i] = (N)/x ;
-    df[ DATA->map[i].p[2] ][i] = (N)*exp( -fparams[ DATA->map[i].p[3] ]/x ) ;
-    df[ DATA->map[i].p[3] ][i] = (-N*fparams[ DATA->map[i].p[2]]/x)*exp( -fparams[ DATA->map[i].p[3] ]/x ) ;
+    df[ DATA->map[i].p[4] ][i] = Nm*( P0 + Ln*P5 + ( P1 )/x + P2/(x*x) + P3/(x*x*x) ) ;
+    df[ DATA->map[i].p[5] ][i] = Ln*N/x ;
+    df[ DATA->map[i].p[6] ][i] = Ln*( P0 + Ln*P5 + ( P1 )/x + P2/(x*x) + P3/(x*x*x) ) ;
 #endif
   }
   return ;

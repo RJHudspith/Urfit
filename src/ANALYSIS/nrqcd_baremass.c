@@ -14,8 +14,26 @@ nrqcd_baremass_analysis( struct input_params *Input )
 {
   size_t i , j , shift = 0 ;
 
-#if 0
-  const double ainv = 2.194 ; //2.287 ; //2.206 ; //2.194 ;
+  /*
+  for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
+    subtract( &Input -> Data.y[j] , Input -> Data.y[j+Input -> Data.Ndata[0]] ) ;
+    subtract( &Input -> Data.y[j+2*Input -> Data.Ndata[0]] ,
+	      Input -> Data.y[j+3*Input -> Data.Ndata[0]] ) ;
+  }
+
+  for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
+    mult_constant( &Input -> Data.y[j] ,
+		   2*cosh( 2*M_PI/20. * j ) ) ;
+    mult_constant( &Input -> Data.y[j+2*Input -> Data.Ndata[0]] ,
+		   2*cosh( 2*M_PI/20. * 2 * j ) ) ;
+  }
+  
+
+  double chi = 0.0 ;
+  struct resampled *fit = fit_and_plot( *Input , &chi ) ;
+  */
+
+  const double ainv = 0.197326/0.08636 ; //2.287 ; //2.206 ; //2.194 ;
 
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
@@ -28,16 +46,17 @@ nrqcd_baremass_analysis( struct input_params *Input )
     shift += Input -> Data.Ndata[i] ;
   }
 
+  /*
   for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
     spin_average( &Input -> Data.y[j] , Input -> Data.y[j+Input->Data.Ndata[0]] ) ;
     //divide_constant( &Input -> Data.y[j] , 9.445 ) ;
   }
-#endif
+  */
 
   double chi = 0.0 ;
   struct resampled *fit = fit_and_plot( *Input , &chi ) ;
 
-  const double Meta = 4.746473196639064 ;
+  const double Meta = 9.445 ; //4.746473196639064 ;
 
   struct resampled res = init_dist( NULL , Input -> Data.y[0].NSAMPLES ,
 				    Input -> Data.y[0].restype ) ;
@@ -58,18 +77,6 @@ nrqcd_baremass_analysis( struct input_params *Input )
   free( res.resampled ) ;
 
   free_fitparams( fit , Input -> Fit.Nlogic ) ;
-
-  /*
-  const double ainv = 0.1973269804 ;
-  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-    for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      divide_constant( &Input -> Data.y[j] , ainv ) ;
-      raise( &Input -> Data.y[j] , -1 ) ;
-      fprintf( stdout , "%f %f\n" , Input -> Data.y[j].avg , Input -> Data.y[j].err ) ;
-    }
-    shift += Input -> Data.Ndata[i] ;
-  }
-  */
   
   return SUCCESS ;
 }

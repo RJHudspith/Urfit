@@ -9,6 +9,44 @@
 #include "init.h"
 #include "pmap.h"
 #include "stats.h"
+#include "resampled_ops.h"
+
+struct resampled *
+generate_fake_boot( const size_t N,
+		    const size_t Nsamples,
+		    const double yarr[N] ,
+		    const double dyarr[N] )
+{
+  //printf( "%zu %zu\n" , N , Nsamples ) ;
+
+  
+  struct resampled *y = malloc( N * sizeof( struct resampled ) ) ;
+  
+  gsl_rng *r = NULL ;
+  // set up the gsl rng
+  gsl_rng_env_setup( ) ;
+  r = gsl_rng_alloc( gsl_rng_default ) ;
+
+  printf( "In fake boot\n" ) ;
+  for( size_t i = 0 ; i < N ; i++ ) {
+    y[i] = init_dist( NULL , Nsamples , BootStrap ) ;
+
+    printf( "y[i] init\n" ) ;
+
+    y[i].avg = yarr[i] ;
+    for( size_t j = 0 ; j < Nsamples ; j++ ) {
+      y[i].resampled[j] = yarr[i] + gsl_ran_gaussian( r , dyarr[i] ) ;
+    }
+
+    printf( "y[i] error\n" ) ;
+    
+    compute_err( &y[i] ) ;
+
+    printf( "%zu done\n" , N ) ;
+  }
+  
+  return y ;
+}
 
 // assumes x and y have been set
 int

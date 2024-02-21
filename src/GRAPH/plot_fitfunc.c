@@ -29,12 +29,13 @@ extrap_fitfunc( const struct resampled *f ,
   
   struct x_desc xdesc = { xpos , Data.LT[shift] , Fit.N , Fit.M } ;
   //struct x_desc xdesc = { xpos , 0.0 , Fit.N , Fit.M } ;
-  double fparams[ fdesc.Nparam ] ;
   
-  size_t j , p ;
+  size_t j ;
+#pragma omp parallel for private(j)
   for( j = 0 ; j < f[0].NSAMPLES ; j++ ) {
+    double fparams[ fdesc.Nparam ] ;
     // evaluate the fitfunc
-    for( p = 0 ; p < fdesc.Nparam ; p++ ) {
+    for( size_t p = 0 ; p < fdesc.Nparam ; p++ ) {
       fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
       //fparams[p] = f[ p ].resampled[j] ;
     }
@@ -42,7 +43,8 @@ extrap_fitfunc( const struct resampled *f ,
     //data.resampled[j] = fdesc.func( xdesc , fparams , shift ) ;
   }
   // and the average
-  for( p = 0 ; p < fdesc.Nparam ; p++ ) {
+  double fparams[ fdesc.Nparam ] ;
+  for( size_t p = 0 ; p < fdesc.Nparam ; p++ ) {
     fparams[ p ] = f[ Fit.map[shift].p[p] ].avg ;
     //fparams[ p ] = f[ p ].avg ;
   }
@@ -87,7 +89,8 @@ extrap_fitfunc_HACK( const struct resampled *f ,
 		     const struct data_info Data ,
 		     const struct fit_info Fit ,
 		     const double xpos ,
-		     const size_t shift )
+		     const size_t shift ,
+		     const size_t h )
 {
   // set up the fit again
   struct fit_descriptor fdesc = init_fit( Data , Fit ) ;
@@ -101,13 +104,13 @@ extrap_fitfunc_HACK( const struct resampled *f ,
   for( j = 0 ; j < f[0].NSAMPLES ; j++ ) {
     // evaluate the fitfunc
     for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-      fparams[p] = f[ p ].resampled[j] ;
+      fparams[p] = f[ Fit.map[h].p[p] ].resampled[j] ;
     }
     data.resampled[j] = fdesc.func( xdesc , fparams , shift ) ;
   }
   // and the average
   for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-    fparams[ p ] = f[ p ].avg ;
+    fparams[ p ] = f[ Fit.map[h].p[p] ].avg ;
   }
   data.avg = fdesc.func( xdesc , fparams , shift ) ;
   compute_err( &data ) ;
@@ -131,33 +134,45 @@ plot_fitfunction_HACK( const struct resampled *f ,
   double *YMIN = malloc( granularity * sizeof( double ) ) ;
   double *YMAX = malloc( granularity * sizeof( double ) ) ;
 
-  size_t h , i ;
+  size_t h = 0 , i ;
 
-  const size_t MAX = 13 ; //fvol2_NMAX( ) ;
+  const size_t MAX = 4 ; //fvol2_NMAX( ) ;
   //const size_t MAX = 15 ; //fvol3_NMAX( ) ;
 
+  printf( "FUUUUCKKK -----> %zu %zu\n" , Data.Ntot , MAX ) ;
+
   // loop over the simultaneous parameters
-  for( size_t shift = 0 ; shift < MAX ; shift++ ) {
+
+  for( size_t j = 0 ; j < Data.Nsim ; j++ ) {
+    printf( "Stars\n" ) ;
+    for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ ) {
+      struct resampled data = extrap_fitfunc_HACK( f , Data , Fit ,
+						   Data.x[shift].avg , shift , h ) ;
+
+      printf( "%f %f %f\n" , Data.x[shift].avg , data.avg , data.err ) ;
+    }
+    
+    //for( size_t shift = MAX-5 ; shift < MAX ; shift++ ) {
+    for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ ) {
     //  size_t shift = 0 ;
-    for( h = 0 ; h < 1 ; h++ ) {
       
       //const double xmin = 0.018225 ;
       //const double xmax = 0.18 ;
 
-      const double xmin = 0.07822077018599871;
-      const double xmax = 0.8;
-      
-      //const double xmin = 0.225981 ;
-      //const double xmax = 0.0 ;
-      //const double xmin = 0.245025 ;
-      //const double xmax = 0.16 ;
+      //const double xmin = 0.078 ; //0.07822077018599871;
+      //const double xmax = 1.2;
+
+      const double xmin = 4 ;
+      const double xmax = 50 ; 
       
       const double x_step = ( xmax - xmin ) / ( granularity - 1 ) ;
       for( i = 0 ; i < granularity ; i++ ) {
 	
 	X[ i ] = xmin + x_step*i ;
 	
-	struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , shift ) ;
+	//struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , shift , h ) ;
+	//struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , shift , shift ) ;
+	struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , j , h ) ;
 	
 	YMAX[i] = data.err_hi ;
 	YAVG[i] = data.avg ;
@@ -173,10 +188,11 @@ plot_fitfunction_HACK( const struct resampled *f ,
       draw_line( X , YMIN , granularity ) ;
 
       if( shift == MAX-1 ) {
-	fprintf( stdout , "Extrap result %e %e\n" , YAVG[0] , 0.5*(YMAX[0]-YMIN[0]) ) ;
+	//fprintf( stdout , "Extrap result %e %e\n" , YAVG[0] , 0.5*(YMAX[0]-YMIN[0]) ) ;
       }
       
     }
+    h += Data.Ndata[j] ;
   }
 
   // free the x, y , ymin and ymax
@@ -284,10 +300,12 @@ plot_fitfunction( const struct resampled *f ,
   size_t shift = 0 ;
   for( h = 0 ; h < Data.Nsim ; h++ ) {
 
+    if( Data.Ndata[h] == 0 ) continue ;
+
     // loop the x to find the max and min of x
-    double xmin = Data.x[shift].err_lo ;
-    double xmax = Data.x[shift].err_hi ;
-    for( i = shift ; i < shift + Data.Ndata[h] ; i++ ) {
+    double xmin = isnan(Data.x[shift].err_lo)?0: Data.x[shift].err_lo;
+    double xmax = isnan(Data.x[shift].err_hi)?100: Data.x[shift].err_hi;
+    for( i = shift ; i < shift + Data.Ndata[h] ; i++ ) {      
       if( Data.x[i].err_lo < xmin ) {
 	xmin = Data.x[i].err_lo ;
       }
@@ -295,10 +313,12 @@ plot_fitfunction( const struct resampled *f ,
 	xmax = Data.x[i].err_hi ;
       }
     }
-    //xmin = 0.11233596051497033 ;
-    //xmin = 0 ;
+    
+    xmin = 0.0 ; //0.11233596051497033 ;
+    //xmin = 0.07822077018599871 ;
 
     const double x_step = ( xmax - xmin ) / ( granularity - 1 ) ;
+    
     for( i = 0 ; i < granularity ; i++ ) {
       
       X[ i ] = xmin + x_step*i ;

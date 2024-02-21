@@ -10,12 +10,11 @@
 #include "resampled_ops.h"
 #include "fit_and_plot.h"
 
-static const int spacing = 1;
 
-// Jboxes 3,6
+static const int t0 = 0 ;
+static const int tp = 1 ;
 
-static const int t0 = 1*spacing ;
-static const int tp = 2*spacing ;
+static const int spacing = 8 ;
 
 static int
 write_evalues( struct resampled *evalues ,
@@ -81,6 +80,7 @@ pof_analysis( struct input_params *Input )
 	y[ idx ] = init_dist( &Input -> Data.y[tp] ,
 			      Input -> Data.y[tp].NSAMPLES ,
 			      Input -> Data.y[tp].restype ) ;
+
 	printf( "y[%zu][%zu][%zu] = %e\n" , m , n , t , y[ idx ].avg ) ;
 	idx++ ;
       }

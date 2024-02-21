@@ -12,7 +12,7 @@
 #define CHOLESKY
 
 // computes the upper section
-static void
+void
 compute_upper_correlation( double **correlation , 
 			   const struct resampled *data ,
 			   const size_t NDATA ,
@@ -78,7 +78,7 @@ compute_upper_correlation( double **correlation ,
 }
 
 // fill the lower triangular part
-static void
+void
 fill_lower_triangular( double **correlation ,
 		       const size_t NDATA )
 {
@@ -94,7 +94,7 @@ fill_lower_triangular( double **correlation ,
 }
 
 // divide by sigma^2
-static void
+void
 modified_covariance( double **correlation ,
 		     const size_t Ndata )
 {

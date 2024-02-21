@@ -21,6 +21,7 @@
 #include "nrqcd.h"
 #include "nrqcd_old.h"
 #include "nrqcd_slope.h"
+#include "Omega_fit.h"
 #include "Qcorr.h"
 #include "Qcorr_fixed.h"
 #include "Qmoments.h"
@@ -50,7 +51,9 @@ an_wrapper( struct input_params *Input )
   case Beta_crit :
     return beta_crit( Input ) ;
   case Binding_Corr :
+    //return binding_corr_analysis( Input ) ;
     return binding_corr_analysis2( Input ) ;
+    //return PCAC_analysis( Input ) ;
   case Correlator :
     return correlator_analysis( Input ) ;
   case Exceptional :
@@ -101,12 +104,13 @@ an_wrapper( struct input_params *Input )
   case ZV :
     return ZV_analysis( Input ) ;
   case Fit :
-    return nrqcd_baremass_analysis( Input ) ;
+    //return nrqcd_baremass_analysis( Input ) ;
     //return c4c7_analysis( Input ) ;
     //return su2_shit( Input ) ;
     //return HAL_analysis( Input ) ;
     //return sol_analysis( Input ) ;
     //return binding_corr_analysis2( Input ) ;
+    return omega_analysis( Input ) ;
   default :
     if( fit_and_plot( *Input , &chi ) == NULL ) {
       return FAILURE ;

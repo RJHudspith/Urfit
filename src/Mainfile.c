@@ -18,6 +18,7 @@
 #include "write_flat.h"
 
 //#define VIEW_AUTOCORR
+//#define VIEW_RAWDATA
 
 int
 main( const int argc , const char *argv[] )
@@ -62,7 +63,18 @@ main( const int argc , const char *argv[] )
   }
   #endif
 #endif
-  
+
+#ifdef VIEW_RAWDATA
+  for( size_t i = 0 ; i < Input.Data.y[0].NSAMPLES ; i++ ) {
+    for( size_t j = 0 ; j < Input.Data.Ndata[0] ; j++ ) {
+      printf( "%e %e\n" ,
+	      Input.Data.x[j].resampled[i] ,
+	      Input.Data.y[j].resampled[i] ) ;
+    }
+    printf( "\n" ) ;
+  }
+#endif
+
   // resample the data we have read in
   if( resample_data( &Input ) == FAILURE ) {
     goto free_failure ;

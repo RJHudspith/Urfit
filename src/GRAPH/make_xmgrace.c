@@ -150,6 +150,10 @@ plot_data( const struct resampled *x ,
 
   size_t i ;
   for( i = 0 ; i < Ndata ; i++ ) {
+    if( isinf( fabs( y[i].avg ) ) ||
+	isnan( fabs( y[i].avg ) ) ||
+	isinf( fabs( y[i].err ) ) ||
+	isnan( fabs( y[i].err ) ) ) continue ;
     fprintf( file , "%e %e %e %e %e %e\n" ,
 	     x[i].avg , 
 	     y[i].avg ,

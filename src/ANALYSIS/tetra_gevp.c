@@ -16,6 +16,9 @@
 static const int t0 = 2 ;
 static const int td = 4 ;
 
+//static const int t0 = 4 ;
+//static const int td = 6 ;
+
 static int
 write_fitmass_graph( FILE *file , 
 		     const struct resampled mass ,

@@ -168,19 +168,28 @@ asinh_effmass( struct resampled *effmass ,
 // newton's method to solve
 // c(t)/c(t+1) - (e^{-meff*t}+e^{-meff*(T-t)})/(e^{-meff*(t+1)}+e^{-meff*(T-t-1)) == 0
 static inline double
-f( const double meff , const double ct , const double ct1 , const double t , const double t1 , const double Lt )
+fcosh( const double meff , const double ct , const double ct1 , const double t , const double t1 , const double Lt )
 {
   return ct/ct1 - (exp( -meff*t ) + exp( -meff*(Lt-t) ))/( exp( -meff*t1 ) + exp( -meff*(Lt-t1) ) ) ;
 }
 
+// newton's method to solve
+// c(t)/c(t+1) - (e^{-meff*t}-e^{-meff*(T-t)})/(e^{-meff*(t+1)}-e^{-meff*(T-t-1)) == 0
+static inline double
+fsinh( const double meff , const double ct , const double ct1 , const double t , const double t1 , const double Lt )
+{
+  return ct/ct1 - (exp( -meff*t ) - exp( -meff*(Lt-t) ))/( exp( -meff*t1 ) - exp( -meff*(Lt-t1) ) ) ;
+}
+
 // newton iteration
 static double
-newton_coshmeff( const double initialguess ,
-		 const double ct ,
-		 const double ct1 ,
-		 const double t ,
-		 const double t1 ,
-		 const int Lt )
+newton_meff( const double initialguess ,
+	     const double ct ,
+	     const double ct1 ,
+	     const double t ,
+	     const double t1 ,
+	     const int Lt ,
+	     double (*f)( const double meff , const double ct , const double ct1 , const double t , const double t1 , const double Lt ) )
 {
   size_t iter = 0 ;
   double meff = initialguess , tol = 1 , dh = 1E-8 ;
@@ -199,27 +208,29 @@ newton_coshmeff( const double initialguess ,
     iter++ ;
   }
   if( isnan( meff ) || isinf( meff ) || iter == 20 ) {
-    fprintf( stderr , "Newton coshmeff failed %e %zu\n" , meff , iter ) ;
-    exit(1) ;
+    fprintf( stderr , "Newton coshmeff failed %zu %e %zu\n" , t , meff , iter ) ;
+    //exit(1) ;
   }
   return meff ;
 }
 
-// log effective mass
+// iterative cosh
 static void
-iterative_effmass( struct resampled *effmass ,
-		   struct resampled y1 , struct resampled y2 ,
-		   struct resampled x1 , struct resampled x2 ,
-		   const int LT )
+iterative_mass( struct resampled *effmass ,
+		struct resampled y1 , struct resampled y2 ,
+		struct resampled x1 , struct resampled x2 ,
+		const int LT ,
+		double (*f)( const double meff , const double ct , const double ct1 , const double t , const double t1 , const double Lt ) )
 {
   if( y2.avg == 0.0 ) { zero_effmass( effmass , y2 ) ; return ; }
   if( y1.avg == 0.0 ) { zero_effmass( effmass , y1 ) ; return ; }
   // do the avg first --> need a more educated guess
-  effmass -> avg = newton_coshmeff( 0.5 , y1.avg , y2.avg , x1.avg , x2.avg , LT ) ;
+  effmass -> avg = newton_meff( 0.5 , y1.avg , y2.avg , x1.avg , x2.avg , LT , f ) ;
   for( size_t k = 0 ; k < effmass -> NSAMPLES ; k++ ) {
-    effmass -> resampled[k] = newton_coshmeff( effmass -> avg ,
-					       y1.resampled[k] , y2.resampled[k] ,
-					       x1.resampled[k] , x2.resampled[k] , LT ) ;
+    effmass -> resampled[k] = newton_meff( effmass -> avg ,
+					   y1.resampled[k] , y2.resampled[k] ,
+					   x1.resampled[k] , x2.resampled[k] , LT ,
+					   f ) ;
   }
   compute_err( effmass ) ;
 }
@@ -276,16 +287,22 @@ effective_mass( struct input_params *Input ,
 			 Input -> Data.y[j+1] ) ;
 	  break ;
 	case ACOSH_ITERATIVE_EFFMASS :
-	  iterative_effmass( &effmass[j] ,
-			     Input -> Data.y[j] , Input -> Data.y[j+1] ,
-			     Input -> Data.x[j] , Input -> Data.x[j+1] ,
-			     Input -> Traj[i].Dimensions[3] ) ;
+	  iterative_mass( &effmass[j] ,
+			  Input -> Data.y[j] , Input -> Data.y[j+1] ,
+			  Input -> Data.x[j] , Input -> Data.x[j+1] ,
+			  Input -> Traj[i].Dimensions[3] , fcosh ) ;
 	  break ;
 	case ASINH_EFFMASS :
 	  asinh_effmass( &effmass[j] ,
 			 Input -> Data.y[j-1] ,
 			 Input -> Data.y[j] ,
 			 Input -> Data.y[j+1] ) ;
+	  break ;
+	case ASINH_ITERATIVE_EFFMASS :
+	  iterative_mass( &effmass[j] ,
+			  Input -> Data.y[j] , Input -> Data.y[j+1] ,
+			  Input -> Data.x[j] , Input -> Data.x[j+1] ,
+			  Input -> Traj[i].Dimensions[3] , fsinh ) ;
 	  break ;
 	default :
 	  // do nothing

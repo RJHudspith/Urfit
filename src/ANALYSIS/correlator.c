@@ -19,6 +19,13 @@
 //#define FIT_EFFMASS
 //#define PADE_LAPLACE
 
+//#define EFFMASS_TYPE ACOSH_ITERATIVE_EFFMASS
+//#define EFFMASS_TYPE ASINH_ITERATIVE_EFFMASS
+//#define EFFMASS_TYPE ASINH_EFFMASS
+#define EFFMASS_TYPE ACOSH_EFFMASS
+//#define EFFMASS_TYPE LOG_EFFMASS
+//#define EFFMASS_TYPE ATANH_EFFMASS
+
 #define CDIV
 
 void 
@@ -176,9 +183,17 @@ correlator_analysis( struct input_params *Input )
 #ifdef PADE_LAPLACE
   boot_pade_laplace( Input ) ;
 #endif
+
+  /*
+  // average 1 and 2
+  for( i = 0 ; i < Input -> Data.Ndata[0] ; i++ ) {
+    add( &Input -> Data.y[i] , Input -> Data.y[i+Input -> Data.Ndata[0]]) ;
+    divide_constant(  &Input -> Data.y[i] , 2 ) ;
+  }
+  */
   
   // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ; //ACOSH_ITERATIVE_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , EFFMASS_TYPE ) ; 
 
 #ifdef FIT_EFFMASS
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
@@ -249,6 +264,11 @@ correlator_analysis( struct input_params *Input )
     printf( "(M/F)^2 %e %e \n" , Fit[0].avg , Fit[0].err ) ;
 
     write_flat_dist( &Fit[0] , &Fit[0] , 1 , "MovFsq.flat" ) ;
+
+
+    equate( &dec , Fit[2] ) ;
+    mult( &dec , Fit[1] ) ;
+    printf( "<AP> %e %e \n" , dec.avg , dec.err ) ;
 
     //////////////// PCAC ? /////////////////////
     // is d_t A_t^P P^W / 2P^L P^W
