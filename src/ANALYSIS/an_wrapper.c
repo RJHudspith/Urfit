@@ -38,6 +38,7 @@
 #include "pof.h"
 #include "sol.h"
 #include "SpinOrbit.h"
+#include "phi_correlation.h"
 
 int
 an_wrapper( struct input_params *Input )
@@ -110,7 +111,9 @@ an_wrapper( struct input_params *Input )
     //return HAL_analysis( Input ) ;
     //return sol_analysis( Input ) ;
     //return binding_corr_analysis2( Input ) ;
-    return omega_analysis( Input ) ;
+    //return omega_analysis( Input ) ;
+    //return imag_mom_analysis( Input ) ;
+    //return phicorr_analysis( Input ) ;
   default :
     if( fit_and_plot( *Input , &chi ) == NULL ) {
       return FAILURE ;

@@ -78,6 +78,13 @@ gen_ops( struct input_params *Input )
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
 	     divide , "Div" , mpi2 , j ) ;
 
+      mult_constant( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 6/2. ) ;
+      do_op( Input -> Data.y[j] ,
+	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
+	     subtract , "SubNC" , mpi2 , j ) ;
+
+
+#if 0
       /*
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
@@ -88,14 +95,15 @@ gen_ops( struct input_params *Input )
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
 	     spin_average , "SpinAve" , mpi2 , j ) ;
 
-      // computes x^2 y
-      raise( &Input -> Data.y[j] , 2 ) ;
-      mult_constant( &Input -> Data.y[j] , 12 ) ;
-      raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
+      // computes x^1/2 / y
+      raise( &Input -> Data.y[j] , 0.5 ) ;
+      //mult_constant( &Input -> Data.y[j] , 12 ) ;
+      //raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
       
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
 	     divide , "x^2Dy^2" , mpi2 , j ) ;
+#endif
     }
   }
   return SUCCESS ;

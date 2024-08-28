@@ -11,7 +11,7 @@
 #include "correlation.h"
 
 #define NA (6)
-#define NPARS (12)
+#define NPARS (13)
 
 // just a linear fit
 int
@@ -44,26 +44,55 @@ omega_analysis( struct input_params *Input )
   }
 
   // compute correlation
-  struct resampled *corr = malloc( NA * sizeof( struct resampled ) ) ;
-  double **relation = malloc( NA * sizeof( double* ) );
+  struct resampled *corr = malloc( (NA+1) * sizeof( struct resampled ) ) ;
+  double **relation = malloc( (NA+1) * sizeof( double* ) );
   size_t idx = 0 ;
   for( size_t a = 0 ; a < NA+NPARS ; a++ ) {
     if( a == 0 || a > NPARS ) {
       relation[idx] = malloc( 6*sizeof( double ) ) ;
       corr[idx] = init_dist( &fit[a] , fit[a].NSAMPLES , fit[a].restype ) ;
       idx ++ ;
-    }
+    }    
   }
 
-  compute_upper_correlation( relation , corr , NA , CORRELATED ) ;
-  fill_lower_triangular( relation , NA ) ;
-  write_corrmatrix( relation , NA , CORRELATED ) ;
-  
-  modified_covariance( relation , NA ) ;
-  fill_lower_triangular( relation , NA ) ;
-  write_corrmatrix( relation , NA , CORRELATED ) ;
+  // do latst one
+  relation[idx] = malloc( 6*sizeof( double ) ) ;
+  corr[idx] = init_dist( &fit[13] , fit[13].NSAMPLES , fit[13].restype ) ;
+  raise( &corr[idx] , 0.5 ) ;
+  mult_constant( &corr[idx] , 0.197326980 ) ;
+  idx ++ ; 
 
-  for( size_t a = 0 ; a < NA ; a++ ) {
+  compute_upper_correlation( relation , corr , NA+1 , CORRELATED ) ;
+  fill_lower_triangular( relation , NA+1 ) ;
+  write_corrmatrix( (const double **)relation , NA+1 , CORRELATED ) ;
+
+  modified_covariance( relation , NA+1 ) ;
+  fill_lower_triangular( relation , NA+1 ) ;
+  write_corrmatrix( (const double **)relation , NA+1 , CORRELATED ) ;
+
+  /*
+  // computes inverse by cholesky decomp
+  printf( "Inverted covariance\n" ) ;
+  
+  gsl_matrix *A = gsl_matrix_calloc( 7 , 7 ) ;
+  for( size_t i = 0 ; i < 7 ; i++ ) {
+    size_t j ;
+    for( j = 0 ; j < 7 ; j++ ) {
+      gsl_matrix_set( A , i , j , relation[i][j] ) ;
+    }
+  }    
+  gsl_linalg_cholesky_decomp( A ) ;
+  gsl_linalg_cholesky_invert( A ) ;
+  for( size_t i = 0 ; i < 7 ; i++ ) {
+    size_t j ;
+    for( j = 0 ; j < 7 ; j++ ) {
+      relation[i][j] = gsl_matrix_get( A , i , j ) ;
+    }
+  }
+  write_corrmatrix( (const double **)relation , NA+1 , CORRELATED ) ;
+  */
+  
+  for( size_t a = 0 ; a < NA+1 ; a++ ) {
     free( corr[a].resampled ) ;
     free( relation[a] ) ;
   }
@@ -72,54 +101,72 @@ omega_analysis( struct input_params *Input )
 
 
   // conversions for Matthias all in units of powers of GeV
-  const double t08 = 8*0.5391144626032651 ;
-  const double rtt08 = sqrt( t08 ) ; // GeV^-1
-  const double Momega = 1.67245 ; // GeV
-  const double f = 0.0924 ; // GeV
+  const double Momega = 1.6695 ; //1.67245 ; // GeV
 
+  struct resampled t08_Momega = init_dist( &fit[13] , fit[13].NSAMPLES , fit[13].restype ) ;
+  mult_constant( &t08_Momega , 8*Momega ) ;
+
+  // sqrt( sqrt(8t0)*Momega )
+  struct resampled fac1 = init_dist( &fit[13] , fit[13].NSAMPLES , fit[13].restype ) ;
+  raise( &fac1 , 0.5 ) ;
+  mult_constant( &fac1 , sqrt(8)*Momega ) ;
+  raise( &fac1 , 0.5 ) ;
+
+  struct resampled fac2 = init_dist( &fit[13] , fit[13].NSAMPLES , fit[13].restype ) ;
+  mult_constant( &fac2 , 8*Momega ) ;
+  mult( &fac2 , fit[13] ) ;
+
+  mult( &fit[12] , t08_Momega ) ;
+  fprintf( stdout , "d_0 :: %e +/- %e GeV^-1\n" , fit[12].avg , fit[12].err ) ;
+  
   // d_\omega
-  mult_constant( &fit[1] , t08*Momega ) ;
+  mult( &fit[1] , t08_Momega ) ;
   fprintf( stdout , "d_\Omega :: %e +/- %e GeV^-1\n" , fit[1].avg , fit[1].err ) ;
 
   // d_\omega prime
-  mult_constant( &fit[2] , t08*Momega ) ;
+  mult( &fit[2] , t08_Momega ) ;
   fprintf( stdout , "d_\Omega^prime :: %e +/- %e GeV^-1\n" , fit[2].avg , fit[2].err ) ;
 
   // e_\omega^{\eta}
-  mult_constant( &fit[3] , t08*t08*Momega ) ;
+  mult( &fit[3] , fac2 ) ;
   fprintf( stdout , "e_\Omega :: %e +/- %e GeV^-3\n" , fit[3].avg , fit[3].err ) ;
 
   // c_\Omega
-  mult_constant( &fit[6] , sqrt(rtt08*Momega) ) ;
+  mult( &fit[6] , fac1 ) ;
   fprintf( stdout , "c_\Omega :: %e +/- %e \n" , fit[6].avg , fit[6].err ) ;
 
   // h_\Omega
-  mult_constant( &fit[7] , sqrt(rtt08*Momega) ) ;
+  mult( &fit[7] , fac1 ) ;
   fprintf( stdout , "h_\Omega :: %e +/- %e \n" , fit[7].avg , fit[7].err ) ;
 
   // G_\OmegaQ^{(s)}
-  mult_constant( &fit[4] , t08*Momega ) ;
+  mult( &fit[4] , t08_Momega ) ;
   fprintf( stdout , "g_{\Omega K}^{(s)} :: %e +/- %e GeV^-1\n" , fit[4].avg , fit[4].err ) ;
 
   // G_\OmegaK^{(V)}
-  mult_constant( &fit[5] , t08*Momega ) ;
+  mult( &fit[5] , t08_Momega ) ;
   fprintf( stdout , "g_{\Omega K}^{(v)} :: %e +/- %e GeV^-1\n" , fit[5].avg , fit[5].err ) ;
 
   // G_\Omega\pi^{(s)}
-  mult_constant( &fit[8] , t08*Momega ) ;
+  mult( &fit[8] , t08_Momega ) ;
   fprintf( stdout , "g_{\Omega pi}^{(s)} :: %e +/- %e GeV^-1\n" , fit[8].avg , fit[8].err ) ;
 
   // G_\Omega\pi^{(v)}
-  mult_constant( &fit[9] , t08*Momega ) ;
+  mult( &fit[9] , t08_Momega ) ;
   fprintf( stdout , "g_{\Omega pi}^{(v)} :: %e +/- %e GeV^-1\n" , fit[9].avg , fit[9].err ) ;
 
   // G_\Omega\eta^{(s)}
-  mult_constant( &fit[10] , t08*Momega ) ;
+  mult( &fit[10] , t08_Momega ) ;
   fprintf( stdout , "g_{\Omega eta}^{(s)} :: %e +/- %e GeV^-1\n" , fit[10].avg , fit[10].err ) ;
 
   // G_\Omega\eta^{(s)}
-  mult_constant( &fit[11] , t08*Momega ) ;
+  mult( &fit[11] , t08_Momega ) ;
   fprintf( stdout , "g_{\Omega eta}^{(v)} :: %e +/- %e GeV^-1\n" , fit[11].avg , fit[11].err ) ;
+
+  // t0 in fm
+  raise( &fit[13] , 0.5 ) ;
+  mult_constant( &fit[13] , 0.197326980 ) ;
+  fprintf( stdout , "rt0 :: %f +/- %f\n" , fit[13].avg , fit[13].err ) ;
   
   return SUCCESS ;
 }

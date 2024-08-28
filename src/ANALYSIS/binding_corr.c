@@ -141,7 +141,10 @@ binding_corr_analysis2( struct input_params *Input )
 
     raise( &temp , 2. ) ;
     divide( &Input -> Data.y[ j ] , temp ) ;
+
+    divide( &Input -> Data.y[ j ] , Input->Data.y[j+LT] ) ;
     */
+    raise( &Input -> Data.y[j+LT] , 4./2 ) ;
     divide( &Input -> Data.y[ j ] , Input->Data.y[j+LT] ) ;
   }
 

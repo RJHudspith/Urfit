@@ -23,6 +23,45 @@ generate_fake_boot( const size_t N,
   struct resampled *y = malloc( N * sizeof( struct resampled ) ) ;
   
   gsl_rng *r = NULL ;
+
+#if 0
+  const size_t Nblocks = 6 ;
+  const size_t blocks[ 6 ] = { 3 , 6 , 6 , 6 , 4 , 3 } ;
+  const long unsigned int Seeds[ 6 ] = {
+    123456 ,
+    123451 ,
+    123454 ,
+    123452 ,
+    123453 ,
+    123455
+  } ;
+
+  // set up the gsl rng
+  gsl_rng_env_setup( ) ;
+  r = gsl_rng_alloc( gsl_rng_default ) ;  
+
+  size_t i = 0 ;
+  for( size_t block = 0 ; block < Nblocks ; block++ ) {
+
+    gsl_rng_set( r , Seeds[block] ) ;
+
+    for( size_t n = 0 ; n < blocks[ block ] ; n++ ) {
+
+      y[i] = init_dist( NULL , Nsamples , BootStrap ) ;
+      y[i].avg = yarr[i] ;
+      for( size_t j = 0 ; j < Nsamples ; j++ ) {
+	y[i].resampled[j] = yarr[i] + gsl_ran_gaussian( r , dyarr[i] ) ;
+	gsl_ran_gaussian( r , dyarr[i] ) ; // dummy
+      }    
+      compute_err( &y[i] ) ;
+
+      fprintf( stdout , "%zu %e %e\n" , i , y[i].avg , y[i].err ) ;
+      
+      i++ ;
+    }
+  }
+#else
+  
   // set up the gsl rng
   gsl_rng_env_setup( ) ;
   r = gsl_rng_alloc( gsl_rng_default ) ;
@@ -44,6 +83,7 @@ generate_fake_boot( const size_t N,
 
     printf( "%zu done\n" , N ) ;
   }
+#endif
   
   return y ;
 }

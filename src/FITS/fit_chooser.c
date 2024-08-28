@@ -21,13 +21,19 @@
 #include "fvol1.h"
 #include "fvol2.h"
 #include "fvol3.h"
-#include "fvol_delta.h"
+#include "fvol4.h"
+#include "fvol5.h"
+#include "fvol6.h"
+
+//#include "fvol_delta.h"
+#include "fvol_delta_fitt0.h"
 #include "c4c7.h"
 #include "HALexp.h"
 #include "HLBL_cont.h"
 #include "LargeNB.h"
 #include "nrqcd_exp.h"
 #include "nrqcd_exp2.h"
+
 #include "pade.h"
 #include "poly.h"
 #include "pp_aa.h"
@@ -90,7 +96,10 @@ get_Nparam( const struct fit_info Fit )
  case FVOL1 : return 3 ;
  case FVOL2 : return 9 ; //return 4 ;
  case FVOL3 : return 5 ;
- case FVOL_DELTA : return 13 ;
+ case FVOL4 : return 6 ;
+ case FVOL5 : return 5 ;
+ case FVOL6 : return 5 ;
+ case FVOL_DELTA : return 14 ;
  case PADE : return Fit.N + Fit.M ;
  case POLES : return Fit.N + Fit.M + 1 ;
  case POLY : return Fit.N + 1 ;
@@ -243,6 +252,27 @@ init_fit( const struct data_info Data ,
     fdesc.d2F        = fvol3_d2f ;
     fdesc.guesses    = fvol3_guesses ;
     break ;
+  case FVOL4 :
+    fdesc.func       = ffvol4 ;
+    fdesc.F          = fvol4_f ;
+    fdesc.dF         = fvol4_df ;
+    fdesc.d2F        = fvol4_d2f ;
+    fdesc.guesses    = fvol4_guesses ;
+    break ;
+  case FVOL5 :
+    fdesc.func       = ffvol5 ;
+    fdesc.F          = fvol5_f ;
+    fdesc.dF         = fvol5_df ;
+    fdesc.d2F        = fvol5_d2f ;
+    fdesc.guesses    = fvol5_guesses ;
+    break ;
+  case FVOL6 :
+    fdesc.func       = ffvol6 ;
+    fdesc.F          = fvol6_f ;
+    fdesc.dF         = fvol6_df ;
+    fdesc.d2F        = fvol6_d2f ;
+    fdesc.guesses    = fvol6_guesses ;
+    break ; 
   case FVOL_DELTA :
     fdesc.func       = ffvol_delta ;
     fdesc.F          = fvol_delta_f ;

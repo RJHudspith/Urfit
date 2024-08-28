@@ -325,6 +325,8 @@ Nint_pt( const struct resampled *dataX ,
   compute_err( &Int ) ;
   
   free( Lerp.resampled ) ;
+
+  fprintf( stdout , "[Nint_pt] NINT %e %e\n" , Int.avg , Int.err ) ;
   
   return Int ;
 }

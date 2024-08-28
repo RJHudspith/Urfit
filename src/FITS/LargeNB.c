@@ -7,19 +7,25 @@
 
 #define EXPFAC
 
-const double NMAP[4] = { 3,4,5,6 } ;
+#define NDERFIT
+
+const double NMAP[5] = { 2,3,4,5,6 } ;
 
 double
 fLargeNB( const struct x_desc X , const double *fparams , const size_t Npars )
 {
+  /*
 #ifdef EXPFAC
   const double Ln = 1/(NMAP[Npars]*NMAP[Npars]) ;
   return (fparams[0] + ( fparams[1] + fparams[5]*Ln )/X.X + fparams[2]*exp(-fparams[3]*X.X) ) *( 1+fparams[4]*NMAP[Npars] + fparams[6]*Ln ) ; 
-#elif (defined 
 #else
   const double Ln = 1/(NMAP[Npars]*NMAP[Npars]) ;
   return (fparams[0] + ( fparams[1] + fparams[5]*Ln )/X.X + fparams[2]/(X.X*X.X) + fparams[3]/(X.X*X.X*X.X) ) *( 1+fparams[4]*NMAP[Npars] + fparams[6]*Ln ) ;
 #endif
+  */
+    const double Ln = 1/(NMAP[Npars]*NMAP[Npars]) ;
+    return (fparams[0] + ( fparams[1] + fparams[5]*Ln )/X.X + fparams[2]*exp(-fparams[3]*pow(X.X,2)) ) *( 1+fparams[4]*(NMAP[Npars]) + fparams[6]*Ln ) ;
+    //return (fparams[0] + ( fparams[1] + fparams[5]*Ln )/X.X + fparams[2]*exp(-fparams[3]*pow(X.X,2)) ) *( 1+fparams[4]*NMAP[Npars] + fparams[6]*Ln ) ;
 }
 
 void
@@ -46,11 +52,25 @@ LargeNB_df( double **df , const void *data , const double *fparams )
   const struct data *DATA = (const struct data*)data ;
   size_t i ;  
   for( i = 0 ; i < DATA -> n ; i++ ) {
+    #ifdef NDERFIT
+    struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
+			DATA -> N , DATA -> M } ;
+
+    size_t j ;
+    for( j = 0 ; j < DATA -> Npars ; j++ ) {
+      df[ DATA -> map[i].p[j] ][i] = Nder( fLargeNB ,
+					   X ,
+					   DATA->map[i].bnd ,
+					   fparams ,
+					   j ,
+					   DATA -> Npars ) ;
+    }
+    #else
     const double x  = DATA -> x[i] ;
 
     const double Nm = NMAP[ DATA->map[i].bnd ] ;
     const double Ln = 1/(Nm*Nm) ;
-
+    
     const double P0 = fparams[ DATA->map[i].p[0] ] ;
     const double P1 = fparams[ DATA->map[i].p[1] ] ;
     const double P2 = fparams[ DATA->map[i].p[2] ] ;
@@ -79,6 +99,8 @@ LargeNB_df( double **df , const void *data , const double *fparams )
     df[ DATA->map[i].p[5] ][i] = Ln*N/x ;
     df[ DATA->map[i].p[6] ][i] = Ln*( P0 + Ln*P5 + ( P1 )/x + P2/(x*x) + P3/(x*x*x) ) ;
 #endif
+
+    #endif
   }
   return ;
 }
@@ -100,7 +122,7 @@ LargeNB_linmat( double **U ,
     const double x  = DATA -> x[i] ;
     const double N = NMAP[ DATA->map[i].bnd ] ;
 
-    U[i][ DATA -> map[i].p[0] ] = (N) ;
+    U[i][ DATA -> map[i].p[0] ] = (N) ; 
     U[i][ DATA -> map[i].p[1] ] = (N)/x ;
     U[i][ DATA -> map[i].p[2] ] = (N)/(x*x) ;
     U[i][ DATA -> map[i].p[3] ] = (N)/(x*x*x) ;

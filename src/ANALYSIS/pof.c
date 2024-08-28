@@ -14,8 +14,8 @@ static const int spacing = 1;
 
 // Jboxes 3,6
 
-static const int t0 = 1*spacing ;
-static const int tp = 2*spacing ;
+static const int t0 = 4 ; //2 ; //1*spacing ;
+static const int tp = 8 ; //4 ; //2*spacing ;
 
 static int
 write_evalues( struct resampled *evalues ,

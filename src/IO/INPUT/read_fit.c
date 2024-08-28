@@ -83,6 +83,12 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = FVOL2 ;
   } else if( are_equal( Flat[tag].Value , "FVOL3" ) ) {
     Input -> Fit.Fitdef = FVOL3 ;
+  } else if( are_equal( Flat[tag].Value , "FVOL4" ) ) {
+    Input -> Fit.Fitdef = FVOL4 ;
+  } else if( are_equal( Flat[tag].Value , "FVOL5" ) ) {
+    Input -> Fit.Fitdef = FVOL5 ;
+  } else if( are_equal( Flat[tag].Value , "FVOL6" ) ) {
+    Input -> Fit.Fitdef = FVOL6 ;
   } else if( are_equal( Flat[tag].Value , "FVOL_DELTA" ) ) {
     Input -> Fit.Fitdef = FVOL_DELTA ;
   } else if( are_equal( Flat[tag].Value , "HALEXP" ) ) {

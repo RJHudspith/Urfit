@@ -147,7 +147,8 @@ perform_bootfit( const struct data_info Data ,
     // loop boots
     #pragma omp for private(i)
     for( i = 0 ; i < chisq.NSAMPLES ; i++ ) {
-
+      
+      //fprintf( stdout , "%zu did \n" , i ) ;
       //set_phi3( i , false ) ;
       
       single_fit( fitparams , &chisq , fdesc_boot ,
@@ -157,7 +158,7 @@ perform_bootfit( const struct data_info Data ,
     // free the fitfunction
     free_ffunction( &fdesc_boot.f , fdesc.Nlogic ) ;
   }
-  
+
   // divide out the number of degrees of freedom
   const size_t Dof = ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ;
   if( Dof != 0 ) {

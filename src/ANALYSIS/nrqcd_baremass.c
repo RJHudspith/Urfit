@@ -14,7 +14,6 @@ nrqcd_baremass_analysis( struct input_params *Input )
 {
   size_t i , j , shift = 0 ;
 
-  /*
   for( j = 0 ; j < Input -> Data.Ndata[0] ; j++ ) {
     subtract( &Input -> Data.y[j] , Input -> Data.y[j+Input -> Data.Ndata[0]] ) ;
     subtract( &Input -> Data.y[j+2*Input -> Data.Ndata[0]] ,
@@ -31,8 +30,8 @@ nrqcd_baremass_analysis( struct input_params *Input )
 
   double chi = 0.0 ;
   struct resampled *fit = fit_and_plot( *Input , &chi ) ;
-  */
 
+#if 0
   const double ainv = 0.197326/0.08636 ; //2.287 ; //2.206 ; //2.194 ;
 
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
@@ -75,7 +74,8 @@ nrqcd_baremass_analysis( struct input_params *Input )
   fprintf( stdout , "Kc %1.10f +/- %1.10f \n" , res.avg , res.err ) ;
 
   free( res.resampled ) ;
-
+#endif
+  
   free_fitparams( fit , Input -> Fit.Nlogic ) ;
   
   return SUCCESS ;

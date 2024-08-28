@@ -156,6 +156,7 @@ asinh_effmass( struct resampled *effmass ,
   // compute ( y[i+1] - y[i-1] / y[i] ) 
   equate( effmass , y1 ) ;
   subtract( effmass , y3 ) ;
+  //add( effmass , y3 ) ;
   divide( effmass , y2 ) ;
   mult_constant( effmass , 0.5 ) ;
     

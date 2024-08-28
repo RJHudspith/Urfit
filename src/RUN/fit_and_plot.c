@@ -18,7 +18,11 @@
 #include "Nint.h"
 #include "GLS.h"
 
-#define NINTPAR
+//#define PLOT_FF
+#define PLOT_FF_HACK
+//#define PLOT_FEFF
+
+//#define NINTPAR
 
 //
 typedef enum { NO_ERROR , NTOT_FAIL ,
@@ -206,9 +210,15 @@ fit_and_plot( struct input_params Input ,
   printf( "plot did\n") ;
   
   if( fitparams != NULL ) {
+    #ifdef PLOT_FF
     plot_fitfunction( fitparams , Data , Input.Fit ) ;
-    //plot_fitfunction_HACK( fitparams , Data , Input.Fit ) ;
+    #endif
+    #ifdef PLOT_FF_HACK
+    plot_fitfunction_HACK( fitparams , Data , Input.Fit ) ;
+    #endif
+    #ifdef PLOT_FEFF
     plot_feffmass( fitparams , Data , Input.Fit ) ;
+    #endif
   }
 
   if( fitparams != NULL ) {

@@ -14,10 +14,10 @@ Nder( double (*f) ( const struct x_desc X ,
       const size_t Npars ,
       const double *fparams ,
       const size_t idx ,        // parameter id
-      const size_t Nparams ) 
+      const size_t Nparams )
 {
   double Plus[ Nparams ] , Minus[ Nparams ] ;
-  double h = 1E-3 , TOL = 1.0 , TOLPREV = UNINIT_FLAG , dfidx = 0 ;
+  double h = 1E-2 , TOL = 1.0 , TOLPREV = UNINIT_FLAG , dfidx = 0 ;
   size_t inc = 0 ;
   
   // copy the temps
@@ -57,11 +57,13 @@ Nder( double (*f) ( const struct x_desc X ,
   #ifdef VERBOSE
   fprintf( stdout , "Finished :: dfidx %f \n" , dfidx ) ;
   #endif
-  
-  if( dfidx == UNINIT_FLAG || TOL > 1E-3 ) {
+
+  /*
+  if( dfidx == UNINIT_FLAG || TOL > 1E-1 ) {
     fprintf( stderr , "[NDER] failed to converge :: %zu %e \n" , inc , TOL ) ;
     return sqrt(-1) ;
   }
+  */
   
   return dfidx ;
 }

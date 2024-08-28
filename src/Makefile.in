@@ -159,7 +159,9 @@ am__objects_1 = ./ANALYSIS/alphas.$(OBJEXT) \
 	./ANALYSIS/pof.$(OBJEXT) ./ANALYSIS/HLBL.$(OBJEXT) \
 	./ANALYSIS/ZV.$(OBJEXT) ./ANALYSIS/sol.$(OBJEXT) \
 	./ANALYSIS/Qcorr_fixed.$(OBJEXT) \
-	./ANALYSIS/SpinOrbit.$(OBJEXT) ./ANALYSIS/Omega_fit.$(OBJEXT)
+	./ANALYSIS/SpinOrbit.$(OBJEXT) ./ANALYSIS/Omega_fit.$(OBJEXT) \
+	./ANALYSIS/imag_mom.$(OBJEXT) \
+	./ANALYSIS/phi_correlation.$(OBJEXT)
 am__objects_2 = ./EFFMASS/blackbox.$(OBJEXT) \
 	./EFFMASS/effmass.$(OBJEXT) ./EFFMASS/gevp.$(OBJEXT)
 am__objects_3 = ./FITS/alpha_D0.$(OBJEXT) \
@@ -185,7 +187,9 @@ am__objects_3 = ./FITS/alpha_D0.$(OBJEXT) \
 	./FITS/tanh.$(OBJEXT) ./FITS/ZV_exp.$(OBJEXT) \
 	./FITS/fvol2.$(OBJEXT) ./FITS/fvol3.$(OBJEXT) \
 	./FITS/fsol.$(OBJEXT) ./FITS/fvolcc.$(OBJEXT) \
-	./FITS/LargeNB.$(OBJEXT) ./FITS/fvol_delta.$(OBJEXT)
+	./FITS/LargeNB.$(OBJEXT) ./FITS/fvol_delta_fitt0.$(OBJEXT) \
+	./FITS/fvol4.$(OBJEXT) ./FITS/fvol5.$(OBJEXT) \
+	./FITS/fvol6.$(OBJEXT)
 am__objects_4 = ./GRAPH/make_xmgrace.$(OBJEXT) \
 	./GRAPH/plot_fitfunc.$(OBJEXT)
 am__objects_5 = ./INIT/fake.$(OBJEXT) ./INIT/init.$(OBJEXT)
@@ -267,10 +271,12 @@ am__depfiles_remade = ./$(DEPDIR)/URFIT-Mainfile.Po \
 	./ANALYSIS/$(DEPDIR)/exceptional.Po \
 	./ANALYSIS/$(DEPDIR)/general_ops.Po \
 	./ANALYSIS/$(DEPDIR)/hvp_pade.Po \
+	./ANALYSIS/$(DEPDIR)/imag_mom.Po \
 	./ANALYSIS/$(DEPDIR)/inverse.Po ./ANALYSIS/$(DEPDIR)/nrqcd.Po \
 	./ANALYSIS/$(DEPDIR)/nrqcd_baremass.Po \
 	./ANALYSIS/$(DEPDIR)/nrqcd_old.Po \
 	./ANALYSIS/$(DEPDIR)/nrqcd_slope.Po \
+	./ANALYSIS/$(DEPDIR)/phi_correlation.Po \
 	./ANALYSIS/$(DEPDIR)/pof.Po ./ANALYSIS/$(DEPDIR)/sol.Po \
 	./ANALYSIS/$(DEPDIR)/statpot.Po \
 	./ANALYSIS/$(DEPDIR)/su2_shit.Po \
@@ -293,7 +299,9 @@ am__depfiles_remade = ./$(DEPDIR)/URFIT-Mainfile.Po \
 	./FITS/$(DEPDIR)/exp_plusc.Po ./FITS/$(DEPDIR)/exp_xinv.Po \
 	./FITS/$(DEPDIR)/fit_chooser.Po ./FITS/$(DEPDIR)/fsol.Po \
 	./FITS/$(DEPDIR)/fvol1.Po ./FITS/$(DEPDIR)/fvol2.Po \
-	./FITS/$(DEPDIR)/fvol3.Po ./FITS/$(DEPDIR)/fvol_delta.Po \
+	./FITS/$(DEPDIR)/fvol3.Po ./FITS/$(DEPDIR)/fvol4.Po \
+	./FITS/$(DEPDIR)/fvol5.Po ./FITS/$(DEPDIR)/fvol6.Po \
+	./FITS/$(DEPDIR)/fvol_delta_fitt0.Po \
 	./FITS/$(DEPDIR)/fvolcc.Po ./FITS/$(DEPDIR)/nrqcd_exp.Po \
 	./FITS/$(DEPDIR)/nrqcd_exp2.Po ./FITS/$(DEPDIR)/pade.Po \
 	./FITS/$(DEPDIR)/pmap.Po ./FITS/$(DEPDIR)/poles.Po \
@@ -490,7 +498,8 @@ ANALYSIS_FILES = ./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/nrqcd_baremass.c ./ANALYSIS/c4c7_analysis.c \
 	./ANALYSIS/su2_shit.c ./ANALYSIS/binding_corr.c ./ANALYSIS/HAL.c \
 	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c ./ANALYSIS/sol.c \
-	./ANALYSIS/Qcorr_fixed.c ./ANALYSIS/SpinOrbit.c ./ANALYSIS/Omega_fit.c
+	./ANALYSIS/Qcorr_fixed.c ./ANALYSIS/SpinOrbit.c ./ANALYSIS/Omega_fit.c \
+	./ANALYSIS/imag_mom.c ./ANALYSIS/phi_correlation.c
 
 EFFMASS_FILES = ./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 INIT_FILES = ./INIT/fake.c ./INIT/init.c
@@ -507,7 +516,7 @@ FITS_FILES = ./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/nrqcd_exp2.c  ./FITS/c4c7.c ./FITS/su2_shitfit.c \
 	./FITS/SUN_cont.c ./FITS/HALexp.c ./FITS/cosh_plusc.c \
 	./FITS/tanh.c ./FITS/ZV_exp.c ./FITS/fvol2.c ./FITS/fvol3.c ./FITS/fsol.c	\
-	./FITS/fvolcc.c ./FITS/LargeNB.c ./FITS/fvol_delta.c
+	./FITS/fvolcc.c ./FITS/LargeNB.c ./FITS/fvol_delta_fitt0.c ./FITS/fvol4.c ./FITS/fvol5.c ./FITS/fvol6.c
 
 GRAPH_FILES = ./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 IO_FILES = ./IO/distribution.c ./IO/GLU_bswap.c ./IO/io_wrapper.c \
@@ -738,6 +747,10 @@ ANALYSIS/$(DEPDIR)/$(am__dirstamp):
 	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
 ./ANALYSIS/Omega_fit.$(OBJEXT): ANALYSIS/$(am__dirstamp) \
 	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
+./ANALYSIS/imag_mom.$(OBJEXT): ANALYSIS/$(am__dirstamp) \
+	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
+./ANALYSIS/phi_correlation.$(OBJEXT): ANALYSIS/$(am__dirstamp) \
+	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
 EFFMASS/$(am__dirstamp):
 	@$(MKDIR_P) ./EFFMASS
 	@: > EFFMASS/$(am__dirstamp)
@@ -846,7 +859,13 @@ FITS/$(DEPDIR)/$(am__dirstamp):
 	FITS/$(DEPDIR)/$(am__dirstamp)
 ./FITS/LargeNB.$(OBJEXT): FITS/$(am__dirstamp) \
 	FITS/$(DEPDIR)/$(am__dirstamp)
-./FITS/fvol_delta.$(OBJEXT): FITS/$(am__dirstamp) \
+./FITS/fvol_delta_fitt0.$(OBJEXT): FITS/$(am__dirstamp) \
+	FITS/$(DEPDIR)/$(am__dirstamp)
+./FITS/fvol4.$(OBJEXT): FITS/$(am__dirstamp) \
+	FITS/$(DEPDIR)/$(am__dirstamp)
+./FITS/fvol5.$(OBJEXT): FITS/$(am__dirstamp) \
+	FITS/$(DEPDIR)/$(am__dirstamp)
+./FITS/fvol6.$(OBJEXT): FITS/$(am__dirstamp) \
 	FITS/$(DEPDIR)/$(am__dirstamp)
 GRAPH/$(am__dirstamp):
 	@$(MKDIR_P) ./GRAPH
@@ -1063,11 +1082,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/exceptional.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/general_ops.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/hvp_pade.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/imag_mom.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/inverse.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/nrqcd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/nrqcd_baremass.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/nrqcd_old.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/nrqcd_slope.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/phi_correlation.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/pof.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/sol.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/statpot.Po@am__quote@ # am--include-marker
@@ -1104,7 +1125,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol1.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol3.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol_delta.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol4.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol5.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol6.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvol_delta_fitt0.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/fvolcc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/nrqcd_exp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/nrqcd_exp2.Po@am__quote@ # am--include-marker
@@ -1412,11 +1436,13 @@ distclean: distclean-am
 	-rm -f ./ANALYSIS/$(DEPDIR)/exceptional.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/general_ops.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/hvp_pade.Po
+	-rm -f ./ANALYSIS/$(DEPDIR)/imag_mom.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/inverse.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_baremass.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_old.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_slope.Po
+	-rm -f ./ANALYSIS/$(DEPDIR)/phi_correlation.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/pof.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/sol.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/statpot.Po
@@ -1453,7 +1479,10 @@ distclean: distclean-am
 	-rm -f ./FITS/$(DEPDIR)/fvol1.Po
 	-rm -f ./FITS/$(DEPDIR)/fvol2.Po
 	-rm -f ./FITS/$(DEPDIR)/fvol3.Po
-	-rm -f ./FITS/$(DEPDIR)/fvol_delta.Po
+	-rm -f ./FITS/$(DEPDIR)/fvol4.Po
+	-rm -f ./FITS/$(DEPDIR)/fvol5.Po
+	-rm -f ./FITS/$(DEPDIR)/fvol6.Po
+	-rm -f ./FITS/$(DEPDIR)/fvol_delta_fitt0.Po
 	-rm -f ./FITS/$(DEPDIR)/fvolcc.Po
 	-rm -f ./FITS/$(DEPDIR)/nrqcd_exp.Po
 	-rm -f ./FITS/$(DEPDIR)/nrqcd_exp2.Po
@@ -1597,11 +1626,13 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./ANALYSIS/$(DEPDIR)/exceptional.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/general_ops.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/hvp_pade.Po
+	-rm -f ./ANALYSIS/$(DEPDIR)/imag_mom.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/inverse.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_baremass.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_old.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_slope.Po
+	-rm -f ./ANALYSIS/$(DEPDIR)/phi_correlation.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/pof.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/sol.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/statpot.Po
@@ -1638,7 +1669,10 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./FITS/$(DEPDIR)/fvol1.Po
 	-rm -f ./FITS/$(DEPDIR)/fvol2.Po
 	-rm -f ./FITS/$(DEPDIR)/fvol3.Po
-	-rm -f ./FITS/$(DEPDIR)/fvol_delta.Po
+	-rm -f ./FITS/$(DEPDIR)/fvol4.Po
+	-rm -f ./FITS/$(DEPDIR)/fvol5.Po
+	-rm -f ./FITS/$(DEPDIR)/fvol6.Po
+	-rm -f ./FITS/$(DEPDIR)/fvol_delta_fitt0.Po
 	-rm -f ./FITS/$(DEPDIR)/fvolcc.Po
 	-rm -f ./FITS/$(DEPDIR)/nrqcd_exp.Po
 	-rm -f ./FITS/$(DEPDIR)/nrqcd_exp2.Po

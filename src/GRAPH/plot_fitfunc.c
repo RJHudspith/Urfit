@@ -136,7 +136,7 @@ plot_fitfunction_HACK( const struct resampled *f ,
 
   size_t h = 0 , i ;
 
-  const size_t MAX = 4 ; //fvol2_NMAX( ) ;
+  const size_t MAX = 23 ; //fvol2_NMAX( ) ;
   //const size_t MAX = 15 ; //fvol3_NMAX( ) ;
 
   printf( "FUUUUCKKK -----> %zu %zu\n" , Data.Ntot , MAX ) ;
@@ -147,32 +147,44 @@ plot_fitfunction_HACK( const struct resampled *f ,
     printf( "Stars\n" ) ;
     for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ ) {
       struct resampled data = extrap_fitfunc_HACK( f , Data , Fit ,
-						   Data.x[shift].avg , shift , h ) ;
-
+						   Data.x[shift].avg ,
+						   j , shift ) ;
       printf( "%f %f %f\n" , Data.x[shift].avg , data.avg , data.err ) ;
     }
+    h += Data.Ndata[j] ;
+  }
+  h = 0 ;
+
+  printf( "WTF %zu\n" , Data.Nsim ) ;
+
+  //for( size_t j = 0 ; j < Data.Nsim ; j++ ) {
+  for( size_t j = 0 ; j < 1 ; j++ ) {
     
-    //for( size_t shift = MAX-5 ; shift < MAX ; shift++ ) {
-    for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ ) {
-    //  size_t shift = 0 ;
+    for( size_t shift = MAX-6 ; shift < MAX ; shift++ )
+    //for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ )
+    {
+      //size_t shift = h ;
       
-      //const double xmin = 0.018225 ;
-      //const double xmax = 0.18 ;
+      const double xmin = 0.078276961035739 ;
+      const double xmax = 0.8 ;
 
       //const double xmin = 0.078 ; //0.07822077018599871;
       //const double xmax = 1.2;
 
-      const double xmin = 4 ;
-      const double xmax = 50 ; 
+      //const double xmin = 4 ;
+      //const double xmax = 40 ; 
       
       const double x_step = ( xmax - xmin ) / ( granularity - 1 ) ;
       for( i = 0 ; i < granularity ; i++ ) {
 	
 	X[ i ] = xmin + x_step*i ;
-	
-	//struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , shift , h ) ;
+
+	//struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , j , shift ) ;
+	//struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , h , h ) ;
+        struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , shift , h ) ;
 	//struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , shift , shift ) ;
-	struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , j , h ) ;
+	//struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , MAX-1, h ) ;
+	//struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , X[i] , MAX-1 , shift ) ;
 	
 	YMAX[i] = data.err_hi ;
 	YAVG[i] = data.avg ;
@@ -188,9 +200,8 @@ plot_fitfunction_HACK( const struct resampled *f ,
       draw_line( X , YMIN , granularity ) ;
 
       if( shift == MAX-1 ) {
-	//fprintf( stdout , "Extrap result %e %e\n" , YAVG[0] , 0.5*(YMAX[0]-YMIN[0]) ) ;
+	fprintf( stdout , "Extrap result %e %e\n" , YAVG[0] , 0.5*(YMAX[0]-YMIN[0]) ) ;
       }
-      
     }
     h += Data.Ndata[j] ;
   }
@@ -220,9 +231,12 @@ plot_feffmass( const struct resampled *f ,
   size_t shift = 0 ;
   for( h = 0 ; h < Data.Nsim ; h++ ) {
 
+    if( Data.Ndata[h] == 0 ) continue ;
+    
     // loop the x to find the max and min of x
     double xmin = Data.x[shift].err_lo ;
     double xmax = Data.x[shift].err_hi ;
+    
     for( i = shift ; i < shift + Data.Ndata[h] ; i++ ) {
       if( Data.x[i].err_lo < xmin ) {
 	xmin = Data.x[i].err_lo ;
@@ -230,21 +244,22 @@ plot_feffmass( const struct resampled *f ,
       if( Data.x[i].err_hi > xmax ) {
 	xmax = Data.x[i].err_hi ;
       }
-    }
+    }    
 
     const double x_step = ( xmax - xmin ) / ( granularity - 1 ) ;
     for( i = 0 ; i < granularity ; i++ ) {
 
-      const double dh = 1E-5 ;
+      const double dh = 1E-7 ;
       
       X[ i ] = xmin + x_step*i ;
       const double X2 = xmin + x_step*i + dh ;
 
-      // do a derivative here
-      
+      // do a derivative here      
       struct resampled data1 = extrap_fitfunc( f , Data , Fit , X[i] , shift ) ;
       struct resampled data2 = extrap_fitfunc( f , Data , Fit , X2 , shift ) ;
 
+      //X[i] -= 0.5 ;
+      
       divide( &data1 , data2 ) ;
       res_log( &data1 ) ;
       divide_constant( &data1 , dh ) ;
@@ -276,9 +291,13 @@ plot_feffmass( const struct resampled *f ,
   }
   fclose( file ) ;
 
+  printf( "Frees\n" ) ;
+
   // free the x, y , ymin and ymax
   free( X ) ; free( YAVG ) ; free( YMIN ) ; free( YMAX ) ;
 
+  printf( "Frees did\n" ) ;
+  
   return SUCCESS ;
 }
 
