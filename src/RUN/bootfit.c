@@ -16,7 +16,7 @@
 #include <gsl/gsl_cdf.h> // pvalue
 
 #include "fake.h"
-#include "fvol_delta.h"
+#include "fvol_delta_fitt0v2.h"
 
 // perform a single bootstrap fit to our data
 static int
@@ -131,12 +131,17 @@ perform_bootfit( const struct data_info Data ,
   if( fitparams == NULL ) goto memfree ;
 
   fprintf( stdout , "[FIT] single fit for the average\n" ) ;
+  
+  //set_phi3v2( 0 , true ) ;
 
-  //set_phi3( 0 , true ) ;
+  fprintf( stdout , "[FIT] set phi3\n" ) ;
   
   // do the average first
   single_fit( fitparams , &chisq , fdesc , Data , Fit , 0 , true ) ;
 
+  fprintf( stdout , "[FIT] single fit done\n" ) ;
+
+#if 1
   // do the other boots in parallel
   #pragma omp parallel
   {
@@ -149,7 +154,7 @@ perform_bootfit( const struct data_info Data ,
     for( i = 0 ; i < chisq.NSAMPLES ; i++ ) {
       
       //fprintf( stdout , "%zu did \n" , i ) ;
-      //set_phi3( i , false ) ;
+      //set_phi3v2( i , false ) ;
       
       single_fit( fitparams , &chisq , fdesc_boot ,
 		  Data , Fit , i , false ) ;
@@ -158,6 +163,7 @@ perform_bootfit( const struct data_info Data ,
     // free the fitfunction
     free_ffunction( &fdesc_boot.f , fdesc.Nlogic ) ;
   }
+ #endif
 
   // divide out the number of degrees of freedom
   const size_t Dof = ( Data.Ntot - fdesc.Nlogic + Fit.Nprior ) ;

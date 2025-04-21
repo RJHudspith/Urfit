@@ -7,7 +7,4 @@ binding_corr_analysis( struct input_params *Input ) ;
 int
 binding_corr_analysis2( struct input_params *Input ) ;
 
-int
-PCAC_analysis( struct input_params *Input ) ;
-
 #endif

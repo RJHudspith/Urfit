@@ -44,17 +44,20 @@ pack_inputs( FILE *Infile ,
   char str1[ STR1_LENGTH ] , str2[ STR2_LENGTH ] ;
   size_t i = 0 ;
   while( true ) {
+    
     const int test = fscanf( Infile , "%s = %s" , str1 , str2 ) ;
-
+    
     if( test == EOF ) break ; // if the file is finished we leave
     if( test != 2 ) continue ; // if there are comments and stuff
     
-    Flat[i].Token_Length = strlen( str1 ) ;
+    Flat[i].Token_Length = 64 ; //strlen( str1 ) ;
     Flat[i].Token = malloc( Flat[i].Token_Length * sizeof( char ) ) ;
+    
     sprintf( Flat[i].Token , "%s" , str1 ) ;
     
-    Flat[i].Value_Length = strlen( str2 ) ;
+    Flat[i].Value_Length = 256 ; //strlen( str2 ) ;
     Flat[i].Value = malloc( Flat[i].Value_Length * sizeof( char ) ) ;
+    
     sprintf( Flat[i].Value , "%s" , str2 ) ;
     
     i++ ;
@@ -143,10 +146,12 @@ read_inputs( struct input_params *Input ,
   // get the flat file length
   const size_t Ntags = get_file_length( infile ) ;
 
-  printf( "[INPUTS] Ntags = %zu \n" , Ntags ) ;
+  fprintf( stdout , "[INPUTS] Ntags = %zu \n" , Ntags ) ;
 
   // pack the input file
   struct flat_file *Flat = pack_inputs( infile , Ntags ) ;
+
+  fprintf( stdout , "[INPUTS] inputs packed\n" ) ;
 
   // get the filetype tag
   size_t io_tag = 0 ;
@@ -168,6 +173,8 @@ read_inputs( struct input_params *Input ,
       Input -> FileType = GLU_Qmoment_File ;
     } else if( are_equal( Flat[ io_tag ].Value , "GLU_File" ) ) {
       Input -> FileType = GLU_File ;
+    } else if( are_equal( Flat[ io_tag ].Value , "Adler_File" ) ) {
+      Input -> FileType = Adler_File ;
     } else {
       fprintf( stderr , "[INPUT] FileType %s not recognised\n" ,
 	       Flat[ io_tag ].Value ) ;
@@ -201,8 +208,12 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = Wflow ;
     } else if( are_equal( Flat[ an_tag ].Value , "Fit" ) ) {
       Input -> Analysis = Fit ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Fpi_CLS" ) ) {
+      Input -> Analysis = Fpi_CLS ;
     } else if( are_equal( Flat[ an_tag ].Value , "Nrqcd" ) ) {
       Input -> Analysis = Nrqcd ;
+    } else if( are_equal( Flat[ an_tag ].Value , "PCAC" ) ) {
+      Input -> Analysis = PCAC ;
     } else if( are_equal( Flat[ an_tag ].Value , "Pof" ) ) {
       Input -> Analysis = Pof ;
     } else if( are_equal( Flat[ an_tag ].Value , "Qcorr" ) ) {

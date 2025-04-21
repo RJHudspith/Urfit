@@ -36,7 +36,7 @@ typedef enum {
 
 // fit types
 typedef enum {
-  ALPHA_D0 , ALPHA_D0_MULTI , ADLERALPHA_D0 , ADLERALPHA_D0_MULTI , HALEXP , EXP , EXP_XINV , COSH , COSH_PLUSC , EXP_PLUSC , HLBL_CONT , NRQCD_EXP , NRQCD_EXP2 , NOFIT , PADE , PEXP , POLY , PP_AA , PP_AA_WW , PP_AA_WW_R2 , PP_AA_EXP , PPAA , QCORR_BESSEL , QSUSC_SU2 , SINH , TANH , POLES , QSLAB , QSLAB_FIXED , CORNELL , CORNELL_V2 , FVOL1 , FVOL2 , FVOL3 , FVOL4, FVOL5, FVOL6, UDCB_HEAVY , C4C7 , SOL , SU2_SHITFIT , SUN_CONT , ZV_EXP , FVOLCC, LARGENB, FVOL_DELTA
+  ALPHA_D0 , ALPHA_D0_MULTI , ADLERALPHA_D0 , ADLERALPHA_D0_MULTI , HALEXP , EXP , EXP_XINV , COSH , COSH_ASYMM, COSH_PLUSC , EXP_PLUSC , HLBL_CONT , NRQCD_EXP , NRQCD_EXP2 , NOFIT , PADE , PEXP , POLY , PP_AA , PP_AA_WW , PP_AA_WW_R2 , PP_AA_EXP , PPAA , QCORR_BESSEL , QSUSC_SU2 , SINH , TANH , POLES , QSLAB , QSLAB_FIXED , CORNELL , CORNELL_V2 , FVOL1 , FVOL2 , FVOL3 , FVOL4, FVOL5, FVOL6, UDCB_HEAVY , C4C7 , SOL , SOL2, SU2_SHITFIT , SUN_CONT , ZV_EXP , FVOLCC, LARGENB, FVOL_DELTA , TEST
 } fittype ;
 
 // time folding types
@@ -51,9 +51,9 @@ enum { Vi = 123 , Ai = 678 , Tij = 10203 , Tit = 31323 } ;
 typedef enum { Raw , JackKnife , BootStrap } resample_type ;
 
 // file type we expect to read
-typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File , GLU_Qmoment_File } file_type ;
+typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File , GLU_Qmoment_File , Adler_File } file_type ;
 
-typedef enum { Adler , Alphas , Beta_crit , Binding_Corr , Correlator , Exceptional , Fit , General , HLBL , HVP , KKops , KK_BK , Nrqcd , Pof , Qcorr , Qsusc , Qslab , QslabFix , Ren_Rats , SpinOrbit, StaticPotential , TetraGEVP , TetraGEVP_Fixed , Wflow , Sol , ZV } analysis_type ;
+typedef enum { Adler , Alphas , Beta_crit , Binding_Corr , Correlator , Exceptional , Fit , Fpi_CLS , General , HLBL , HVP , KKops , KK_BK , Nrqcd , PCAC, Pof , Qcorr , Qsusc , Qslab , QslabFix , Ren_Rats , SpinOrbit, StaticPotential , TetraGEVP , TetraGEVP_Fixed , Wflow , Sol , ZV } analysis_type ;
 
 // x-data descriptor
 struct x_desc {

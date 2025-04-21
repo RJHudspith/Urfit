@@ -24,7 +24,7 @@ Nder( double (*f) ( const struct x_desc X ,
   memcpy( Plus  , fparams , Nparams * sizeof( double ) ) ;
   memcpy( Minus , fparams , Nparams * sizeof( double ) ) ;
   
-  while( TOL > 1E-10 && inc < 15 ) {
+  while( TOL > 1E-15 && inc < 200 ) {
 
     // set the plus and minus terms
     Plus[ idx ]  = fparams[ idx ] + h ;

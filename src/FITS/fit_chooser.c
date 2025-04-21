@@ -12,11 +12,13 @@
 #include "cornell.h"
 #include "cornell_v2.h"
 #include "cosh.h"
+#include "cosh_asymm.h"
 #include "cosh_plusc.h"
 #include "exp.h"
 #include "exp_plusc.h"
 #include "exp_xinv.h"
 #include "fsol.h"
+#include "fsol2.h"
 #include "fvolcc.h"
 #include "fvol1.h"
 #include "fvol2.h"
@@ -26,7 +28,7 @@
 #include "fvol6.h"
 
 //#include "fvol_delta.h"
-#include "fvol_delta_fitt0.h"
+#include "fvol_delta_fitt0v2.h"
 #include "c4c7.h"
 #include "HALexp.h"
 #include "HLBL_cont.h"
@@ -57,6 +59,8 @@
 #include "pmap.h"      // for allocating the pmap
 #include "su2_shitfit.h"
 
+#include "test.h"
+
 // return number of params in the fit
 size_t
 get_Nparam( const struct fit_info Fit )
@@ -84,6 +88,8 @@ get_Nparam( const struct fit_info Fit )
  case SINH :
  case EXP :
    return 2 * Fit.N ;
+ case COSH_ASYMM :
+   return 2 * (Fit.N+Fit.M) ;
  case COSH_PLUSC :
    return 1+2 * Fit.N ;
  case EXP_XINV :
@@ -96,8 +102,8 @@ get_Nparam( const struct fit_info Fit )
  case FVOL1 : return 3 ;
  case FVOL2 : return 9 ; //return 4 ;
  case FVOL3 : return 5 ;
- case FVOL4 : return 6 ;
- case FVOL5 : return 5 ;
+ case FVOL4 : return 5 ;
+ case FVOL5 : return 4 ;
  case FVOL6 : return 5 ;
  case FVOL_DELTA : return 14 ;
  case PADE : return Fit.N + Fit.M ;
@@ -119,7 +125,9 @@ get_Nparam( const struct fit_info Fit )
  case NRQCD_EXP : return 2 ;
  case NRQCD_EXP2 : return 5 ;
  case SOL : return 5 ;
+ case SOL2 : return 8 ;
  case SU2_SHITFIT : return 2 ;
+ case TEST : return 5 ;
  case NOFIT : return 0 ;
  }
  return 0 ;
@@ -195,6 +203,13 @@ init_fit( const struct data_info Data ,
     fdesc.F          = cosh_f ;
     fdesc.dF         = cosh_df ;
     fdesc.d2F        = cosh_d2f ;
+    fdesc.guesses    = exp_guesses ;
+    break ;
+  case COSH_ASYMM :
+    fdesc.func       = fcosh_asymm ;
+    fdesc.F          = cosh_asymm_f ;
+    fdesc.dF         = cosh_asymm_df ;
+    fdesc.d2F        = cosh_asymm_d2f ;
     fdesc.guesses    = exp_guesses ;
     break ;
   case COSH_PLUSC : 
@@ -274,11 +289,11 @@ init_fit( const struct data_info Data ,
     fdesc.guesses    = fvol6_guesses ;
     break ; 
   case FVOL_DELTA :
-    fdesc.func       = ffvol_delta ;
-    fdesc.F          = fvol_delta_f ;
-    fdesc.dF         = fvol_delta_df ;
-    fdesc.d2F        = fvol_delta_d2f ;
-    fdesc.guesses    = fvol_delta_guesses ;
+    fdesc.func       = ffvol_deltav2 ;
+    fdesc.F          = fvol_deltav2_f ;
+    fdesc.dF         = fvol_deltav2_df ;
+    fdesc.d2F        = fvol_deltav2_d2f ;
+    fdesc.guesses    = fvol_deltav2_guesses ;
     break ;
   case HALEXP :
     fdesc.func       = fHALexp ;
@@ -395,6 +410,13 @@ init_fit( const struct data_info Data ,
     fdesc.d2F        = sol_d2f ;
     fdesc.guesses    = sol_guesses ; 
     break ;
+  case SOL2 :
+    fdesc.func       = fsol2 ;
+    fdesc.F          = sol2_f ;
+    fdesc.dF         = sol2_df ;
+    fdesc.d2F        = sol2_d2f ;
+    fdesc.guesses    = sol2_guesses ; 
+    break ;
   case SUN_CONT :
     fdesc.func       = fSUN_cont ;
     fdesc.F          = SUN_cont_f ;
@@ -458,6 +480,14 @@ init_fit( const struct data_info Data ,
     fdesc.d2F        = su2_shitfit_d2f ;
     fdesc.guesses    = su2_shitfit_guesses ;
     break ;
+  case TEST :
+    fdesc.func       = ftest ;
+    fdesc.F          = test_f ;
+    fdesc.dF         = test_df ;
+    fdesc.d2F        = test_d2f ;
+    fdesc.guesses    = test_guesses ;
+    break ;
+
   case NOFIT :
     break ;
   }

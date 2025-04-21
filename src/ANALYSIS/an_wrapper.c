@@ -10,6 +10,7 @@
 #include "binding_corr.h"
 #include "correlator.h"
 #include "CPCV.h"
+#include "decay_wilson.h"
 #include "fit_and_plot.h"
 #include "exceptional.h"
 #include "general_ops.h"
@@ -52,13 +53,13 @@ an_wrapper( struct input_params *Input )
   case Beta_crit :
     return beta_crit( Input ) ;
   case Binding_Corr :
-    //return binding_corr_analysis( Input ) ;
     return binding_corr_analysis2( Input ) ;
-    //return PCAC_analysis( Input ) ;
   case Correlator :
     return correlator_analysis( Input ) ;
   case Exceptional :
     return fit_inverse( Input ) ;
+  case Fpi_CLS :
+    return fpi_analysis( Input ) ;
   case General :
     return gen_ops( Input ) ;
   case HLBL :
@@ -76,6 +77,8 @@ an_wrapper( struct input_params *Input )
   case Pof :
     return pof_analysis( Input ) ;
     //return pof_analysis_fixed( Input ) ;
+  case PCAC :
+    return PCAC_analysis( Input ) ;
   case Qcorr :
     //return fit_Qcorr( Input ) ;
     return Qmoments( Input ) ;

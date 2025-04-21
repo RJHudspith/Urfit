@@ -14,6 +14,8 @@
 #include "plot_fitfunc.h"
 #include "resampled_ops.h"
 
+#include "write_flat.h"
+
 //#define OBC
 //#define OBCTLEN (96)
 
@@ -79,6 +81,8 @@ ZV_analysis( struct input_params *Input )
   // perform a fit to a constant
   double Chi ;
   struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
+
+  write_flat_dist( Fit , Input->Data.x , 1 , "ZV.flat" ) ;
 
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;
 

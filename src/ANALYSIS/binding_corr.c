@@ -144,114 +144,13 @@ binding_corr_analysis2( struct input_params *Input )
 
     divide( &Input -> Data.y[ j ] , Input->Data.y[j+LT] ) ;
     */
-    raise( &Input -> Data.y[j+LT] , 4./2 ) ;
+    //raise( &Input -> Data.y[j+LT] , 4./2 ) ;
+    //mult( &Input -> Data.y[ j+LT ] , Input->Data.y[j+2*LT] ) ;
     divide( &Input -> Data.y[ j ] , Input->Data.y[j+LT] ) ;
   }
 
   // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
-
-  // perform a fit
-  double Chi ;
-  struct resampled *Fit = fit_and_plot( *Input , &Chi ) ;
-
-    // write out a flat file
-  if( Input -> Fit.Fitdef == EXP ||
-      Input -> Fit.Fitdef == COSH ||
-      Input -> Fit.Fitdef == SINH ) {
-    
-    struct resampled mpi2 = init_dist( NULL ,
-				       Fit[1].NSAMPLES ,
-				       Fit[1].restype ) ;
-    write_flat_dist( &Fit[1] , &mpi2 , 1 , "Mass_0.flat" ) ;
-    FILE *massfile = fopen( "massfits.dat" , "w+a" ) ;
-
-    write_fitmass_graph( massfile , Fit[1] ,
-			 Input -> Traj[0].Fit_Low ,
-			 Input -> Traj[0].Fit_High , 0 ) ;
-    
-    fclose( massfile ) ;
-  }
-  
-  return SUCCESS ;
-}
-
-static void
-deriv( struct resampled *res ,
-       struct resampled *tempb , 
-       const struct resampled *y ,
-       const size_t i ,
-       const size_t LT ,
-       const size_t offset )
-{
-  // compute the derivative and put it in tempf
-  if( i == 0 ) {
-    // f(x+1)-f(x)
-    equate( res , y[1+offset] ) ;
-    equate( tempb , y[offset] ) ;
-    subtract( res , *tempb ) ; 
-  } else if( i == LT-1 ) {
-    // f(x) - f(x-1)
-    equate( res , y[i+offset] ) ;
-    equate( tempb , y[i-1+offset] ) ;
-    subtract( res , *tempb ) ; 
-  } else {
-    equate( res , y[i+1+offset] ) ;
-    equate( tempb , y[i-1+offset] ) ;
-    subtract( res , *tempb ) ;
-    mult_constant( res , 0.5 ) ;
-  }
-}
-
-// form from https://arxiv.org/pdf/1502.04999.pdf
-const double getCA( const double beta )
-{
-  const double g0sq = 6/beta ;
-  return -0.006033*g0sq*( 1 + exp( 9.2056 - 13.9847/g0sq ) ) ;
-}
-
-int
-PCAC_analysis( struct input_params *Input )
-{
-  size_t i , j = 0 ;
-  const size_t N = Input -> Fit.N ;
-  const size_t LT = Input -> Data.Ndata[0] ;
-
-  struct resampled tempf = init_dist( &Input -> Data.y[ j ] ,
-				      Input -> Data.y[ j ].NSAMPLES ,
-				      Input -> Data.y[ j ].restype ) ;
-  struct resampled tempb = init_dist( &Input -> Data.y[ j ] ,
-				      Input -> Data.y[ j ].NSAMPLES ,
-				      Input -> Data.y[ j ].restype ) ;
-
-  // first we O(a) improve the axial current
-  // ASSUMES first element is PP and second set is  <At P>
-  const double beta = 3.34 ;
-  const double CA = getCA( beta ) ;
-
-  printf( "CA(%f) :: %e\n" , beta , CA ) ;
-
-  for( j = 0 ; j < LT ; j++ ) {
-    deriv( &tempf , &tempb , Input -> Data.y , j , LT , 0 ) ;
-    mult_constant( &tempf , CA ) ;
-    add( &Input -> Data.y[j+LT] , tempf ) ; 
-  }
-  
-  // ASSUMES first element is PP and second set is  <At P>
-  for( j = 0 ; j < LT ; j++ ) {
-    
-    deriv( &tempf , &tempb , Input -> Data.y , j , LT , LT ) ;
-
-    // divide by PP correlator
-    divide( &tempf , Input -> Data.y[j] ) ;
-    mult_constant( &tempf , -0.5 ) ;
-    equate( &Input -> Data.y[j] , tempf ) ;
-  }
-  free( tempf.resampled ) ;
-  free( tempb.resampled ) ;
-    
-  // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
+  struct resampled *effmass = effective_mass( Input , LOG_EFFMASS ) ;
 
   // perform a fit
   double Chi ;

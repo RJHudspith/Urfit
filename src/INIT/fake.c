@@ -11,6 +11,32 @@
 #include "stats.h"
 #include "resampled_ops.h"
 
+// set up the gsl rng
+gsl_rng *r = NULL ;
+
+struct resampled
+generate_fake_single( const double y,
+		      const double dy ,
+		      const size_t Nsamples )
+{
+  gsl_rng_env_setup( ) ;
+  if( r == NULL ) {
+    r = gsl_rng_alloc( gsl_rng_default ) ;
+  }
+  
+  printf( "Test %e\n" , gsl_ran_gaussian( r , 1 ) ) ;
+
+  
+  struct resampled res = init_dist( NULL , Nsamples , BootStrap ) ;
+  for( size_t j = 0 ; j < Nsamples ; j++ ) {
+    res.resampled[j] = y + gsl_ran_gaussian( r , dy ) ;
+    gsl_ran_gaussian( r , dy ) ;
+  }
+  res.avg = y ;
+  compute_err( &res ) ;
+  return res ;
+}
+
 struct resampled *
 generate_fake_boot( const size_t N,
 		    const size_t Nsamples,

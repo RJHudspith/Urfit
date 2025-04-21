@@ -17,6 +17,9 @@ static const int t0 = 2 ;
 static const int td = 4 ;
 
 //static const int t0 = 4 ;
+//static const int td = 8 ;
+
+//static const int t0 = 4 ;
 //static const int td = 6 ;
 
 static int

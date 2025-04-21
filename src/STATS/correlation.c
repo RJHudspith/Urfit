@@ -238,12 +238,14 @@ write_corrmatrix( const double **correlation ,
       printf( "%e " , correlation[0][i] ) ;
     } else {
       for( j = 0 ; j < NCUT ; j++ ) {
+	/*
 	if( j < i ) {
 	  printf( " & " ) ;
 	} else { 
 	  printf( "%1.4f & " , correlation[i][j] ) ;
 	}
-	//printf( "%e " , correlation[i][j] ) ;
+	*/
+	printf( "%e " , correlation[i][j] ) ;
       }
       printf( "\n" ) ;
     }

@@ -18,7 +18,7 @@ ANALYSIS_FILES=./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/su2_shit.c ./ANALYSIS/binding_corr.c ./ANALYSIS/HAL.c \
 	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c ./ANALYSIS/sol.c \
 	./ANALYSIS/Qcorr_fixed.c ./ANALYSIS/SpinOrbit.c ./ANALYSIS/Omega_fit.c \
-	./ANALYSIS/imag_mom.c ./ANALYSIS/phi_correlation.c
+	./ANALYSIS/decay_wilson.c
 
 EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
 
@@ -36,8 +36,8 @@ FITS_FILES=./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/alpha_D0_multi_new.c ./FITS/udcb_heavy.c ./FITS/nrqcd_exp.c \
 	./FITS/nrqcd_exp2.c  ./FITS/c4c7.c ./FITS/su2_shitfit.c \
 	./FITS/SUN_cont.c ./FITS/HALexp.c ./FITS/cosh_plusc.c \
-	./FITS/tanh.c ./FITS/ZV_exp.c ./FITS/fvol2.c ./FITS/fvol3.c ./FITS/fsol.c	\
-	./FITS/fvolcc.c ./FITS/LargeNB.c ./FITS/fvol_delta_fitt0.c ./FITS/fvol4.c ./FITS/fvol5.c ./FITS/fvol6.c
+	./FITS/tanh.c ./FITS/ZV_exp.c ./FITS/fvol2.c ./FITS/fvol3.c ./FITS/fsol.c ./FITS/fsol2.c	\
+	./FITS/fvolcc.c ./FITS/LargeNB.c ./FITS/fvol_delta_fitt0.c ./FITS/fvol_delta_fitt0v2.c ./FITS/fvol4.c ./FITS/fvol5.c ./FITS/fvol6.c ./FITS/cosh_asymm.c ./FITS/test.c
 
 GRAPH_FILES=./GRAPH/make_xmgrace.c ./GRAPH/plot_fitfunc.c
 
@@ -48,11 +48,11 @@ IO_FILES=./IO/distribution.c ./IO/GLU_bswap.c ./IO/io_wrapper.c \
 
 INPUT_FILES=./IO/INPUT/read_inputs.c ./IO/INPUT/read_traj.c \
 	./IO/INPUT/read_fit.c ./IO/INPUT/read_graph.c \
-	./IO/INPUT/read_stats.c
+	./IO/INPUT/read_stats.c ./IO/read_Adler.c
 
 MINIMIZE_FILES=./MINIMIZE/CG.c ./MINIMIZE/GA.c ./MINIMIZE/GLS.c \
 	./MINIMIZE/GLS_pade.c ./MINIMIZE/line_search.c \
-	./MINIMIZE/LM.c ./MINIMIZE/SD.c
+	./MINIMIZE/LM.c ./MINIMIZE/SD.c ./MINIMIZE/powell.c
 
 PHYSICS_FILES=./PHYSICS/cruel_runnings.c ./PHYSICS/decays.c ./PHYSICS/momenta.c\
 	./PHYSICS/sort.c

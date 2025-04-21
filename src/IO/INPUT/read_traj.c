@@ -235,7 +235,8 @@ set_trajs( const struct flat_file *Flat ,
     if( are_equal( tok , "NULL" ) ) {
       Traj[i].FileY = NULL ;
     } else {
-      Traj[i].FileY = malloc( strlen( tok ) * sizeof( char ) ) ;
+      //Traj[i].FileY = malloc( strlen( tok ) * sizeof( char ) ) ;
+      Traj[i].FileY = malloc( (strlen( tok )+8) * sizeof( char ) ) ;
       sprintf( Traj[i].FileY , "%s" , tok ) ;
     }
     printf( "%s \n" , tok ) ;
@@ -289,7 +290,7 @@ set_trajs( const struct flat_file *Flat ,
     if( are_equal( tok , "NULL" ) ) {
       Traj[i].RW = NULL ;
     } else {
-      Traj[i].RW = malloc( strlen( tok ) * sizeof( char ) ) ;
+      Traj[i].RW = malloc( (strlen( tok )+8) * sizeof( char ) ) ;
       sprintf( Traj[i].RW , "%s" , tok ) ;
     }
   }

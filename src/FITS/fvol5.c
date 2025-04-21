@@ -157,7 +157,7 @@ fvol5_df( double **df , const void *data , const double *fparams )
     df[ mp[3] ][ i ] = fparams[mp[0]]*asq[i] ; //fparams[mp[4]]*fparams[mp[4]] ; //asq[i] ;
     #endif
 
-    df[ mp[4] ][ i ] = 0.0 ; //2*fparams[mp[0]]*fparams[mp[3]]*fparams[mp[4]] ; //asq[i] ;
+    //df[ mp[4] ][ i ] = 0.0 ; //2*fparams[mp[0]]*fparams[mp[3]]*fparams[mp[4]] ; //asq[i] ;
   }
   return ;
 }

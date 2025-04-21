@@ -18,8 +18,8 @@
 #include "Nint.h"
 #include "GLS.h"
 
-//#define PLOT_FF
-#define PLOT_FF_HACK
+#define PLOT_FF
+//#define PLOT_FF_HACK
 //#define PLOT_FEFF
 
 //#define NINTPAR

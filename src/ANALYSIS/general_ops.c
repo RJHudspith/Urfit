@@ -78,13 +78,13 @@ gen_ops( struct input_params *Input )
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
 	     divide , "Div" , mpi2 , j ) ;
 
+      /*
       mult_constant( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 6/2. ) ;
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
 	     subtract , "SubNC" , mpi2 , j ) ;
+      */
 
-
-#if 0
       /*
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
@@ -103,7 +103,7 @@ gen_ops( struct input_params *Input )
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
 	     divide , "x^2Dy^2" , mpi2 , j ) ;
-#endif
+      //#endif
     }
   }
   return SUCCESS ;

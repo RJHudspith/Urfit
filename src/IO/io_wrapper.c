@@ -7,6 +7,7 @@
 #include "distribution.h"
 #include "fake.h"
 #include "init.h"
+#include "read_Adler.h"
 #include "read_corr.h"
 #include "read_flat.h"
 #include "read_GLU.h"
@@ -19,6 +20,11 @@ io_wrap( struct input_params *Input )
 {
   // IO switch
   switch( Input -> FileType ) {
+  case Adler_File :
+    if( read_Adler( Input ) == FAILURE ) {
+      return FAILURE ;
+    }
+    return SUCCESS ;
   case Corr_File :
     if( read_corr( Input ) == FAILURE ) {
       return FAILURE ;

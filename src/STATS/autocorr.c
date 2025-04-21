@@ -75,6 +75,8 @@ autocorrelation( const struct resampled RAW ,
 		 const size_t NSEP ,
 		 const char *output )
 {
+  printf( "In this guy !!! ") ;
+  
   // openmp'd fftws
   parallel_ffts( ) ;
 
@@ -151,7 +153,8 @@ autocorrelation( const struct resampled RAW ,
     }
     // simple error estimate
     const double err = n * sqrt( ( sum ) / N ) ;
-    fprintf( output_file , "TAU_%zu %e %e \n" , n * NSEP , sum , err ) ;
+    if( isnan( sum ) || isnan( err ) ) break ;
+    fprintf( output_file , "%zu %e %e \n" , n * NSEP , sum , err ) ;
   }
 
   fclose( output_file ) ;

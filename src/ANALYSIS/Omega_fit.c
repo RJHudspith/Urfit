@@ -4,7 +4,7 @@
 #include "fit_and_plot.h"
 #include "init.h" // free_fitparams
 
-#include "fvol_delta.h"
+#include "fvol_delta_fitt0v2.h"
 #include "write_flat.h"
 
 #include "resampled_ops.h"
@@ -17,8 +17,8 @@
 int
 omega_analysis( struct input_params *Input )
 {
-  init_phi3( 1000 ) ;
-  set_phi3( 0 , true ) ;
+  init_phi3v2( 1000 ) ;
+  set_phi3v2( 0 , true ) ;
 
   double chi = 0.0 ;
   struct resampled *fit = fit_and_plot( *Input , &chi ) ;

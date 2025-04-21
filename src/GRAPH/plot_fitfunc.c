@@ -136,7 +136,7 @@ plot_fitfunction_HACK( const struct resampled *f ,
 
   size_t h = 0 , i ;
 
-  const size_t MAX = 23 ; //fvol2_NMAX( ) ;
+  const size_t MAX = 21 ; //fvol2_NMAX( ) ;
   //const size_t MAX = 15 ; //fvol3_NMAX( ) ;
 
   printf( "FUUUUCKKK -----> %zu %zu\n" , Data.Ntot , MAX ) ;
@@ -157,16 +157,16 @@ plot_fitfunction_HACK( const struct resampled *f ,
 
   printf( "WTF %zu\n" , Data.Nsim ) ;
 
-  //for( size_t j = 0 ; j < Data.Nsim ; j++ ) {
-  for( size_t j = 0 ; j < 1 ; j++ ) {
+  for( size_t j = 0 ; j < Data.Nsim ; j++ ) {
+    //for( size_t j = 0 ; j < 1 ; j++ ) {
     
-    for( size_t shift = MAX-6 ; shift < MAX ; shift++ )
-    //for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ )
+    //for( size_t shift = MAX-6 ; shift < MAX ; shift++ )
+    for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ )
     {
       //size_t shift = h ;
       
-      const double xmin = 0.078276961035739 ;
-      const double xmax = 0.8 ;
+      const double xmin = 0.0 ; //0.078276961035739 ;
+      const double xmax = 0.5 ;
 
       //const double xmin = 0.078 ; //0.07822077018599871;
       //const double xmax = 1.2;
@@ -333,7 +333,7 @@ plot_fitfunction( const struct resampled *f ,
       }
     }
     
-    xmin = 0.0 ; //0.11233596051497033 ;
+    //xmin = 0.0 ; //0.11233596051497033 ;
     //xmin = 0.07822077018599871 ;
 
     const double x_step = ( xmax - xmin ) / ( granularity - 1 ) ;

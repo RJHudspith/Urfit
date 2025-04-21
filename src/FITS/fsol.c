@@ -14,7 +14,7 @@ static double psq[ 25 ] = { 0 } ;
 
 void
 set_psq_sol( const double *p2 ,
-		const size_t NP2 )
+	     const size_t NP2 )
 {
   size_t i ;
   for( i = 0 ; i < NP2 ; i++ ) {

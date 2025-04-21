@@ -14,8 +14,8 @@ static const int spacing = 1;
 
 // Jboxes 3,6
 
-static const int t0 = 4 ; //2 ; //1*spacing ;
-static const int tp = 8 ; //4 ; //2*spacing ;
+static const int t0 = 1 ; //2 ; //1*spacing ;
+static const int tp = 2 ; //4 ; //2*spacing ;
 
 static int
 write_evalues( struct resampled *evalues ,
@@ -69,7 +69,7 @@ pof_analysis( struct input_params *Input )
   size_t t , m , n , idx = 0 ;
   /*
   for( t = 0 ; t < Input -> Data.Ndata[0] ; t++ ) {
-    divide_constant( &Input -> Data.y[t] , 1E16 ) ;
+    divide_constant( &Input -> Data.y[t] , 1E8 ) ;
   }
   */
 

@@ -9,26 +9,11 @@
 #include "Nder.h"
 #include <gsl/gsl_sf_bessel.h>
 
-#define COMPUTE_ZOMEGA
-
-// choices for param2
-//#define ASQ_TERM
-//#define A_TERM
-//#define ASQM_TERM
-
-//#define CUTA
-
-//#define CUTL
+//#define COMPUTE_ZOMEGA
 
 // GeV values
 static const double mpi = 0.1348 ;
 static const double mk  = 0.4942 ;
-
-//static const double mpi = 0.1349766 ;
-//static const double mk  = 0.497614 ;
-
-//static const double mpi = 0.1349768 ;
-//static const double mk = 0.495011 ;
 
 
 static const double chiral_f = 0.0924 ; // f in GeV
@@ -394,7 +379,7 @@ fv_IQR( const double mRL ,
 }
 
 void
-set_phi3( const size_t sample_idx , const bool is_avg )
+set_phi3v2( const size_t sample_idx , const bool is_avg )
 {
   for( size_t i = 0 ; i < NENSEMBLES+1 ; i++ ) {
     if( is_avg ) {
@@ -608,46 +593,36 @@ setlutcont( const double t0 )
 }
 
 void
-init_phi3( const size_t Nboots )
+init_phi3v2( const size_t Nboots )
 {  
   // need to give this an error
   static double y[ NENSEMBLES+1 ] = {
-#ifndef CUTA
-    0.7803, 0.9045, 0.9550,
-#endif
-#ifndef CUTL
-    0.7496,
-#endif
-    0.7557, 0.8420, 0.9462, 0.9365, 0.9866,
-    0.7559, 0.8556, 0.9355, 0.9353, 0.9999, 1.0366,
-#ifndef CUTL
-    0.7459,
-#endif
-    0.7410, 0.8539, 0.9382, 1.0126, 1.0556 ,
-    0.7636, 0.8797, 0.9860, 1.0558,
-    0.7439, 0.8657 ,
+    // A653 , A654 , B650
+    0.0449143249, 0.0515834944, 0.05377761,
+    // U103, H101, H102, H105, N101, C101
+    0.032502, 0.0331859089, 0.0366492736, 0.04092529, 0.0406344964, 0.0423495241,
+    // B450, S400, X451, N451, D450, D452
+    0.0258019969, 0.0289748484, 0.0316946809,0.0317694976, 0.0337971456, 0.0347859801,
+    // H200, N202, N203, N200, D200, E250
+    0.0183196225,0.0180203776,0.0207417604, 0.0227135041, 0.02442968, 0.0253573776,
+    // N300, N302, J303, E300
+    0.0111703761, 0.0129004164,0.0143113369, 0.0153066384,
+    // J500, J501
+    0.0066471409, 0.0077334436,
     -1
   };
   static double dy[ NENSEMBLES+1 ] = {
-#ifndef CUTA
-    0.0070, 0.0071, 0.0047,
-#endif
-#ifndef CUTL
-    0.0051,
-#endif
-    0.0056, 0.0050, 0.0057, 0.0029, 0.0033,
-    0.0048, 0.0039, 0.0019, 0.0017, 0.0020, 0.0017,
-#ifndef CUTL
-    0.0086,
-#endif
-    0.0053, 0.0024, 0.0029, 0.0019, 0.0012,
-    0.0038, 0.0044, 0.0026, 0.0017,
-    0.0051, 0.0044 ,
+    0.0003857126, 0.0004042736, 0.00027828,
+    0.0003, 0.0002258908, 0.0002182416, 0.000246806, 0.0001249796, 0.0001399372,
+    0.000144567, 0.0001327716,6.05302e-05, 6.06016e-05, 6.61824e-05, 5.5953e-05,
+    0.00016241, 8.32288e-05,5.7608e-05, 6.93266e-05, 4.689e-05, 2.86632e-05,
+    4.86174e-05, 6.36048e-05,3.82816e-05, 2.4744e-05,
+    3.09814e-05, 3.86936e-05,
     0.0
   };
   phi3_res = generate_fake_boot( NENSEMBLES+1, Nboots, y , dy ) ;
 
-  set_phi3( 0 , true ) ;
+  set_phi3v2( 0 , true ) ;
   for( size_t i = 0 ; i < NENSEMBLES+1 ; i++ ) {
     fprintf( stdout , "PHI3 set --> %zu %e %e\n" , i , phi3_res[i].avg , phi3_res[i].err ) ;
   }
@@ -661,9 +636,7 @@ init_phi3( const size_t Nboots )
     const double pl = pow( mOm + eps , 2 ) , mn = pow( mOm - eps , 2 ) ;
     
     const double fv1 = fv_IQR( MCasL[i]  , MKL[i]   , MOML[i] ) ;
-    
     lut.b11[i] = bubble1( PhiOmega[ i ] , PhiCascade[ i ] , Phi3[ i ]   , MKL[ i ]   , MCasL[i]  , fv1 )/phif ;
-
 
     const double fv2 = fv_IQR( MCsStL[i] , MKL[i]   , MOML[i] ) ;
     lut.b21[i] = bubble2( PhiOmega[ i ] , PhiCasStar[ i ] , Phi3[ i ]   , MKL[ i ]   , MCsStL[i] , fv2 )/phif ;
@@ -704,69 +677,77 @@ Zomega( const double *fparams , const struct LUT lt , const int Npars )
 #endif
 
 double
-ffvol_delta( const struct x_desc X , const double *fparams , const size_t Npars )
+ffvol_deltav2( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  const double t0 = fparams[13] ;
+  const double asq = fparams[0]*fparams[0] ;
+  const double t0 = 1.0 ; //fparams[13] ;
+
+  const double t0_asq = t0/asq  ; //+ fparams[2]*(X.X-mpi*mpi*asq) ;
+  //const double t0_asq = fparams[13]/asq ; //*(1 + fparams[2]*(X.X/asq-mpi*mpi) );
+  
+  const double phi2 = 8*t0_asq*X.X ;
+  const double phi3 = 8*t0_asq*Phi3[Npars] ;
+  const double phi5 = (4*phi3-phi2)/3. ;
+
+  const double phi2cont = 8*t0*(mpi*mpi) ;
+  const double phi3cont = 8*t0*(mk*mk) ;
+  const double phi5cont = (4*phi3cont-phi2cont)/3. ;
+
+  //printf( "Here %g \n" , t0 ) ;
+  //printf( "Here %g %g \n" , t0_asq , fparams[0] ) ; 
+  //printf( "Test phi2 %g | phi3 %g | phi5 %g\n" , phi2 , phi3 , phi5 ) ;
+
   const struct LUT lutcont = setlutcont( t0 ) ;
 
-  const double phi3cont = 8*t0*(mk*mk) ;
-  const double phi5cont = 8*t0*(4*mk*mk-mpi*mpi)/3. ; // GMOR physical eta
-  const double phi2cont = 8*t0*(mpi*mpi) ;
-  
   const double c1 = phi2cont*phi2cont ;
   const double c3 = phi3cont*phi3cont ;
-  const double c6 = phi3cont-phi2cont ;
-  const double c5 = phi5cont*phi5cont ;
-  const double c2 = (c1*log(phi2cont/musq)) ;
-  
-  const double c4 = (c3*log(phi3cont/musq))/(16*M_PI*M_PI);
 
-  const double c10 = (c5*log(phi5cont/musq))/(16*M_PI*M_PI) ;
+  const double t0musq = 8*t0*chiral_mu*chiral_mu ;
+
+  const double c4 = (c3*log(phi3cont/t0musq))/(16*M_PI*M_PI);
+  
+  const double c8 = (c1*log(phi2cont/t0musq))/(16*M_PI*M_PI);
+
+  const double c6  = phi3cont-phi2cont ;
   const double c11 = phi3cont+phi2cont/2. ;
 
-  const double IQMPI = msqIQ0( X.X , c2 , -1 ) + X.X*X.X*lut.fvpi0[ Npars ] ;
-  const double IQ2MPI = mqIQ2( X.X , c2 , -1 ) - X.X*X.X*lut.fvpi2[ Npars ] ;
-  
+  const double fv1 = msqIQ0( phi3 , 0 , MKL[Npars] ) ;
+  const double fv2 = mqIQ2( phi3 , 0 , MKL[Npars] ) ;
 
-  #ifdef COMPUTE_ZOMEGA
+  const double fv3 = msqIQ0( phi2 , 0 , MPIL[Npars] ) ;
+  const double fv4 = mqIQ2( phi2 , 0 , MPIL[Npars] ) ;
+
+#ifdef COMPUTE_ZOMEGA
   const double Zom = Zomega( fparams , lut     , Npars      ) ;
   const double Zph = Zomega( fparams , lutcont , NENSEMBLES ) ;  
-  #else
+#else
   const double Zom = 1.0 , Zph = 1.0  ;
-  #endif
+#endif
 
-  const double asq = fparams[0]*fparams[0] ;
-
+  const double fif = 8*t0*chiral_f*chiral_f ;
+  
   return fparams[0]*( 1 
-		      +fparams[1]*( -(8/3.)*( (Phi3[Npars]-X.X) - c6 )
-				    //+(16/9.)*( (Phi3[Npars]-X.X)*lut.IMeta[Npars] - c6*lutcont.IMetaSub )/phif
-				   )
-		      #ifdef A_TERM
-		      +fparams[2]*( fparams[0]*(Phi3[Npars]+X.X/2.))
-                      #elif (defined ASQ_TERM)
-		      +fparams[2]*fparams[0]*fparams[0]
-                      #elif (defined ASQM_TERM)
-		      +fparams[2]*fparams[0]*fparams[0]*( -(8/3.)*( (Phi3[Npars]-X.X) - c6 ) )
-		      -4*fparams[2]*fparams[0]*fparams[0]/3.*( (Phi3[Npars]+X.X/2.) - c11 ) 
-                      #else // MK^4
-		      +fparams[2]*( Phi3[Npars]*Phi3[Npars] - c3 )
-		      #endif
-		      +fparams[3]*( (Phi3[Npars] - X.X)*PhiEta[Npars] - c6*phi5cont ) 
-		      -fparams[4]*(lut.IQ0msq[Npars]-c4)/phif
-		      -fparams[5]*(lut.IQ2[Npars]-c4/4.)/phif
+		      +fparams[1]*( -(8/3.)*( (phi3-phi2) - c6 ) )
+
+
+		      //+fparams[3]*( (phi3-phi2)*phi5 - c6*phi5cont )
+		      -fparams[4]*(fv1-c4)/fif
+		      -fparams[5]*(fv2-c4/4.)/fif
+
+		      -fparams[8]*(fv3-c8)/fif
+		      -fparams[9]*(fv4-c8/4.)/fif
+
+		      //
 		      +fparams[6]*fparams[6]*( +lut.b11[Npars]/Zom - lutcont.b11[NENSEMBLES]/Zph )
 		      +fparams[7]*fparams[7]*(1/3.)*( +lut.b21[Npars]/Zom - lutcont.b21[NENSEMBLES]/Zph
 						      +lut.b22[Npars]/Zom - lutcont.b22[NENSEMBLES]/Zph )
-		      -fparams[8]*IQMPI/phif
-		      -fparams[9]*IQ2MPI/phif
-		      -fparams[10]*(lut.IQ0msq_eta[Npars]-c10)/phif
-		      -fparams[11]*(lut.IQ2_eta[Npars]-c10/4.)/phif
-		      -4*(fparams[12]+fparams[1]/3.)*( (Phi3[Npars]+X.X/2.) - c11 ) 
-		      ) ;
+
+		      -4*(fparams[12]+fparams[1]/3.)*( (phi3+phi2/2.) - c11 )
+		      ) ; 
 }
 
 void
-fvol_delta_f( double *f , const void *data , const double *fparams )
+fvol_deltav2_f( double *f , const void *data , const double *fparams )
 {
   const double mul = (1.67245/mOmega) ;
   const struct data *DATA = (const struct data*)data ;
@@ -779,14 +760,14 @@ fvol_delta_f( double *f , const void *data , const double *fparams )
     struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
 			DATA -> N , DATA -> M } ;
 
-    f[i] = ffvol_delta( X , p , i ) - DATA -> y[i]*mul ;
+    f[i] = ffvol_deltav2( X , p , i ) - DATA -> y[i]*mul ;
   }
   return ;
 }
 
 // derivatives
 void
-fvol_delta_df( double **df , const void *data , const double *fparams )
+fvol_deltav2_df( double **df , const void *data , const double *fparams )
 {
   const struct data *DATA = (const struct data*)data ;
 
@@ -796,7 +777,7 @@ fvol_delta_df( double **df , const void *data , const double *fparams )
 
     size_t j ;
     for( j = 0 ; j < DATA -> Npars ; j++ ) {
-      df[ DATA -> map[i].p[j] ][i] = Nder( ffvol_delta ,
+      df[ DATA -> map[i].p[j] ][i] = Nder( ffvol_deltav2 ,
 					   X ,
 					   i,
 					   fparams ,
@@ -809,13 +790,13 @@ fvol_delta_df( double **df , const void *data , const double *fparams )
 
 // second derivatives? Will we ever use them - J?
 void
-fvol_delta_d2f( double **d2f , const void *data , const double *fparams )
+fvol_deltav2_d2f( double **d2f , const void *data , const double *fparams )
 {
   return ;
 }
 
 void
-fvol_delta_guesses( double *fparams ,
+fvol_deltav2_guesses( double *fparams ,
 		    const struct data_info Data ,
 		    const struct fit_info Fit )
 {

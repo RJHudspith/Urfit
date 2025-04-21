@@ -10,7 +10,7 @@
    FitSims = , , , , , -> Up to Nlogic of these if there is only NULL at the start we have 0
    Prior = index,val,err -- can have loads of these
    FitTol = tolerance we minimize to
-   FitMin = minimizer we use {CG,GA,LM,SD}
+   FitMin = minimizer we use {CG,GA,LM,SD,POWELL}
 
    Guess_0 = val
    Guess_1 = val
@@ -30,6 +30,7 @@
 #include "GLS_pade.h"
 #include "LM.h"
 #include "SD.h"
+#include "powell.h"
 
 #include "fit_chooser.h"
 #include "read_inputs.h"
@@ -67,6 +68,8 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = CORNELL_V2 ;
   } else if( are_equal( Flat[tag].Value , "COSH" ) ) {
     Input -> Fit.Fitdef = COSH ;
+  } else if( are_equal( Flat[tag].Value , "COSH_ASYMM" ) ) {
+    Input -> Fit.Fitdef = COSH_ASYMM ;
   } else if( are_equal( Flat[tag].Value , "COSH_PLUSC" ) ) {
     Input -> Fit.Fitdef = COSH_PLUSC ;
   } else if( are_equal( Flat[tag].Value , "EXP" ) ) {
@@ -127,8 +130,12 @@ get_fitDef(  struct input_params *Input ,
     Input -> Fit.Fitdef = TANH ;
   } else if( are_equal( Flat[tag].Value , "SOL" ) ) {
     Input -> Fit.Fitdef = SOL ;
+  } else if( are_equal( Flat[tag].Value , "SOL2" ) ) {
+    Input -> Fit.Fitdef = SOL2 ;
   } else if( are_equal( Flat[tag].Value , "SU2_SHITFIT" ) ) {
     Input -> Fit.Fitdef = SU2_SHITFIT ;
+  } else if( are_equal( Flat[tag].Value , "TEST" ) ) {
+    Input -> Fit.Fitdef = TEST ;
   } else if( are_equal( Flat[tag].Value , "SUN_CONT" ) ) {
     Input -> Fit.Fitdef = SUN_CONT ;
   } else if( are_equal( Flat[tag].Value , "QCORR_BESSEL" ) ) {
@@ -210,6 +217,8 @@ get_fitMin( struct input_params *Input ,
     Input -> Fit.Minimize = lm_iter ;
   } else if( are_equal( Flat[tag].Value , "SD" ) ) {
     Input -> Fit.Minimize = sd_iter ;
+  } else if( are_equal( Flat[tag].Value , "POWELL" ) ) {
+    Input -> Fit.Minimize = powell_iter ;
   } else {
     return FAILURE ;
   }

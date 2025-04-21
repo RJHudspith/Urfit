@@ -59,22 +59,22 @@ map_correlator( const struct traj Traj ,
 
 
 #if 0
-  if( get_correlator( C , str , 0 , Traj.Gs ,
+  if( get_correlator( C , str , 0 , 1 ,
 		      mompoint , Nlt ) == FAILURE ) {
     return NULL ;
   }
   Nsum++ ;
-  double complex C2[ 256 ] = {} ;
-  if( get_correlator( C2 , str , 1 , Traj.Gs ,
+  double complex C3[ 256 ] = {} ;
+  if( get_correlator( C3 , str , 1 , 1 ,
 		      mompoint , Nlt ) == FAILURE ) {
     return NULL ;
   }
   Nsum++ ;
 
   // normalize C by Nsum
-  C[0] = ( C[0] + C2[0] ) ;
+  C[0] = ( C[0] + C3[0] ) ;
   for( idx = 1 ; idx < Nlt ; idx++ ) {
-    C[idx] = ( C[idx] + C2[Nlt-idx] ) ;
+    C[idx] = ( C[idx] + C3[Nlt-idx] ) ;
   }
 
 #else

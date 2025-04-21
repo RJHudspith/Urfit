@@ -14,9 +14,9 @@
    Keep the top NBREED - these are the parents
    
    For the breeding Pop ( Ngen - NBREED - NMUTANTS )
-   inheritance is an average of the mother and fathers genes
+   inheritance is an average of the parents' genes
 
-   For the mutants we add random gaussian noise to the NBREED
+   For the mutants we add random gaussian noise to the entire
    population, pulled from the width of the breeding population
 
    The best fit parameter is to be found in the first gene
@@ -39,23 +39,24 @@
 #include "chisq.h"
 #include "ffunction.h"
 
-#define VERBOSE
+//#define VERBOSE
 
-#define NGEN (256) // number of generations in gene pool
+#define NGEN (512) // number of generations in gene pool
 
-// percentage that persist from the previous generation
-#define NBREED ((int)(10)) 
+// number that persist from the previous generation
+#define NBREED (32) 
 
 // number of parents of a child
-#define NPARENTS (int)(4)
+#define NPARENTS (16)
 
-#define NTOURNAMENT (int)(15)
+// number of draws for tournament selection
+#define NTOURNAMENT (12)
 
 // probability of mutation of the whole pop
-#define PMUTANT (0.5)
+#define PMUTANT (0.7)
 
 // It turns out this one is very important!! WHY???
-#define NOISE (0.1) // guesses * gaussian of width NOISE to start our run
+#define NOISE (0.15) // guesses * gaussian of width NOISE to start our run
 
 // defaults to selection sort but can use insertion sort here too
 #define INSERTION_SORT
@@ -129,38 +130,26 @@ insertion_sort_GA( struct genes *G )
 static void
 print_population( struct genes *G )
 {
+  printf( "\n" ) ;
   size_t i , j ;
-  for( i = 0 ; i < NGEN ; i++ ) {
+  printf( "ELITES\n" ) ;
+  for( i = 0 ; i < NBREED ; i++ ) {
     for( j = 0 ; j < G[i].Nlogic ; j++ ) {
-      printf( " %e " , G[i].g[j] ) ;
+      printf( " %1.15e " , G[i].g[j] ) ;
     }
     printf( " :: %e \n" , G[i].chisq ) ;
   }
+  printf( "RABBLE\n" ) ;
+  for( i = NBREED ; i < NGEN ; i++ ) {
+    for( j = 0 ; j < G[i].Nlogic ; j++ ) {
+      printf( " %1.15e " , G[i].g[j] ) ;
+    }
+    printf( " :: %e \n" , G[i].chisq ) ;
+  }
+  printf( "\n" ) ;
   return ;
 }
 #endif
-
-// computes the width of the distribution
-static void
-compute_sigma( struct sigma *Sig ,
-	       const struct genes *G ,
-	       const size_t Nlogic )
-{
-  size_t i , j ;
-  for( i = 0 ; i < Nlogic ; i++ ) {
-    double max = G[0].g[i] , min = G[0].g[i] ;
-    for( j = 1 ; j < NGEN ; j++ ) {
-      if( G[j].g[i] < min ) {
-	min = G[j].g[i] ;
-      }
-      if( G[j].g[i] > max ) {
-	max = G[j].g[i] ;
-      }
-    }
-    Sig -> s[i] = ( max - min ) ;
-  }
-  return ;
-}
 
 // perform simple selection
 static size_t
@@ -215,7 +204,7 @@ ga_iter( void *fdesc ,
   
   // counters and max iterations GAMAX
   size_t iters = 0 , i , j ;
-  const size_t GAMAX = 5000 ;
+  const size_t GAMAX = 2000 ;
 
   // allocate the fitfunction
   struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , 
@@ -235,7 +224,6 @@ ga_iter( void *fdesc ,
   
   // gene pool
   struct genes *G = NULL ;
-  struct sigma Sig ;
   gsl_rng *r = NULL ;
 
   G = malloc( NGEN * sizeof( struct genes ) ) ;
@@ -243,8 +231,6 @@ ga_iter( void *fdesc ,
     G[i].g = NULL ;
     G[i].g = malloc( Fit -> Nlogic * sizeof( double ) ) ;
   }
-
-  Sig.s = malloc( Fit -> Nlogic * sizeof( double ) ) ;
   
   // get a seed from urandom
   size_t Seed ;
@@ -279,28 +265,25 @@ ga_iter( void *fdesc ,
     G[i].chisq = compute_chi( &f2 , Fit -> f , Fit , G[i].g , data , W ) ;
   }
 
-  // normalise it
-  #ifdef NORMALISE_POP
-  normalise_pop( G ) ;
-  #endif
-
   // sort by chisq
   insertion_sort_GA( G ) ;
   
   #ifdef VERBOSE
-  //print_population( G ) ;
+  print_population( G ) ;
   #endif
   
   // iterate the algorithm
   double chisq_diff = 10 ;
-  while( chisq_diff > TOL && iters < GAMAX ) {
+  while( chisq_diff > TOL &&
+	 iters < GAMAX &&
+	 G[0].chisq > TOL ) {
 
     for( i = NBREED ; i < NGEN ; i++ ) {
       size_t parent[ NPARENTS ] , k ;
       for( k = 0 ; k < NPARENTS ; k++ ) {
 	parent[k] = tournament_selection( G , r ) ;
       }
-      // breed into the new population
+      // breed into the new population with an average
       for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
 	G[i].g[j] = 0.0 ;
 	for( k = 0 ; k < NPARENTS ; k++ ) {
@@ -308,48 +291,35 @@ ga_iter( void *fdesc ,
 	}
         G[i].g[j] /= NPARENTS ;
       }
-      G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
-				G[i].g , data , W ) ;
+      G[i].chisq = compute_chi( &f2 , Fit -> f , Fit , G[i].g , data , W ) ;
     }
 
-
-        // sort for the next breeding population
-    #ifdef INSERTION_SORT
-    insertion_sort_GA( G ) ;
-    #else
-    selection_sort_GA( G ) ;
-    #endif
-    
-    // look for the elites to be static as an 
-    // opportunity to turn off the fit
-    //printf( "%e %e \n" , G[0].chisq , G[NGEN-1].chisq  ) ;
-    chisq_diff = fabs( G[0].chisq - G[NGEN-1].chisq ) ;
-
-    // compute the width of the distribution as-is and use
-    // that as a guide for how to add noise
-    compute_sigma( &Sig , G , Fit -> Nlogic ) ;
-
-    // perform a mutation on the entire pop with mutation
-    // chance PMUTANT
+    // idea here is to reduce the noise as the algorithm progresses, this is heuristic
+    const double noise = NOISE/(1.+0.5*iters);
     for( i = 0 ; i < NGEN ; i++ ) {
-      if( gsl_rng_uniform( r ) < PMUTANT ) {
-	for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
+      bool is_mutated = false ;
+      for( j = 0 ; j < Fit -> Nlogic ; j++ ) {
+	if( gsl_rng_uniform( r ) < PMUTANT ) {
+	  is_mutated = true ;
 	  // if we have prior information we use it
 	  if( Fit -> Prior[j].Initialised == true ) {
 	    G[i].g[j] = G[ i ].g[j] * 
 	      ( 1 + gsl_ran_gaussian( r , Fit -> Prior[j].Err ) ) ;
 	  } else {
-	    G[i].g[j] = G[i].g[j] * 
-	      ( 1 + gsl_ran_gaussian( r , NOISE ) ) ;
+	    G[i].g[j] = G[i].g[j] * ( 1 + gsl_ran_gaussian( r , noise ) ) ;
 	  }
 	}
-	G[i].chisq = compute_chi( &f2 , Fit -> f , Fit ,
-				  G[i].g , data , W ) ;
+      }
+      if( is_mutated ) { 
+	G[i].chisq = compute_chi( &f2 , Fit -> f , Fit , G[i].g , data , W ) ;
       }
     }
 
     // sort for the next breeding population
     insertion_sort_GA( G ) ;
+
+    // look for the population to be static to just end it
+    chisq_diff = fabs( G[0].chisq - G[NBREED-1].chisq ) ;
     
     iters++ ;
   }
@@ -392,10 +362,5 @@ ga_iter( void *fdesc ,
     gsl_rng_free( r ) ;
   }
   
-  // free the variance
-  if( Sig.s != NULL ) {
-    free( Sig.s ) ;
-  }
-
   return iters ;
 }

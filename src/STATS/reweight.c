@@ -14,7 +14,7 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
-//#define CONTINUOUS
+#define CONTINUOUS
 
 static double
 get_rw( double *rwfac ,

@@ -280,6 +280,30 @@ run_MZ_2nf3( const double alpha ,
   return RUN( MC , alpha_mup , mu , 3 , loops ) ;
 }
 
+// running from nf=3 to MZ matching at the charm
+// I want to automate this for many nfs
+double 
+run_nf4_2MZ( const double alpha ,
+	     const double mu ,
+	     const size_t loops )
+{
+  double alpha_mup = RUN( mu , alpha , MB , 4 , loops ) ;
+  alpha_mup = match_up_OS( alpha_mup , MB , 5 , loops ) ;
+  return RUN( MB , alpha_mup , MZ , 5 , loops ) ;
+}
+
+// running from nf=5 at MZ matching at the charm and back to some value in Nf=3
+// I want to automate this for many nfs
+double 
+run_MZ_2nf4( const double alpha ,
+	     const double mu ,
+	     const size_t loops )
+{
+  double alpha_mup = RUN( MZ , alpha , MB , 5 , loops ) ;
+  alpha_mup = match_down_OS( alpha_mup , MB , 5 , loops ) ;
+  return RUN( MB , alpha_mup , mu , 4 , loops ) ;
+}
+
 // run an nf=3 distribution to MZ
 struct resampled
 run_distribution_nf3_2MZ( struct resampled alpha ,
@@ -304,10 +328,12 @@ void
 test_running( void )
 {
   const double amz = 0.1184 ;
-
-  double alpha = run_MZ_2nf3( amz , 2.0 , 4 ) ;
+  double alpha = run_MZ_2nf3( amz , 3.0 , 4 ) ;
 
   printf( "%f -> %f -> %f \n" , amz , alpha , run_nf3_2MZ( alpha , 2.0 , 4 ) ) ;
+
+  alpha = run_MZ_2nf4( amz , 3.0 , 3 ) ;
+  printf( "%f -> %f -> %f \n" , amz , alpha , run_nf4_2MZ( alpha , 2.0 , 4 ) ) ;
   
   return ;
 }
