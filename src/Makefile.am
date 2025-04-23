@@ -52,7 +52,7 @@ INPUT_FILES=./IO/INPUT/read_inputs.c ./IO/INPUT/read_traj.c \
 
 MINIMIZE_FILES=./MINIMIZE/CG.c ./MINIMIZE/GA.c ./MINIMIZE/GLS.c \
 	./MINIMIZE/GLS_pade.c ./MINIMIZE/line_search.c \
-	./MINIMIZE/LM.c ./MINIMIZE/SD.c ./MINIMIZE/powell.c
+	./MINIMIZE/LM.c ./MINIMIZE/SD.c ./MINIMIZE/powell.c ./MINIMIZE/Simplex.c
 
 PHYSICS_FILES=./PHYSICS/cruel_runnings.c ./PHYSICS/decays.c ./PHYSICS/momenta.c\
 	./PHYSICS/sort.c

@@ -116,6 +116,7 @@ cg_iter( void *fdesc ,
 
     // compute beta using polyak - ribiere
     register double num = 0.0 , denom = 0.0 ;
+    double newdf[ Fit -> Nlogic ] ;
     for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
       t = y ;
       // switch the types of fit we are doing
@@ -138,40 +139,27 @@ cg_iter( void *fdesc ,
 	}
 	break ;
       }
-      double newdf = kahan_summation( y , Nsum ) ;
+      newdf[i] = kahan_summation( y , Nsum ) ;
       
       // subtract the prior if there is one
       if( Fit -> f.Prior[i].Initialised == true ) {
-        newdf -= ( Fit -> f.fparams[i] - Fit -> f.Prior[i].Val ) / 
+        newdf[i] -= ( Fit -> f.fparams[i] - Fit -> f.Prior[i].Val ) / 
 	  ( Fit -> f.Prior[i].Err * Fit -> f.Prior[i].Err ) ;
       }
 
-      #ifdef LOC_BETA
-      num   = newdf * ( newdf - old_df[i] ) ;
-      denom = old_df[i] * old_df[i] ;
-      old_df[i] = newdf ; // reset the old direction to be the new one
-      const double beta = fmax( 0 , num / denom ) ;
-
-      s[i] = old_df[i] + beta * s[i] ;
-
-      //printf("LOCBETA beta %e \n" , beta ) ;
-      #else
-      num   += newdf * ( newdf - old_df[i] ) ;
+      num   += newdf[i] * ( newdf[i] - old_df[i] ) ;
       denom += old_df[i] * old_df[i] ;
-      old_df[i] = newdf ; // reset the old direction to be the new one
-      #endif
+      
+      old_df[i] = newdf[i] ; // reset the old direction to be the new one
     }
 
-    #ifndef LOC_BETA
-    const double beta = fmax( 0 , num / denom ) ;
-
-    // update conjugate directions "s"
+    double beta = fmax( 0. , num/denom ) ;
     for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
-      s[i] = old_df[i] + beta * s[i] ;
+      s[i] = old_df[i] + beta*( s[i] ) ;
     }
-    #endif
-
-    // perform a backtracking line search
+    
+    
+    // perform a line search
     double alsum = 0.0 ;
     for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
       alpha[i] = line_search( &f2 , Fit -> f , old_df , s ,
@@ -183,22 +171,12 @@ cg_iter( void *fdesc ,
       #endif
 
       // set x = x + \alpha * s
-      //fprintf( stdout , "Before %e\n" , Fit -> f.fparams[i] ) ;
       Fit -> f.fparams[i] += alpha[i] * s[i] ;
-      //fprintf( stdout , "After %e\n" , Fit -> f.fparams[i] ) ;
 
       #ifdef VERBOSE
       fprintf( stdout , "[CG] NEPARAMS :: %f \n" , Fit -> f.fparams[i] ) ;
       #endif
     }
-
-    /*
-    if( fabs( alsum ) < 1E-15 && iters > 2 ) {
-      fprintf( stdout , "[CG] alphas are all small, exiting %e, exiting\n" ,
-	       alsum ) ;
-      break ;
-    }
-    */
     
     iters++ ;
   }
@@ -214,17 +192,14 @@ cg_iter( void *fdesc ,
   for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
     printf( "PARAMS :: %e \n" , Fit -> f.fparams[i] ) ;
   }
-  //exit(1) ;
 
   // free the directions
   if( s != NULL ) {
     free( s ) ;
   }
-
   if( old_df != NULL ) {
     free( old_df ) ;
   }
-
   if( y != NULL ) {
     free( y ) ;
   }
@@ -232,13 +207,8 @@ cg_iter( void *fdesc ,
   return iters ;
 }
 
-#ifdef LOC_BETA
-  #undef LOC_BETA
-#endif
-
 // clean up the defines
 #ifdef VERBOSE
   #undef VERBOSE
 #endif
-#undef BIG_GUESS
 

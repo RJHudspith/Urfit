@@ -31,6 +31,7 @@
 #include "LM.h"
 #include "SD.h"
 #include "powell.h"
+#include "Simplex.h"
 
 #include "fit_chooser.h"
 #include "read_inputs.h"
@@ -219,6 +220,8 @@ get_fitMin( struct input_params *Input ,
     Input -> Fit.Minimize = sd_iter ;
   } else if( are_equal( Flat[tag].Value , "POWELL" ) ) {
     Input -> Fit.Minimize = powell_iter ;
+  } else if( are_equal( Flat[tag].Value , "SIMPLEX" ) ) {
+    Input -> Fit.Minimize = simplex_iter ;
   } else {
     return FAILURE ;
   }

@@ -1,6 +1,16 @@
 #ifndef LINE_SEARCH_H
 #define LINE_SEARCH_H
 
+void
+linmin( const int n ,
+	double p[n] ,
+	double xi[n] ,
+	double *fret ,
+	struct ffunction *f2 , 
+	const struct fit_descriptor *fdesc ,
+	const double **W ,
+	const void *data ) ;
+
 double
 line_search( struct ffunction *f2 ,
 	     const struct ffunction f1 ,
