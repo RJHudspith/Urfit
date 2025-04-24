@@ -1,6 +1,7 @@
 #ifndef LINE_SEARCH_H
 #define LINE_SEARCH_H
 
+// NRC min function for Powell's
 void
 linmin( const int n ,
 	double p[n] ,
@@ -11,6 +12,7 @@ linmin( const int n ,
 	const double **W ,
 	const void *data ) ;
 
+// my rougher backtrack+golden code
 double
 line_search( struct ffunction *f2 ,
 	     const struct ffunction f1 ,
@@ -18,8 +20,12 @@ line_search( struct ffunction *f2 ,
 	     const double *descent ,
 	     const struct fit_descriptor fdesc ,
 	     const void *data ,
-	     const double **W ,
-	     const size_t jidx ,
-	     const double alpha ) ;
+	     const double **W ) ;
 
+// gets the derivative of the \chi^2 function
+void
+get_gradient( double *grad ,
+	      const double **W ,
+	      const struct fit_descriptor *Fit ) ;
+  
 #endif

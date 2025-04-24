@@ -21,7 +21,7 @@ typedef struct {
   double feval ;
 } simplex ;
 
-int compare( const void *a , const void *b )
+static int compare( const void *a , const void *b )
 {
   const simplex *A = (const simplex*)a , *B = (const simplex*)b ;
   return A -> feval > B -> feval ;
@@ -39,7 +39,7 @@ ave( const int n , const simplex s[n+1]  , double ave[n] ) {
   }
 }
 
-static double
+static inline double
 evaluate_chisq( const int n ,
 		const double x[n] ,
 		struct ffunction *f2 ,
@@ -47,10 +47,7 @@ evaluate_chisq( const int n ,
 		const double **W ,
 		const double *data )
 {
-  for( int i = 0 ; i < n ; i++ ) {
-    f2 -> fparams[i] = x[i] ;
-  }
-  Fit -> F( f2 -> f , data , f2 -> fparams ) ;
+  Fit -> F( f2 -> f , data , x ) ;
   return compute_chisq( *f2 , W , f2 -> CORRFIT ) ;
 }
 

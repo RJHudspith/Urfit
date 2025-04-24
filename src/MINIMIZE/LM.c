@@ -185,7 +185,7 @@ lm_step( struct ffunction *f ,
     fprintf( stderr , "[LM] LU decomp broken?\n" ) ;
     return !GSL_SUCCESS ;
   }
-  if( gsl_linalg_LU_solve( LM -> alpha_new , perm , LM -> beta , LM -> delta ) != GSL_SUCCESS ) {
+  if( gsl_linalg_LU_solve( LM -> alpha_new , LM -> perm , LM -> beta , LM -> delta ) != GSL_SUCCESS ) {
     fprintf( stderr , "[LM] LU solve broken?\n" ) ;
     return !GSL_SUCCESS ;
   }

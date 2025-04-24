@@ -42,7 +42,7 @@ f1dim( const double x )
   }
   // compute the residual
   loc_fdesc.F(  loc_f.f  , loc_data , loc_f.fparams ) ;
-  loc_fdesc.dF( loc_f.df , loc_data , loc_f.fparams ) ;
+  //loc_fdesc.dF( loc_f.df , loc_data , loc_f.fparams ) ;
   // return the chi^2
   return compute_chisq( loc_f , loc_W , loc_f.CORRFIT ) ;
 }
@@ -255,23 +255,23 @@ linmin( const int n ,
 // perform an step in the descent direction
 static double
 test_step( struct ffunction *f2 , 
-	   const double grad ,
+	   const double *grad ,
 	   const struct ffunction f1 ,
 	   const struct fit_descriptor fdesc ,
 	   const void *data ,
 	   const double **W ,
-	   const size_t jidx ,
 	   const double alpha )
 {
   // copy f1 to f2
   copy_ffunction( f2 , f1 ) ;
-  f2 -> fparams[ jidx ] += alpha * grad ;
+  for( int i = 0 ; i < fdesc.Nlogic ; i++ ) {
+    f2 -> fparams[ i ] += alpha * grad[i] ;
+  }
   fdesc.F( f2 -> f , data , f2 -> fparams ) ;
-  fdesc.dF( f2 -> df , data , f2 -> fparams ) ;
   return compute_chisq( *f2 , W , f2 -> CORRFIT ) ;
 }
 
-// backtracking line search with Wolfe conditions
+// backtracking line search and then golden ratio improvement
 double
 line_search( struct ffunction *f2 ,
 	     const struct ffunction f1 ,
@@ -279,25 +279,20 @@ line_search( struct ffunction *f2 ,
 	     const double *descent , 
 	     const struct fit_descriptor fdesc ,
 	     const void *data ,
-	     const double **W ,
-	     const size_t jidx ,
-	     const double alpha )
+	     const double **W )
 {
   const double fac = 0.1 ;
 
   // perform a "backtracking line search" should use brent's method
   // really and probably will do at some point, uses a golden ratio
-  // search to find approximately the minimum as long as this minimum
-  // satisfies the wolfe conditions
-
+  // search to find approximately the minimum
   // do a rough search 1^12 -> 1E-12 for abest step 100
-  double min = 1234567891000 ;
-  double atrial = 1E8 , abest = 1E-15 ;
+  double min = 123456789 ;
+  double atrial = 100 , abest = 1E-15 ;
   size_t iters = 0 ;
-  while( atrial > (1E-50)*alpha ) {
+  while( atrial > 1E-16 ) {
     atrial *= fac ;
-    double trial = test_step( f2 , descent[jidx] , f1 , fdesc , 
-			      data , W , jidx , atrial ) ;
+    double trial = test_step( f2 , descent , f1 , fdesc , data , W , atrial ) ;
     iters++ ;
     if( isnan( trial ) ) continue ;
     if( isinf( trial ) ) continue ;
@@ -316,15 +311,15 @@ line_search( struct ffunction *f2 ,
   const double R = 0.6180339887498949 ;
   double c = b - ( b-a )*R;
   double d = a + ( b-a )*R ;
-  double fc = test_step( f2 , descent[jidx] , f1 , fdesc , data , W , jidx , c ) ;
-  double fd = test_step( f2 , descent[jidx] , f1 , fdesc , data , W , jidx , d ) ;
-  while( fabs( b-a ) > 1E-3*(fabs(b)+fabs(a)) ) {
+  double fc = test_step( f2 , descent , f1 , fdesc , data , W , c ) ;
+  double fd = test_step( f2 , descent , f1 , fdesc , data , W , d ) ;
+  while( fabs( b-a ) > 1E-7*(fabs(b)+fabs(a)) ) {
     if( fc < fd ) {
       b = d ; d = c ; c = b - R*(b-a) ;
-      fd = fc ; fc = test_step( f2 , descent[jidx] , f1 , fdesc , data , W , jidx , c ) ;
+      fd = fc ; fc = test_step( f2 , descent , f1 , fdesc , data , W , c ) ;
     } else {
       a = c ; c = d ; d = a + R*(b-a) ;
-      fc = fd ; fd = test_step( f2 , descent[jidx] , f1 , fdesc , data , W , jidx , d ) ;
+      fc = fd ; fd = test_step( f2 , descent , f1 , fdesc , data , W , d ) ;
     }
   }
   #ifdef VERBOSE
@@ -334,4 +329,44 @@ line_search( struct ffunction *f2 ,
   printf( "[LINE SEARCH] abest :: %e \n" , abest ) ;
   #endif
   return (a+b)/2 ;
+}
+
+// gets minus the derivative of the \chi^2 function i.e. the descent direction
+void
+get_gradient( double *grad ,
+	      const double **W ,
+	      const struct fit_descriptor *Fit )
+{
+  size_t Nsum = Fit -> f.N ;
+  switch( Fit -> f.CORRFIT ) {
+  case UNWEIGHTED : case UNCORRELATED : break ;
+  case CORRELATED : Nsum = Fit -> f.N * Fit -> f.N ; break ;
+  }
+  double y[ Nsum ] ; 
+  for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
+    switch( Fit -> f.CORRFIT ) {
+    case UNWEIGHTED :
+      for( int j = 0 ; j < Fit -> f.N ; j++ ) {
+	y[j] = -Fit -> f.df[i][j] * Fit -> f.f[j] ; 
+      }
+      break ;
+    case UNCORRELATED :
+      for( int j = 0 ; j < Fit -> f.N ; j++ ) {
+	y[j] = -Fit -> f.df[i][j] * W[0][j] * Fit -> f.f[j] ; 
+      }
+      break ;
+    case CORRELATED :
+      for( int j = 0 ; j < Fit -> f.N ; j++ ) {
+	for( int k = 0 ; k < Fit -> f.N ; k++ ) {
+	  y[k+Fit->f.N*j] = -Fit -> f.df[i][j] * W[j][k] * Fit -> f.f[k] ; 
+	}
+      }
+      break ;
+    }
+    grad[i] = kahan_summation( y , Nsum ) ;
+    if( Fit -> f.Prior[i].Initialised == true ) {
+      grad[i] -= ( Fit -> f.fparams[i] - Fit -> f.Prior[i].Val ) / 
+	( Fit -> f.Prior[i].Err * Fit -> f.Prior[i].Err ) ;
+    }
+  }
 }
