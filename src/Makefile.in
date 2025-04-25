@@ -207,7 +207,7 @@ am__objects_8 = ./MINIMIZE/CG.$(OBJEXT) ./MINIMIZE/GA.$(OBJEXT) \
 	./MINIMIZE/GLS.$(OBJEXT) ./MINIMIZE/GLS_pade.$(OBJEXT) \
 	./MINIMIZE/line_search.$(OBJEXT) ./MINIMIZE/LM.$(OBJEXT) \
 	./MINIMIZE/SD.$(OBJEXT) ./MINIMIZE/powell.$(OBJEXT) \
-	./MINIMIZE/Simplex.$(OBJEXT)
+	./MINIMIZE/Simplex.$(OBJEXT) ./MINIMIZE/BFGS.$(OBJEXT)
 am__objects_9 = ./PHYSICS/cruel_runnings.$(OBJEXT) \
 	./PHYSICS/decays.$(OBJEXT) ./PHYSICS/momenta.$(OBJEXT) \
 	./PHYSICS/sort.$(OBJEXT)
@@ -327,10 +327,11 @@ am__depfiles_remade = ./$(DEPDIR)/URFIT-Mainfile.Po \
 	./IO/INPUT/$(DEPDIR)/read_graph.Po \
 	./IO/INPUT/$(DEPDIR)/read_inputs.Po \
 	./IO/INPUT/$(DEPDIR)/read_stats.Po \
-	./IO/INPUT/$(DEPDIR)/read_traj.Po ./MINIMIZE/$(DEPDIR)/CG.Po \
-	./MINIMIZE/$(DEPDIR)/GA.Po ./MINIMIZE/$(DEPDIR)/GLS.Po \
-	./MINIMIZE/$(DEPDIR)/GLS_pade.Po ./MINIMIZE/$(DEPDIR)/LM.Po \
-	./MINIMIZE/$(DEPDIR)/SD.Po ./MINIMIZE/$(DEPDIR)/Simplex.Po \
+	./IO/INPUT/$(DEPDIR)/read_traj.Po ./MINIMIZE/$(DEPDIR)/BFGS.Po \
+	./MINIMIZE/$(DEPDIR)/CG.Po ./MINIMIZE/$(DEPDIR)/GA.Po \
+	./MINIMIZE/$(DEPDIR)/GLS.Po ./MINIMIZE/$(DEPDIR)/GLS_pade.Po \
+	./MINIMIZE/$(DEPDIR)/LM.Po ./MINIMIZE/$(DEPDIR)/SD.Po \
+	./MINIMIZE/$(DEPDIR)/Simplex.Po \
 	./MINIMIZE/$(DEPDIR)/line_search.Po \
 	./MINIMIZE/$(DEPDIR)/powell.Po \
 	./PHYSICS/$(DEPDIR)/cruel_runnings.Po \
@@ -536,7 +537,8 @@ INPUT_FILES = ./IO/INPUT/read_inputs.c ./IO/INPUT/read_traj.c \
 
 MINIMIZE_FILES = ./MINIMIZE/CG.c ./MINIMIZE/GA.c ./MINIMIZE/GLS.c \
 	./MINIMIZE/GLS_pade.c ./MINIMIZE/line_search.c \
-	./MINIMIZE/LM.c ./MINIMIZE/SD.c ./MINIMIZE/powell.c ./MINIMIZE/Simplex.c
+	./MINIMIZE/LM.c ./MINIMIZE/SD.c ./MINIMIZE/powell.c \
+	./MINIMIZE/Simplex.c ./MINIMIZE/BFGS.c
 
 PHYSICS_FILES = ./PHYSICS/cruel_runnings.c ./PHYSICS/decays.c ./PHYSICS/momenta.c\
 	./PHYSICS/sort.c
@@ -966,6 +968,8 @@ MINIMIZE/$(DEPDIR)/$(am__dirstamp):
 	MINIMIZE/$(DEPDIR)/$(am__dirstamp)
 ./MINIMIZE/Simplex.$(OBJEXT): MINIMIZE/$(am__dirstamp) \
 	MINIMIZE/$(DEPDIR)/$(am__dirstamp)
+./MINIMIZE/BFGS.$(OBJEXT): MINIMIZE/$(am__dirstamp) \
+	MINIMIZE/$(DEPDIR)/$(am__dirstamp)
 PHYSICS/$(am__dirstamp):
 	@$(MKDIR_P) ./PHYSICS
 	@: > PHYSICS/$(am__dirstamp)
@@ -1189,6 +1193,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./IO/INPUT/$(DEPDIR)/read_inputs.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./IO/INPUT/$(DEPDIR)/read_stats.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./IO/INPUT/$(DEPDIR)/read_traj.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./MINIMIZE/$(DEPDIR)/BFGS.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./MINIMIZE/$(DEPDIR)/CG.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./MINIMIZE/$(DEPDIR)/GA.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./MINIMIZE/$(DEPDIR)/GLS.Po@am__quote@ # am--include-marker
@@ -1549,6 +1554,7 @@ distclean: distclean-am
 	-rm -f ./IO/INPUT/$(DEPDIR)/read_inputs.Po
 	-rm -f ./IO/INPUT/$(DEPDIR)/read_stats.Po
 	-rm -f ./IO/INPUT/$(DEPDIR)/read_traj.Po
+	-rm -f ./MINIMIZE/$(DEPDIR)/BFGS.Po
 	-rm -f ./MINIMIZE/$(DEPDIR)/CG.Po
 	-rm -f ./MINIMIZE/$(DEPDIR)/GA.Po
 	-rm -f ./MINIMIZE/$(DEPDIR)/GLS.Po
@@ -1745,6 +1751,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./IO/INPUT/$(DEPDIR)/read_inputs.Po
 	-rm -f ./IO/INPUT/$(DEPDIR)/read_stats.Po
 	-rm -f ./IO/INPUT/$(DEPDIR)/read_traj.Po
+	-rm -f ./MINIMIZE/$(DEPDIR)/BFGS.Po
 	-rm -f ./MINIMIZE/$(DEPDIR)/CG.Po
 	-rm -f ./MINIMIZE/$(DEPDIR)/GA.Po
 	-rm -f ./MINIMIZE/$(DEPDIR)/GLS.Po

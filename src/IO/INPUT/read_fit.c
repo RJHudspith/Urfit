@@ -10,7 +10,7 @@
    FitSims = , , , , , -> Up to Nlogic of these if there is only NULL at the start we have 0
    Prior = index,val,err -- can have loads of these
    FitTol = tolerance we minimize to
-   FitMin = minimizer we use {CG,GA,LM,SD,POWELL}
+   FitMin = minimizer we use {CG,GA,LM,SD,POWELL,SIMPLEX,BFGS}
 
    Guess_0 = val
    Guess_1 = val
@@ -32,6 +32,7 @@
 #include "SD.h"
 #include "powell.h"
 #include "Simplex.h"
+#include "BFGS.h"
 
 #include "fit_chooser.h"
 #include "read_inputs.h"
@@ -222,6 +223,8 @@ get_fitMin( struct input_params *Input ,
     Input -> Fit.Minimize = powell_iter ;
   } else if( are_equal( Flat[tag].Value , "SIMPLEX" ) ) {
     Input -> Fit.Minimize = simplex_iter ;
+  } else if( are_equal( Flat[tag].Value , "BFGS" ) ) {
+    Input -> Fit.Minimize = BFGS_iter ;
   } else {
     return FAILURE ;
   }
