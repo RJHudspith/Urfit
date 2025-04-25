@@ -2,7 +2,7 @@
 #define LINE_SEARCH_H
 
 // NRC min function for Powell's
-void
+double
 linmin( const int n ,
 	double p[n] ,
 	double xi[n] ,

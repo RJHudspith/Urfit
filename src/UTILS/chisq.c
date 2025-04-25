@@ -14,7 +14,6 @@ compute_chisq( const struct ffunction f ,
   // pointers and stuff
   const double *pf = f.f , *pW = *W ;
   register double chisq = 0.0 ;
-  double *y = NULL , *t ;
   size_t i , j , Nsum = 1 ;
 
   // allocate the array we want to sum
@@ -23,21 +22,20 @@ compute_chisq( const struct ffunction f ,
   case UNCORRELATED : Nsum = f.N ; break ;
   case CORRELATED : Nsum = f.N * f.N ; break ;
   }
-  y = calloc( Nsum , sizeof( double ) ) ;
-  t = y ;
+  double y[ Nsum ] ;
 
   // compute the chisq within the switch
   switch( CORRFIT ) {
   case UNWEIGHTED :
     for( i = 0 ; i < f.N ; i++ ) {
-      *t = *pf * ( *pf ) ;
-      t++ , pf++ ;
+      y[i] = *pf * ( *pf ) ;
+      pf++ ;
     }
     break ;
   case UNCORRELATED :
     for( i = 0 ; i < f.N ; i++ ) {
-      *t = *pf * (*pW) * ( *pf ) ;
-      t++ , pf++ , pW++ ;
+      y[i] = *pf * (*pW) * ( *pf ) ;
+      pf++ , pW++ ;
     }
     break ;
   case CORRELATED :
@@ -46,8 +44,8 @@ compute_chisq( const struct ffunction f ,
       // point to the data and the W matrix
       pf = f.f ; pW = *( W + i ) ;
       for( j = 0 ; j < f.N ; j++ ) {
-	*t = fi * ( *pW ) * ( *pf ) ;
-	t++ , pf++ , pW++ ;
+	y[j+f.N*i] = fi * ( *pW ) * ( *pf ) ;
+	pf++ , pW++ ;
       }
     }
     break ;
@@ -55,11 +53,6 @@ compute_chisq( const struct ffunction f ,
 
   // perform the round off resistant summation
   chisq = kahan_summation( y , Nsum ) ;
-
-  // free the array
-  if( y != NULL ) {
-    free( y ) ;
-  }
   
   // add priors to the chisq
   for( i = 0 ; i < f.NPARAMS ; i++ ) {
@@ -68,5 +61,5 @@ compute_chisq( const struct ffunction f ,
       chisq += fac * fac ;
     }
   }
-  return (double)chisq ;
+  return chisq ;
 }

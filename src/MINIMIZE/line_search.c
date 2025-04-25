@@ -1,60 +1,49 @@
 /**
    @file line_search.c
-   @brief numerical recipes line search stuff
+
+   various line search codes from numerical recipes (changed a lot because their code is incomprehensible and didn't parallelise) and myself
  */
 #include "gens.h"
 
 #include <limits.h>
 #include <assert.h>
+#include <omp.h>
 
 #include "chisq.h"
 #include "ffunction.h"
 #include "summation.h"
 
-// put all the line search stuff in here
-#define MAXNPAR (24)
+// yeah Brent's method is a little faster
+#define BRENT
 
-//#define VERBOSE
+// store all this crap
+typedef struct {
+  const int n ;
+  double *p , *xi ;
+  struct ffunction *f2 ;
+  const struct fit_descriptor *fdesc ;
+  const double **W ;
+  const void *data ;
+} ltemps ;
 
-// don't see much improvement between Golden Search and Brent's method honestly
-//#define BRENT
-
-// eww NR use some gross global functions this will be VERY problematic in parallel
-static int ncom = 0 ;
-
-// change with the number of threads...
-static struct ffunction loc_f ;
-static struct fit_descriptor loc_fdesc ;
-
-// don't change
-static const double **loc_W ;
-static const void *loc_data ;
-
-static double pcom[MAXNPAR] , xicom[MAXNPAR] ;
-
-// gross conversion of our chisq to a one-dimensional function for the minimizers
+// hmmm this gets called a lot maybe I should make it faster
 static inline double
-f1dim( const double x )
+ntrialf( ltemps tmp , const double x )
 {
-  // adjust the fit parameters
-  for( int j = 0 ; j < ncom ; j++ ) {
-    loc_f.fparams[j] = pcom[j] + x*xicom[j] ;
+  for( int j = 0 ; j < tmp.n ; j++ ) {
+    tmp.f2 -> fparams[j] = tmp.p[j] + x*tmp.xi[j] ;
   }
-  // compute the residual
-  loc_fdesc.F(  loc_f.f  , loc_data , loc_f.fparams ) ;
-  //loc_fdesc.dF( loc_f.df , loc_data , loc_f.fparams ) ;
-  // return the chi^2
-  return compute_chisq( loc_f , loc_W , loc_f.CORRFIT ) ;
+  tmp.fdesc -> F( tmp.f2 -> f , tmp.data , tmp.f2 -> fparams ) ;
+  return compute_chisq( *tmp.f2 , tmp.W , tmp.f2 -> CORRFIT ) ; 
 }
 
-// one dimensional function bracket using the golden ratio from NR
+// compute the bracketing using the golden ratio from NR
 static void
-bracket( double (*f)( const double x ) ,
-	 double *a , double *b , double *c )
-{
+nbracket( ltemps tmp , double *a , double *b , double *c )
+{ 
   const double GOLD = 1.618034 ;
   double ax = *a , bx = *b ;
-  double fa = f(ax) , fb = f(bx) ;
+  double fa = ntrialf( tmp , ax ) , fb = ntrialf( tmp , bx ) ;
   // swaps
   if( fb > fa ) {
     double tmp = ax ; ax = bx ; bx = tmp ;
@@ -62,40 +51,36 @@ bracket( double (*f)( const double x ) ,
   }
   // guess for c
   double cx = bx + GOLD*(bx-ax) ;
-  double fc = f(cx) , fu = 1 ;  
+  double fc = ntrialf( tmp , cx ) ;
   while( fb > fc ) {
-    const double r = (bx-ax)*(fb-fc) ;
-    const double q = (bx-cx)*(fb-fa) ;
+    const double r = (bx-ax)*(fb-fc) , q = (bx-cx)*(fb-fa) ;
     double u = bx-((bx-cx)*q-(bx-ax)*r)/
       (2.*copysign(fmax(fabs(q-r),1E-20),q-r)) ;
-    double ulim = bx + 111*(cx-bx) ;
+    double ulim = bx + 111*(cx-bx) , fu = 1 ;
     if( (bx-u)*(u-cx) > 0 ) {
-      fu = f(u) ;
+      fu = ntrialf( tmp , u ) ; 
       if( fu < fc ) {
-	ax = bx ;
-	bx = u ;
-	fa = fb ;
-	fb = fu ;
+	ax = bx ; bx = u  ;
+	fa = fb ; fb = fu ;
 	break ;
       } else if( fu > fb ) {
-	cx = u ;
-	fc = fu ;
+	cx = u  ; fc = fu ;
 	break ;
       }
       u = cx + GOLD*(cx-bx) ;
-      fu = f(u) ;
+      fu = ntrialf( tmp , u ) ; 
     } else if( (cx-u)*(u-ulim) > 0.0 ) {
-      fu = f(u) ;
+      fu = ntrialf( tmp , u ) ; 
       if( fu < fc ) {
 	bx = cx ; cx = u  ; u = u+GOLD*(u-cx) ;
-	fb = fc ; fc = fu ; fu = f(u) ;
+	fb = fc ; fc = fu ; fu = ntrialf( tmp , u ) ;
       }
     } else if( (u-ulim)*(ulim-cx) >= 0.0 ) {
       u = ulim ;
-      fu = f(u) ;
+      fu = ntrialf( tmp , u ) ; 
     } else {
       u = cx + GOLD*(cx-bx) ;
-      fu = f(u) ;
+      fu = ntrialf( tmp , u ) ;
     }
     ax = bx ; bx = cx ; cx = u ;
     fa = fb ; fb = fc ; fc = fu ;
@@ -107,19 +92,15 @@ bracket( double (*f)( const double x ) ,
 #ifdef BRENT
 // returns the function evaluated at xmin and xmin itself using Brent's method
 static double
-line_NR( double (*f)( const double x ) ,
-	  const double ax , const double bx , const double cx ,
-	  double *xmin ,
-	  const double tol )
+nline_NR( ltemps tmp , const double ax , const double bx , const double cx , double *xmin , const double tol )
 {
   const int MAXLINE = 200 ;
   const double R = 0.6180339887498949 , C = 1.-R ;
-
-  double a = ax < cx ? ax : cx ;
-  double b = ax > cx ? ax : cx ;
+  //const double ax = brac[0] , bx = brac[1] , cx = brac[2] ;
+  double a = ax < cx ? ax : cx , b = ax > cx ? ax : cx ;
   double x = bx , w = bx , v = bx , e = 0.0 ;
   double fw , fv , fx , tol1 ;
-  fw = fv = fx = f( x ) ;
+  fw = fv = fx = ntrialf( tmp , x ) ;
   for( int iters = 0 ; iters < MAXLINE ; iters++ ) {
     const double xm = 0.5*(a+b) ;
     const double tol2 = 2*(tol1=tol*fabs(x)+1E-20) ;
@@ -136,7 +117,7 @@ line_NR( double (*f)( const double x ) ,
       if( q > 0. ) p = -p ;
       q = fabs(q) ;
       double etemp = e ;
-      // can the code ever get here as d is unitialized in NR
+      // can the code ever get here on first iter as d is unitialized in NR
       e = d ;
       if( fabs(p) >= fabs( 0.5*q*etemp ) ||
 	  p <= q*(a-x) ||
@@ -154,7 +135,7 @@ line_NR( double (*f)( const double x ) ,
     }
     // single function evaluation
     u = (fabs(d) >= tol1 ? x+d : x+copysign(tol1,d)) ;
-    const double fu = f(u) ;
+    const double fu = ntrialf( tmp , u  ) ;
     if( fu <= fx ) {
       if( u >= x ) a = x ; else b = x ;
       v = w ; w = x ; x = u ;
@@ -174,12 +155,9 @@ line_NR( double (*f)( const double x ) ,
   return fx ;
 }
 #else
-// returns the function evaluated at xmin and xmin itself assumes a < b < c
+// returns the function evaluated at xmin and xmin itself using golden section search
 static double
-line_NR( double (*f)( const double x ) ,
-	 const double a , const double b , const double c ,
-	 double *xmin ,
-	 const double tol )
+nline_NR( ltemps tmp , const double a , const double b , const double c , double *xmin , const double tol )
 {
   const int MAXLINE = 200 ;
   const double R = 0.6180339887498949 , C = 1.-R ;
@@ -189,67 +167,49 @@ line_NR( double (*f)( const double x ) ,
   } else {
     x2 = b ; x1 = b - C*(b-a) ;
   }
-  double f1 = f(x1) , f2 = f(x2) ;
+  double fx1 = ntrialf( tmp , x1 ) , fx2 = ntrialf( tmp , x2 ) ; 
   int iters = 0 ;
-  while( fabs( x3 - x0 ) > tol*(fabs(x1)+fabs(x2)+1E-25 ) ) {
-    if( f2 < f1 ) {
+  while( fabs( x3 - x0 ) > tol*(fabs(x1)+fabs(x2))+1E-25 ) {
+    if( fx2 < fx1 ) {
       x0 = x1 ; x1 = x2 ; x2 = R*x1 + C*x3 ; 
-      f1 = f2 ; f2 = f(x2) ;
+      fx1 = fx2 ; fx2 = ntrialf( tmp , x2 ) ; 
     } else {
       x3 = x2 ; x2 = x1 ; x1 = R*x2 + C*x0 ;
-      f2 = f1 ; f1 = f(x1) ;
+      fx2 = fx1 ; fx1 = ntrialf( tmp , x1 ) ; 
     }
-    #ifdef VERBOSE
-    printf( "Line %e %e\n" , fabs(x3-x0) , tol*(fabs(x1)+fabs(x2))) ;
-    #endif
     if( iters > MAXLINE ) {
       fprintf( stderr , "Line search failed to meet desired precision in %d iterations\n" , iters ) ;
-      fprintf( stderr , "Precision %e | target %e\n" , fabs(x3-x0) , tol*(fabs(x1)+fabs(x2)) ) ;
+      fprintf( stderr , "Precision %e\n" , fabs(x3-x0) ) ;
       break ;
     }
     iters++ ;
   }
-  #ifdef VERBOSE
-  printf( "Line search convergence in %d iterations\n" , iters ) ;
-  #endif
-  if( f1 < f2 ) {
-    *xmin = x1 ;
-    return f1 ;
+  if( fx1 < fx2 ) {
+    *xmin = x1 ; return fx1 ;
   } else {
-    *xmin = x2 ;
-    return f2 ;
+    *xmin = x2 ; return fx2 ;
   }
 }
 #endif
 
-// need to convert here between our fit function and simple 1D function for the line search
-void
-linmin( const int n ,
-	double p[n] ,
-	double xi[n] ,
-	double *fret ,
-	struct ffunction *f2 , 
+// function is local and can be called in a thread-parallel fashion for Powell
+double
+linmin( const int n , double p[n] , double xi[n] ,
+	double *fret , struct ffunction *f2 ,
 	const struct fit_descriptor *fdesc ,
 	const double **W ,
 	const void *data )  
 {
-  loc_f = *f2 ;
-  // probably not going to have more parameters than this
-  assert( n < 24 ) ;
-  copy_ffunction( &loc_f , fdesc -> f ) ;
-  loc_fdesc = *fdesc ;
-  ncom = fdesc -> Nlogic ; // # of logical parameters
-  loc_W = W ;
-  loc_data = data ;
-  memcpy( pcom  , p  , n*sizeof( double ) ) ;
-  memcpy( xicom , xi , n*sizeof( double ) ) ;
-  double a = 0 , b = 2 , c = 5 , xmin = 0 ;
-  bracket( f1dim , &a , &b , &c ) ;  
-  *fret = line_NR( f1dim , a , b , c , &xmin , 1E-3 ) ;
+  ltemps tmp = { .n = n , .p = p , .xi = xi , .f2 = f2 ,
+		 .fdesc = fdesc , .W = W , .data = data } ;
+  double a = 0 , b = 0.5 , c = 1, xmin = 0 ;  
+  nbracket( tmp , &a , &b , &c ) ;  
+  *fret = nline_NR( tmp , a , b , c , &xmin , 1E-3 ) ;
   for( int j = 0 ; j < n ; j++ ) {
     xi[j] *= xmin ;
     p[j] += xi[j] ;
   }
+  return xmin ;
 }
 
 // perform an step in the descent direction
@@ -282,32 +242,36 @@ line_search( struct ffunction *f2 ,
 	     const double **W )
 {
   const double fac = 0.1 ;
-
-  // perform a "backtracking line search" should use brent's method
-  // really and probably will do at some point, uses a golden ratio
-  // search to find approximately the minimum
-  // do a rough search 1^12 -> 1E-12 for abest step 100
+  // perform a "backtracking line search" could use brent's method
+  // do a rough search 100 -> 1E-16 for abest step 10
   double min = 123456789 ;
   double atrial = 100 , abest = 1E-15 ;
   size_t iters = 0 ;
+
+  const double fx = test_step( f2 , descent , f1 , fdesc , data , W , 0.0 ) ;
+  double armijo = 0 ;
+  for( int i = 0 ; i < fdesc.Nlogic ; i++ ) {
+    armijo += descent[i]*descent[i] ;
+  }
+  armijo *= fac ;
+  
   while( atrial > 1E-16 ) {
     atrial *= fac ;
     double trial = test_step( f2 , descent , f1 , fdesc , data , W , atrial ) ;
     iters++ ;
     if( isnan( trial ) ) continue ;
     if( isinf( trial ) ) continue ;
-    if( trial < min
-	// Armijo
-	// && trial > fx - atrial*0.1*descent[jidx]*descent[jidx]
-	) {
+    if( trial < min ) {
       abest = atrial ;
       min = trial ;
     }
-  }  
-  
+    // backtrack until we first satisfy the armijo constraint
+    if( trial < fx - atrial*armijo ) break ;
+  }
+
+  // and then golden ratio search to refine the step
   double amid = abest ;
   double a = amid / fac , b = amid * fac ;
-  // perform golden ratio line search
   const double R = 0.6180339887498949 ;
   double c = b - ( b-a )*R;
   double d = a + ( b-a )*R ;
@@ -328,7 +292,7 @@ line_search( struct ffunction *f2 ,
   }
   printf( "[LINE SEARCH] abest :: %e \n" , abest ) ;
   #endif
-  return (a+b)/2 ;
+  return 0.5*(a+b) ;
 }
 
 // gets minus the derivative of the \chi^2 function i.e. the descent direction
@@ -370,3 +334,7 @@ get_gradient( double *grad ,
     }
   }
 }
+
+#ifdef BRENT
+  #undef BRENT
+#endif

@@ -26,6 +26,7 @@ cg_iter( void *fdesc ,
 
   // allocate the fitfunction
   struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , Fit -> f.N ) ;
+  copy_ffunction( &f2 , Fit -> f ) ;
 
   // get priors
   f2.Prior = Fit -> f.Prior = Fit -> Prior ;
@@ -61,6 +62,7 @@ cg_iter( void *fdesc ,
     get_gradient( newdf , W , Fit ) ;
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
       num   += newdf[i]*(newdf[i]-old_df[i]) ;
+      //num   += newdf[i]*newdf[i] ; Fletcher reeves
       denom += old_df[i]*old_df[i] ;
       old_df[i] = newdf[i] ;
     }
