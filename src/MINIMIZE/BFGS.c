@@ -50,7 +50,7 @@ BFGS_iter( void *fdesc ,
 
   // inverse hessian estimate for initial guess set for now to be the identity matrix
   double H[ Fit -> Nlogic ][ Fit -> Nlogic ] , p[ Fit -> Nlogic ] ;
-  double chisq_diff = 10 , chiprev = 123456789 , chinew ;
+  double chisq_diff = 10 , chiprev = 123456789 , chinew , alpha = 1 ;
   
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
   Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
@@ -83,7 +83,7 @@ BFGS_iter( void *fdesc ,
     
     // line search in this direction
     copy_ffunction( &f2 , Fit -> f ) ;
-    const double alpha = line_search( &f2 , Fit -> f , grad , p , *Fit , data , W ) ;
+    alpha = line_search( &f2 , Fit -> f , grad , p , *Fit , data , W , 100*alpha ) ;
     // set s = alpha*p and x = x + s
     double s[ Fit -> Nlogic ] ;
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {

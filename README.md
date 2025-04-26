@@ -12,17 +12,21 @@ And there is also a Conjugate Gradient
 
     CG
 
-method for those who want to try something worse. Never use the minimisation SD, although it exists.
+method for those who want to try something worse. Never use the minimisation SD, although it exists. You can also try out the
+
+    BFGS
+
+If that is what you are into.
 
 If the function we have is too complicated for the specification of derivatives I have the following methods
 
     POWELL, SIMPLEX, GA
 
-Implementing Powell's method from Numerical Recipes, the downhill simplex (most closely resembles SciPy's implementation), or a genetic algorithm with tournament selection and elitism which is just fun to play around with. These only require function evaluations and no derivatives.
+Implementing Powell's method from Numerical Recipes, the downhill simplex (most closely resembles SciPy's implementation), or a genetic algorithm with tournament selection and elitism which is just fun to play around with.
 
 If we are lucky enough to have a problem that is linear in the parameters, i.e. can be expressed as
 
-   y = f[0] + f[1]*x^n + f[2]*x^m
+     y = f[0] + f[1]*x^n + f[2]*x^m
 
 With n and m being real numbers we can skip minimisation altogether and directly solve this Generalised Least Squares problem using the routine
 
@@ -40,7 +44,8 @@ The idea of this code was to provide natural sharing of simultaneous fit paramet
 
 If we set p[1], the exponent, to be simultaneous over two data sets then the fit will have 3 fit parameters and be ordered
 
-   y_1 = p[0]*exp(-p[1]*x)
-   y_2 = p[2]*exp(-p[1]*x)
+    y_1 = p[0]*exp(-p[1]*x)
+   
+    y_2 = p[2]*exp(-p[1]*x)
 
 This form is true for most of the basic fit functions specified, some of the more nuanced and complicated versions sometimes change this and for that you are on your own.

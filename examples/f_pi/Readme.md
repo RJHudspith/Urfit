@@ -56,8 +56,9 @@ That will fit a (sink,source) \gamma_5,\gamma_5 and \gamma_t\gamma_5,\gamma_5 co
 
 We will be doing a PPAA fit, which does
 
-   y_0 = p[1]*p[1]*( exp( -p[0]*x ) + exp( -p[0]*(Lt-x)) )
-   y_1 = p[2]*p[1]*( exp( -p[0]*x ) - exp( -p[0]*(Lt-x)) )	
+    y_0 = p[1]*p[1]*( exp( -p[0]*x ) + exp( -p[0]*(Lt-x)) )
+    
+    y_1 = p[2]*p[1]*( exp( -p[0]*x ) - exp( -p[0]*(Lt-x)) )	
 
 Which is useful when we have symmetric sources and sinks, e.g. Stochastic Wall sources or point sources or whatever.
 
@@ -75,7 +76,7 @@ i.e. 32x32x32
 
 We can also get f_\pi from e.g. Coulomb gauge fixed wall sources RBC-style using mostly the same code but we need the four correlators P^W P^L, A^W A^L, P^W A^L and A^W P^L (probably 3 would suffice come to think of it), this is nice as they are all local at the sink so a smeared source would work too. Anyway we then call the
 
-   PP_AA
+     PP_AA
 
 Fit routine. Once we have the fit the decay contant is computed in the same fashion.
 

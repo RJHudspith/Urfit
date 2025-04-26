@@ -43,7 +43,8 @@ cg_iter( void *fdesc ,
   memcpy( s , old_df , Fit->Nlogic*sizeof(double) ) ;
 
   // line search the SD step
-  double alpha = line_search( &f2 , Fit -> f , old_df , s , *Fit , data , W ) ;
+  double alpha = 1. ;
+  alpha = line_search( &f2 , Fit -> f , old_df , s , *Fit , data , W , 100*alpha ) ;
   for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
     Fit -> f.fparams[i] += alpha*s[i] ;
   }
@@ -71,7 +72,7 @@ cg_iter( void *fdesc ,
       s[i] = newdf[i] + beta*( s[i] ) ;
     }
     // update with a line search
-    alpha = line_search( &f2 , Fit -> f , old_df , s , *Fit , data , W ) ;
+    alpha = line_search( &f2 , Fit -> f , old_df , s , *Fit , data , W , 100*alpha ) ;
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
       Fit -> f.fparams[i] += alpha*s[i] ;
     }

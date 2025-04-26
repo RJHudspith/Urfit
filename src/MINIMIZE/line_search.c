@@ -239,13 +239,14 @@ line_search( struct ffunction *f2 ,
 	     const double *descent , 
 	     const struct fit_descriptor fdesc ,
 	     const void *data ,
-	     const double **W )
+	     const double **W ,
+	     double atrial )
 {
   const double fac = 0.1 ;
   // perform a "backtracking line search" could use brent's method
   // do a rough search 100 -> 1E-16 for abest step 10
   double min = 123456789 ;
-  double atrial = 100 , abest = 1E-15 ;
+  double abest = 1E-15 ;
   size_t iters = 0 ;
 
   const double fx = test_step( f2 , descent , f1 , fdesc , data , W , 0.0 ) ;
