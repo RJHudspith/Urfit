@@ -1,5 +1,6 @@
 /**
-   BFGS minimizer is a little fishy/wrong, I mean it vaguely works
+   @file BFGS.c
+   @brief BFGS minimizer for our \chi^2 functional
  */
 #include "gens.h"
 
@@ -12,7 +13,7 @@
 //#define VERBOSE
 
 #ifdef VERBOSE
-// have a look at the hessian
+// have a look at the hessian mayhaps
 static void
 printH( const int n , const double H[n][n] )
 {
@@ -33,8 +34,6 @@ BFGS_iter( void *fdesc ,
 	   const double **W ,
 	   const double TOL )
 {
-  assert( !"This is still under development" ) ;
-  
   // point to the fit descriptor
   struct fit_descriptor *Fit = (struct fit_descriptor*)fdesc ;
   
@@ -51,8 +50,6 @@ BFGS_iter( void *fdesc ,
 
   // inverse hessian estimate for initial guess set for now to be the identity matrix
   double H[ Fit -> Nlogic ][ Fit -> Nlogic ] , p[ Fit -> Nlogic ] ;
- 
-  
   double chisq_diff = 10 , chiprev = 123456789 , chinew ;
   
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
@@ -61,10 +58,10 @@ BFGS_iter( void *fdesc ,
   double grad[ Fit -> Nlogic ] ;
   get_gradient( grad , W , Fit ) ;
 
-  // set initial direction
+  // set initial Hessian to be the identity
   for( int i = 0 ; i < Fit->Nlogic ; i++ ) {
     memset( H[i] , 0. , Fit->Nlogic*sizeof(double) ) ;
-    H[i][i] = 1 ;
+    H[i][i] = 1. ;
     p[i] = Fit -> f.fparams[i] ;
   }
   
@@ -107,7 +104,7 @@ BFGS_iter( void *fdesc ,
     double sty = 0 , sumy = 0 , sums = 0. ;
     for( int i = 0  ; i < Fit -> Nlogic ; i++ ) {
       double tmp = (y[i] - grad[i]) ; grad[i] = y[i] ; y[i] = tmp ;
-      sty += -s[i]*y[i] ;
+      sty  += -s[i]*y[i] ;
       sumy += sqrt( y[i]*y[i] ) ;
       sums += sqrt( s[i]*s[i] ) ;
       double sum = 0 ;
@@ -118,7 +115,7 @@ BFGS_iter( void *fdesc ,
       yHy += y[i]*sum ;
     }
 
-    // these are normalisers so if they are super small we are fucked
+    // these are normalisers so if they are super small we are fucked and we just leave
     if( fabs(yHy) < 1E-15 || fabs(sty) < 1E-15 ) {
       break ;
     }
@@ -126,10 +123,14 @@ BFGS_iter( void *fdesc ,
     // NR values
     double fad = 1./yHy , fac = 1./sty , fae = yHy ;
     if( fac > sqrt(1E-15*sumy*sums) ) {
-      for( int i = 0  ; i < Fit -> Nlogic ; i++ ) {
+      // this is the magic vector that gets added to make it a full BFGS
+      for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
+	y[i] = fac*s[i] - fad*Hy[i] ;
+      }
+      // cool outerproducts s.sT and such
+      for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
 	for( int j = 0 ; j < Fit -> Nlogic ; j++ ) {
-	  // huh so we can't do full BFGS (the extra term) probably due to some sign
-	  H[i][j] += fac*s[i]*s[j] - fad*Hy[i]*Hy[j] ; //- fae*y[i]*y[j] ;
+	  H[i][j] += fac*s[i]*s[j] - fad*Hy[i]*Hy[j] + fae*y[i]*y[j] ;
 	}
       }
     }    
