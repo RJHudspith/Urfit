@@ -20,7 +20,8 @@ line_search( struct ffunction *f2 ,
 	     const double *descent ,
 	     const struct fit_descriptor fdesc ,
 	     const void *data ,
-	     const double **W ) ;
+	     const double **W ,
+	     double atrial ) ;
 
 // gets the derivative of the \chi^2 function
 void
