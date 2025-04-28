@@ -288,6 +288,7 @@ get_gradient( double *grad ,
       grad[i] -= ( Fit -> f.fparams[i] - Fit -> f.Prior[i].Val ) / 
 	( Fit -> f.Prior[i].Err * Fit -> f.Prior[i].Err ) ;
     }
+    grad[i] *= 2 ;
   }
 }
 
