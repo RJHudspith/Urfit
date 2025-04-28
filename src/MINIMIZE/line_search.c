@@ -317,12 +317,10 @@ line_search( struct ffunction *f2 ,
       }
     }
   }
-  //printf( "Iters %d \n" , iters ) ;
   return x ;
 #else
-  double a = abest/fac , b = abest*fac ; //abest*fac , b = abest/fac ;
-  double c = b - ( b-a )*R;
-  double d = a + ( b-a )*R ;
+  double a = abest*fac , b = abest/fac ;
+  double c = b - ( b-a )*R , d = a + ( b-a )*R ;
   double fc = test_step( f2 , descent , f1 , fdesc , data , W , c ) ;
   double fd = test_step( f2 , descent , f1 , fdesc , data , W , d ) ;
   while( fabs( b-a ) > 1E-7*(fabs(b)+fabs(a)) ) {
