@@ -11,16 +11,11 @@
 //#define BCORRECT
 
 // qsort comparison function for the bootstrap
-int 
+static inline int 
 comp( const void *elem1 , 
       const void *elem2 ) 
 {
-
-  const double f = *( (double*)elem1 ) ;
-  const double s = *( (double*)elem2 ) ;
-  if (f > s) { return  1 ; }
-  if (f < s) { return -1 ; }
-  return 0 ;
+  return  *( (double*)elem1 ) >  *( (double*)elem2 ) ;
 }
 
 // qsort comparison function for the bootstrap

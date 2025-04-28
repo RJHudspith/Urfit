@@ -31,8 +31,7 @@ single_fit( struct resampled *fitparams ,
   if( Data.Ntot == 0 || fdesc.Nlogic == 0 ) return FAILURE ;
   
   // initialise the data we will fit
-  double *yloc = malloc( Data.Ntot * sizeof( double ) ) ;
-  double *xloc = malloc( Data.Ntot * sizeof( double ) ) ;
+  double yloc[ Data.Ntot ] , xloc[ Data.Ntot ] ;
   int Flag = SUCCESS ;
   
   // initialise the data we are fitting
@@ -88,9 +87,6 @@ single_fit( struct resampled *fitparams ,
       fitparams[j].resampled[sample_idx] = fdesc.f.fparams[j] ;
     }
   }
-
-  free( yloc ) ;
-  free( xloc ) ;
   
   return Flag ;
 }	    
@@ -119,8 +115,7 @@ perform_bootfit( const struct data_info Data ,
   // allocate the fitparams
   struct resampled *fitparams = malloc( fdesc.Nlogic * sizeof( struct resampled ) ) ; 
   for( i = 0 ; i < fdesc.Nlogic ; i++ ) {
-    fitparams[i] = init_dist( NULL , Data.y[0].NSAMPLES ,
-			      Data.y[0].restype ) ;
+    fitparams[i] = init_dist( NULL , Data.y[0].NSAMPLES , Data.y[0].restype ) ;
     fitparams[i].avg = UNINIT_FLAG ;
   }
 
@@ -133,8 +128,7 @@ perform_bootfit( const struct data_info Data ,
   fprintf( stdout , "[FIT] single fit for the average\n" ) ;
   
   //set_phi3v2( 0 , true ) ;
-
-  fprintf( stdout , "[FIT] set phi3\n" ) ;
+  //fprintf( stdout , "[FIT] set phi3\n" ) ;
   
   // do the average first
   single_fit( fitparams , &chisq , fdesc , Data , Fit , 0 , true ) ;

@@ -54,7 +54,7 @@ BFGS_iter( void *fdesc ,
   
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
   Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
-
+  
   double grad[ Fit -> Nlogic ] ;
   get_gradient( grad , W , Fit ) ;
 
@@ -81,7 +81,6 @@ BFGS_iter( void *fdesc ,
     }
     
     // line search in this direction
-    copy_ffunction( &f2 , Fit -> f ) ;
     alpha = line_search( &f2 , Fit -> f , grad , p , *Fit , data , W ) ;
     // set s = alpha*p and x = x + s
     double s[ Fit -> Nlogic ] ;
@@ -106,7 +105,7 @@ BFGS_iter( void *fdesc ,
       sty  += -s[i]*y[i] ;
       sumy += sqrt( y[i]*y[i] ) ;
       sums += sqrt( s[i]*s[i] ) ;
-      double sum = 0 ;
+      register double sum = 0 ;
       for( int j = 0 ; j < Fit -> Nlogic ; j++ ) {
 	sum += H[i][j]*y[j] ;
       }
@@ -120,7 +119,7 @@ BFGS_iter( void *fdesc ,
     }
     
     // NR values
-    double fad = 1./yHy , fac = 1./sty , fae = yHy ;
+    const double fad = 1./yHy , fac = 1./sty , fae = yHy ;
     if( fac > sqrt(1E-15*sumy*sums) ) {
       // this is the magic vector that gets added to make it a full BFGS
       for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
@@ -128,8 +127,14 @@ BFGS_iter( void *fdesc ,
       }
       // cool outerproducts s.sT and such
       for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
+	const register double A =  fac*s[i] ;
+	const register double B = -fad*Hy[i] ;
+	const register double C =  fae*y[i] ;
+	// try and urge the compiler to FMA these
 	for( int j = 0 ; j < Fit -> Nlogic ; j++ ) {
-	  H[i][j] += fac*s[i]*s[j] - fad*Hy[i]*Hy[j] + fae*y[i]*y[j] ;
+	  H[i][j] += A*s[j] ;
+	  H[i][j] += B*Hy[j] ;
+	  H[i][j] += C*y[j] ;
 	}
       }
     }    
