@@ -49,13 +49,13 @@ BFGS_iter( void *fdesc ,
   f2.Prior = Fit -> f.Prior = Fit -> Prior ;
 
   // inverse hessian estimate for initial guess set for now to be the identity matrix
-  double H[ Fit -> Nlogic ][ Fit -> Nlogic ] ;
-  double chisq_diff = 10 , chiprev = 123456789 , chinew , alpha = 1 ;
-  
+  double H[ Fit -> Nlogic ][ Fit -> Nlogic ] ;  
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
   Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
-  
-  double grad[ Fit -> Nlogic ] ;
+
+  // array temporaries of gradients and things
+  double grad[ Fit -> Nlogic ] , s[ Fit -> Nlogic ] , p[ Fit -> Nlogic ] ;
+  double y[ Fit -> Nlogic ] , Hy[ Fit -> Nlogic ] ;
   get_gradient( grad , W , Fit ) ;
 
   // set initial Hessian to be the identity
@@ -63,14 +63,13 @@ BFGS_iter( void *fdesc ,
     memset( H[i] , 0. , Fit->Nlogic*sizeof(double) ) ;
     H[i][i] = 1. ;
   }
-  
+
+  double chisq_diff = 10 , chiprev = 123456789 , chinew , alpha = 1 ;
   while( chisq_diff > TOL && iters < BFGSMAX ) {
-    double p[ Fit -> Nlogic ] ;
     // update f which has the gradient direction in
     chinew = Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
     chisq_diff = fabs(chinew-chiprev) ;   
     chiprev = chinew ;
-
     // obtain direction P = -H_{ij}\Delta_j 
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
       register double sum = 0. ;
@@ -79,27 +78,20 @@ BFGS_iter( void *fdesc ,
       }
       p[i] = sum ;
     }
-    
-    // line search in this direction
-    alpha = line_search( &f2 , Fit -> f , grad , p , *Fit , data , W ) ;
-    // set s = alpha*p and x = x + s
-    double s[ Fit -> Nlogic ] ;
+    // line search in this direction & set s = alpha*p and x = x + s
+    alpha = line_search( &f2 , Fit -> f , p , *Fit , data , W ) ;
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
       s[i] = alpha*p[i] ;
       Fit -> f.fparams[i] += s[i] ;
     }
-
     // recompute gradients and put in y = \Del
     Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
     Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
-
     // get new descent direction (-grad hence all the fucking signs)
-    double y[ Fit -> Nlogic ] ;
     get_gradient( y , W , Fit ) ;
 
     // update estimate for inverse Hessian
-    double yHy = 0.0 , Hy[ Fit -> Nlogic ] ;
-    double sty = 0 , sumy = 0 , sums = 0. ;
+    double yHy = 0.0 , sty = 0 , sumy = 0 , sums = 0. ;
     for( int i = 0  ; i < Fit -> Nlogic ; i++ ) {
       double tmp = (y[i] - grad[i]) ; grad[i] = y[i] ; y[i] = tmp ;
       sty  += -s[i]*y[i] ;
@@ -151,7 +143,8 @@ BFGS_iter( void *fdesc ,
   for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
     printf( "PARAMS :: %e \n" , Fit -> f.fparams[i] ) ;
   }
-#endif  
+#endif
+  free_ffunction( &f2 , Fit -> Nlogic ) ; 
   return iters ;
 }
 

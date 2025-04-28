@@ -1,6 +1,5 @@
 /**
-   line search steepest-descent
-   does a fast job at doing badly
+   line search steepest-descent does a fast job at doing badly
  */
 #include "gens.h"
 
@@ -9,7 +8,9 @@
 #include "line_search.h"
 #include "summation.h"
 
-//#define VERBOSE
+#include <assert.h>
+
+#define VERBOSE
 
 // steepest-descent iterations this sucks don't use it
 int
@@ -18,6 +19,8 @@ sd_iter( void *fdesc ,
 	 const double **W ,
 	 const double TOL )
 {
+  assert( !"Routine only exists for educational purposes" ) ;
+  
   // point to the fit descriptor
   struct fit_descriptor *Fit = (struct fit_descriptor*)fdesc ;
   
@@ -28,7 +31,8 @@ sd_iter( void *fdesc ,
   // allocate the temporary fitfunction for computing new steps 
   // down descent direction in the line search
   struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , Fit -> f.N ) ;
-
+  copy_ffunction( &f2 , Fit->f ) ;
+  
   // allocate the gradient
   double *grad = malloc( Fit -> Nlogic * sizeof( double ) ) ;
   
@@ -43,7 +47,7 @@ sd_iter( void *fdesc ,
     // compute the derivative of the \chi^2 function
     get_gradient( grad , W , Fit ) ;
     // line search along it
-    alpha = line_search( &f2 , Fit -> f , grad , grad , *Fit , data , W ) ;
+    alpha = line_search( &f2 , Fit -> f , grad , *Fit , data , W ) ;
     // update fparams
     for( i = 0 ; i < Fit -> Nlogic ; i++ ) {
       Fit -> f.fparams[i] += alpha*grad[i] ;

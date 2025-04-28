@@ -45,11 +45,8 @@ get_alpha_beta( struct lmstep *LM ,
 {
   double *t ;
   size_t p , q = 0 , i , j ;
-  
-  // compute beta
+  // compute beta gradient of \chi^2 function
   for( p = 0 ; p < f.NPARAMS ; p++ ) {
-
-    // compute beta
     t = LM -> y ;
     switch( f.CORRFIT ) {
     case UNWEIGHTED : 
@@ -71,24 +68,19 @@ get_alpha_beta( struct lmstep *LM ,
       break ;
     }
     register double bp = kahan_summation( LM -> y , LM -> Nsum ) ;
-
     // add the priors if they have been set
     if( f.Prior[p].Initialised == true ) {
       bp += ( f.fparams[p] - f.Prior[p].Val ) / 
 	( f.Prior[p].Err * f.Prior[p].Err ) ;
     }
-
     #ifdef VERBOSE
     printf( "[LM] beta[%zu] %e \n" , p , bp ) ;
     #endif
-
     // set beta[p]
     gsl_vector_set( LM -> beta , p , bp ) ;
-
     // compute alpha[p][q].loop q only need to do top half
     // as the matrix "alpha" is symmetric
     for( q = p ; q < f.NPARAMS ; q++ ) {
-
       // compute alpha
       t = LM -> y ;
       switch( f.CORRFIT ) {
@@ -126,7 +118,6 @@ get_alpha_beta( struct lmstep *LM ,
 	break ;
       }
       register double apq = kahan_summation( LM -> y , LM -> Nsum ) ;
-      
       // second derivatives acting on the prior
       if( p == q ) {
 	if( f.Prior[p].Initialised == true ) {
@@ -134,11 +125,9 @@ get_alpha_beta( struct lmstep *LM ,
 	    ( f.Prior[p].Err * f.Prior[p].Err ) ;
 	}
       }
-
       #ifdef VERBOSE
       printf( "[LM] alpha[%zu,%zu] %e \n" , p , q  , -apq ) ;
       #endif
-
       gsl_matrix_set( LM -> alpha , p , q , -apq ) ;
     }
   }
@@ -202,14 +191,13 @@ lm_step( struct ffunction *f ,
   // compute the predicted chi^2?
   register double loc_sumd = 0.0 , loc_sumB = 0.0 ;
   for( i = 0 ; i < f -> NPARAMS ; i++ ) {
-    loc_sumd += gsl_vector_get( LM -> delta , i ) * gsl_vector_get( LM -> beta , i ) ;
-    size_t j ;
-    for( j = 0 ; j < f -> NPARAMS ; j++ ) {
-      loc_sumB +=
-	gsl_vector_get( LM -> delta , i ) *
-	gsl_matrix_get( LM -> alpha , i , j ) *
-	gsl_vector_get( LM -> delta , j ) ;
+    register const double LMi = gsl_vector_get( LM -> delta , i ) ;
+    loc_sumd += LMi*LMi ;
+    register double sumj = 0.0 ; // matrix-vector product LM.alpha[i][j]*LM.delta[j] ;
+    for( size_t j = 0 ; j < f -> NPARAMS ; j++ ) {
+      sumj += gsl_matrix_get( LM -> alpha , i , j ) * gsl_vector_get( LM -> delta , j ) ;
     }
+    loc_sumB +=  LMi*sumj ;
   }
   #ifdef VERBOSE
   fprintf( stdout , "[LM] F(x+d) = %e + %e \n" ,
@@ -218,9 +206,8 @@ lm_step( struct ffunction *f ,
   
   LM -> pred = loc_sumd + loc_sumB/2. ;
   
-  // evaluate these functions
-  fdesc.F( f -> f , data , f -> fparams ) ;
   // compute new chisq
+  fdesc.F( f -> f , data , f -> fparams ) ;
   return compute_chisq( *f , W , f -> CORRFIT ) ;
 }
 
@@ -229,10 +216,8 @@ init_LM( struct lmstep *LM ,
 	 const struct ffunction f ,
 	 const size_t Nlogic )
 {
-  LM->alpha     = gsl_matrix_alloc( Nlogic , 
-				   Nlogic ) ;
-  LM->alpha_new = gsl_matrix_alloc( Nlogic , 
-				   Nlogic ) ;
+  LM->alpha     = gsl_matrix_alloc( Nlogic , Nlogic ) ;
+  LM->alpha_new = gsl_matrix_alloc( Nlogic , Nlogic ) ;
   LM->beta      = gsl_vector_alloc( Nlogic ) ;
   LM->delta     = gsl_vector_alloc( Nlogic ) ;
   LM->perm      = gsl_permutation_alloc( Nlogic ) ;

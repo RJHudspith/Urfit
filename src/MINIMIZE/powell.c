@@ -17,7 +17,7 @@ powell_iter( void *fdesc ,
 	     const double **W ,
 	     const double TOL )
 {
-  const int MAX_ITERS = 600 ;
+  const int MAX_ITERS = 2000 ;
   int iters = 0 ;
 
   struct fit_descriptor *Fit = (struct fit_descriptor*)fdesc ;
@@ -26,12 +26,7 @@ powell_iter( void *fdesc ,
   // get priors and evaluate initial chisq and stuff
   Fit -> f.Prior = Fit -> Prior ;
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ; 
-  Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
-  
-  // need this due to NR's crazy global variable solution
-  struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , Fit -> f.N ) ;
-  copy_ffunction( &f2 , Fit -> f ) ;
-  
+  Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;  
   double *fret = &Fit -> f.chisq ;
   
   // set the search directions to be the identity matrix
@@ -52,14 +47,14 @@ powell_iter( void *fdesc ,
     for( int i = 0 ; i < n ; i++ ) {
       memcpy( xit , dirs[i] , n*sizeof(double)) ;
       fptt = *fret ;
-      linmin( n , p , xit , fret , &f2 , fdesc , W , data ) ;
+      linmin( n , p , xit , fret , &Fit->f , fdesc , W , data ) ;
       if( (fptt - *fret) > del ) {
 	del = fptt - *fret ;
 	ibig = i ;
       }
     }
     // leave
-    if( (2*(fp - *fret)) <= (TOL*(fabs(fp)+fabs(*fret))+1E-28 ) ) {  
+    if( sqrt(fabs(fp - *fret)) <= (TOL*(fabs(fp)+fabs(*fret))+1E-28 ) ) {  
       break ;
     }
     for( int j = 0 ; j < n ; j++ ) {
@@ -73,7 +68,7 @@ powell_iter( void *fdesc ,
     if( fptt < fp ) {
       const double t = 2*(fp-2*(*fret)+fptt)*sqrt(fp-*fret-del)-del*sqrt(fp-fptt) ;
       if( t < 0.0 ) {
-	linmin( n , p , xit , fret , &f2 , fdesc , W , data ) ;
+	linmin( n , p , xit , fret , &Fit->f , fdesc , W , data ) ;
 	for( int j = 0 ; j < n ; j++ ) {
 	  dirs[ibig][j] = dirs[n-1][j] ;
 	  dirs[n-1][j]  = xit[j] ;
@@ -81,15 +76,11 @@ powell_iter( void *fdesc ,
       }
     }
   }
-
-  // gotta do this
-  free_ffunction( &f2 , Fit -> Nlogic ) ;
     
   // here we reached the end and it is time to set everything
   for( int j = 0 ; j < n ; j++ ) {
     Fit -> f.fparams[j] = p[j] ;
   }
-  Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
   Fit -> f.chisq = *fret ;
   
   return iters == MAX_ITERS ? FAILURE : iters ;

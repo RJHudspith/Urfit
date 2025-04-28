@@ -94,7 +94,7 @@ nbracket( ltemps tmp , double *a , double *b , double *c )
 static double
 nline_NR( ltemps tmp , const double ax , const double bx , const double cx , double *xmin , const double tol )
 {
-  const int MAXLINE = 200 ;
+  const int MAXLINE = 500 ;
   const double R = 0.6180339887498949 , C = 1.-R ;
   double a = ax < cx ? ax : cx , b = ax > cx ? ax : cx ;
   double x = bx , w = bx , v = bx , e = 0.0 ;
@@ -216,7 +216,6 @@ linmin( const int n , double p[n] , double xi[n] ,
 double
 line_search( struct ffunction *f2 ,
 	     const struct ffunction f1 ,
-	     const double *grad ,
 	     const double *descent , 
 	     const struct fit_descriptor fdesc ,
 	     const void *data ,
