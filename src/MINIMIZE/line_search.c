@@ -239,23 +239,14 @@ line_search( struct ffunction *f2 ,
 	     const double *descent , 
 	     const struct fit_descriptor fdesc ,
 	     const void *data ,
-	     const double **W ,
-	     double atrial )
+	     const double **W )
 {
   const double fac = 0.1 ;
-  // perform a "backtracking line search" could use brent's method
-  // do a rough search 100 -> 1E-16 for abest step 10
-  double min = 123456789 ;
-  double abest = 1E-15 ;
-
-  const double f0 = test_step( f2 , descent , f1 , fdesc , data , W , 0.0 ) ;
-  double armijo = 0 ;
-  for( int i = 0 ; i < fdesc.Nlogic ; i++ ) {
-    armijo += descent[i]*descent[i] ;
-  }
-  armijo *= fac ;
-  
-  while( atrial > 1E-16 ) {
+  // perform a "backtracking line search" initially
+  // do a rough search 100000 -> 1E-16 for abest step 10
+  // the point is that we bracket the minimum between abest/10 and abest*10 for a better line search
+  double min = 123456789 , abest = 1E-15 , atrial = 1E5 ;
+  while( atrial > 1E-15 ) {
     atrial *= fac ;
     double trial = test_step( f2 , descent , f1 , fdesc , data , W , atrial ) ;
     if( isnan( trial ) ) continue ;
@@ -264,11 +255,8 @@ line_search( struct ffunction *f2 ,
       abest = atrial ;
       min = trial ;
     }
-    // backtrack until we first satisfy the armijo constraint
-    if( trial < f0 - atrial*armijo ) break ;
   }
-
-  // and then Brent/golden ratio search to refine the step
+  // and then Brent or golden ratio search to refine the step
   const double R = 0.6180339887498949 ;
 #ifdef BRENT
   const double C = 1.-R , tol = 1E-6 ;

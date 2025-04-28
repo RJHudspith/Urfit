@@ -82,7 +82,7 @@ BFGS_iter( void *fdesc ,
     
     // line search in this direction
     copy_ffunction( &f2 , Fit -> f ) ;
-    alpha = line_search( &f2 , Fit -> f , grad , p , *Fit , data , W , 1000*alpha ) ;
+    alpha = line_search( &f2 , Fit -> f , grad , p , *Fit , data , W ) ;
     // set s = alpha*p and x = x + s
     double s[ Fit -> Nlogic ] ;
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
