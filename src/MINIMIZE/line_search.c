@@ -238,8 +238,16 @@ line_search( struct ffunction *f2 ,
       min = trial ;
     }
   }
+  // we know that f(abest*fac) > f(abest) < f(abest/fac) but this isn't very symmetric
+  // as they differ by orders of magnitude so we increment the upper edge by factors of
+  // abest*fac with the idea that likely one iteration here will be enough
+  double aup = abest , fup = min ;
+  while( (fup-min) < 1E-15 ) {
+    aup += abest*fac ;
+    fup = ntrialf( tmp , aup ) ;
+  }  
   double xmin = 0 ;
-  nline_NR( tmp , abest*fac , abest , abest/fac , &xmin , 1E-7 ) ;
+  nline_NR( tmp , abest*fac , abest , aup , &xmin , 1E-7 ) ;
   return xmin ;
 }
 

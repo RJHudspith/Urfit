@@ -144,7 +144,7 @@ perform_bootfit( const struct data_info Data ,
     fdesc_boot.Prior = Fit.Prior ;
     
     // loop boots
-    #pragma omp for private(i)
+    #pragma omp for private(i) schedule(dynamic) nowait
     for( i = 0 ; i < chisq.NSAMPLES ; i++ ) {
       
       //fprintf( stdout , "%zu did \n" , i ) ;
