@@ -61,7 +61,7 @@ BFGS_iter( void *fdesc ,
   // set initial Hessian to be the identity
   for( int i = 0 ; i < Fit->Nlogic ; i++ ) {
     memset( H[i] , 0. , Fit->Nlogic*sizeof(double) ) ;
-    H[i][i] = 1.0 ;
+    H[i][i] = 1. ;
   }
   
   while( chisq_diff > TOL && iters < BFGSMAX ) {
