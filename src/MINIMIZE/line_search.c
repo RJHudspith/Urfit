@@ -247,9 +247,8 @@ line_search( struct ffunction *f2 ,
   // do a rough search 100 -> 1E-16 for abest step 10
   double min = 123456789 ;
   double abest = 1E-15 ;
-  size_t iters = 0 ;
 
-  const double fx = test_step( f2 , descent , f1 , fdesc , data , W , 0.0 ) ;
+  const double f0 = test_step( f2 , descent , f1 , fdesc , data , W , 0.0 ) ;
   double armijo = 0 ;
   for( int i = 0 ; i < fdesc.Nlogic ; i++ ) {
     armijo += descent[i]*descent[i] ;
@@ -259,7 +258,6 @@ line_search( struct ffunction *f2 ,
   while( atrial > 1E-16 ) {
     atrial *= fac ;
     double trial = test_step( f2 , descent , f1 , fdesc , data , W , atrial ) ;
-    iters++ ;
     if( isnan( trial ) ) continue ;
     if( isinf( trial ) ) continue ;
     if( trial < min ) {
@@ -267,13 +265,74 @@ line_search( struct ffunction *f2 ,
       min = trial ;
     }
     // backtrack until we first satisfy the armijo constraint
-    if( trial < fx - atrial*armijo ) break ;
+    if( trial < f0 - atrial*armijo ) break ;
   }
 
-  // and then golden ratio search to refine the step
-  double amid = abest ;
-  double a = amid / fac , b = amid * fac ;
+  // and then Brent/golden ratio search to refine the step
   const double R = 0.6180339887498949 ;
+#ifdef BRENT
+  const double C = 1.-R , tol = 1E-6 ;
+  const int maxiters = 100 ;
+  double ax = abest*fac , bx = abest , cx = abest/fac ;
+  double a = ax < cx ? ax : cx , b = ax > cx ? ax : cx ;
+  double x = bx , w = bx , v = bx , e = 0.0 ;
+  double fw , fv , fx , tol1 ;
+  fw = fv = fx = test_step( f2 , descent , f1 , fdesc , data , W , x ) ;
+  int iters ;
+  for( iters = 0 ; iters < maxiters ; iters++ ) {
+    const double xm = 0.5*(a+b) ;
+    const double tol2 = 2*(tol1=tol*fabs(x)+1E-20) ;
+    double d = 0. , u = 0 ;
+    if( fabs(x-xm) <= (tol2-0.5*(b-a)) ) {
+      break ;
+    }
+    // logic block for the parabolic step 
+    if( fabs(e) > tol1 ) {
+      const double r = (x-w)*(fx-fv) ;
+      double q = (x-v)*(fx-fw) ;
+      double p = (x-v)*q-(x-w)*r ;
+      q = 2*(q-r) ;
+      if( q > 0. ) p = -p ;
+      q = fabs(q) ;
+      double etemp = e ;
+      // can the code ever get here on first iter as d is unitialized in NR
+      e = d ;
+      if( fabs(p) >= fabs( 0.5*q*etemp ) ||
+	  p <= q*(a-x) ||
+	  p >= q*(b-x) ) {
+	d = C*(e=(x>xm?a-x:b-x)) ;
+      } else {
+	d = p/q ;
+	u = x+d ;
+	if( (u-a)<tol2 || (b-u)<tol2 ) {
+	  d = copysign(tol1,xm-x) ;
+	}
+      }
+    } else {
+      d = C*(e=(x>xm?a-x:b-x)) ;
+    }
+    // single function evaluation
+    u = (fabs(d) >= tol1 ? x+d : x+copysign(tol1,d)) ;
+    const double fu = test_step( f2 , descent , f1 , fdesc , data , W , u ) ;
+    if( fu <= fx ) {
+      if( u >= x ) a = x ; else b = x ;
+      v = w ; w = x ; x = u ;
+      fv = fw ; fw = fx ; fx = fu ;
+    } else {
+      if( u < x ) a = u ; else b = u ;
+      if( fu <= fw || w == x ) {
+	v  =  w ; w  =  u ;
+	fv = fw ; fw = fu ;
+      } else if( fu <= fv || v == x || v == w ) {
+	v  =  u ;
+	fv = fu ;
+      }
+    }
+  }
+  //printf( "Iters %d \n" , iters ) ;
+  return x ;
+#else
+  double a = abest/fac , b = abest*fac ; //abest*fac , b = abest/fac ;
   double c = b - ( b-a )*R;
   double d = a + ( b-a )*R ;
   double fc = test_step( f2 , descent , f1 , fdesc , data , W , c ) ;
@@ -287,13 +346,8 @@ line_search( struct ffunction *f2 ,
       fc = fd ; fd = test_step( f2 , descent , f1 , fdesc , data , W , d ) ;
     }
   }
-  #ifdef VERBOSE
-  if( iters == 1000 ) {
-    fprintf( stderr , "[LINE SEARCH] backtracking failed %e \n" , abest ) ;
-  }
-  printf( "[LINE SEARCH] abest :: %e \n" , abest ) ;
-  #endif
   return 0.5*(a+b) ;
+#endif
 }
 
 // gets minus the derivative of the \chi^2 function i.e. the descent direction

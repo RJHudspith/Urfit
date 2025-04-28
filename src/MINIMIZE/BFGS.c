@@ -49,7 +49,7 @@ BFGS_iter( void *fdesc ,
   f2.Prior = Fit -> f.Prior = Fit -> Prior ;
 
   // inverse hessian estimate for initial guess set for now to be the identity matrix
-  double H[ Fit -> Nlogic ][ Fit -> Nlogic ] , p[ Fit -> Nlogic ] ;
+  double H[ Fit -> Nlogic ][ Fit -> Nlogic ] ;
   double chisq_diff = 10 , chiprev = 123456789 , chinew , alpha = 1 ;
   
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
@@ -61,12 +61,11 @@ BFGS_iter( void *fdesc ,
   // set initial Hessian to be the identity
   for( int i = 0 ; i < Fit->Nlogic ; i++ ) {
     memset( H[i] , 0. , Fit->Nlogic*sizeof(double) ) ;
-    H[i][i] = 1. ;
-    p[i] = Fit -> f.fparams[i] ;
+    H[i][i] = 1.0 ;
   }
   
   while( chisq_diff > TOL && iters < BFGSMAX ) {
-    
+    double p[ Fit -> Nlogic ] ;
     // update f which has the gradient direction in
     chinew = Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
     chisq_diff = fabs(chinew-chiprev) ;   
@@ -83,7 +82,7 @@ BFGS_iter( void *fdesc ,
     
     // line search in this direction
     copy_ffunction( &f2 , Fit -> f ) ;
-    alpha = line_search( &f2 , Fit -> f , grad , p , *Fit , data , W , 100*alpha ) ;
+    alpha = line_search( &f2 , Fit -> f , grad , p , *Fit , data , W , 1000*alpha ) ;
     // set s = alpha*p and x = x + s
     double s[ Fit -> Nlogic ] ;
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
