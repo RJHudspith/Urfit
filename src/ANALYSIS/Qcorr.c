@@ -21,10 +21,19 @@ int
 fit_Qcorr( struct input_params *Input )
 {   
   size_t i , j , shift = 0 ;
-  const double fac = 1.0/ ( 10*10*10*10. ) ;
+  const double fac = 1.0/ ( Input -> Traj[0].Dimensions[0] *
+			    Input -> Traj[0].Dimensions[1] *
+			    Input -> Traj[0].Dimensions[2] *
+			    Input -> Traj[0].Dimensions[3] ) ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
-      mult_constant( &Input -> Data.y[j] , fac ) ;
+      // as a function of R
+      raise( &Input -> Data.x[j] , 0.5 ) ;
+      // modulo y
+      //raise( &Input -> Data.y[j] , 2 ) ;
+      //raise( &Input -> Data.y[j] , 0.5 ) ;
+      // divide by V
+      mult_constant( &Input -> Data.y[j] , -fac ) ;
     }
     shift = j ;
   }

@@ -16,7 +16,7 @@
 #include <gsl/gsl_cdf.h> // pvalue
 
 #include "fake.h"
-#include "fvol_delta_fitt0v2.h"
+#include "fvol_delta_fitt0.h"
 
 // perform a single bootstrap fit to our data
 static int
@@ -127,8 +127,8 @@ perform_bootfit( const struct data_info Data ,
 
   fprintf( stdout , "[FIT] single fit for the average\n" ) ;
   
-  //set_phi3v2( 0 , true ) ;
-  //fprintf( stdout , "[FIT] set phi3\n" ) ;
+  //set_phi3( 0 , true ) ;
+  fprintf( stdout , "[FIT] set phi3\n" ) ;
   
   // do the average first
   single_fit( fitparams , &chisq , fdesc , Data , Fit , 0 , true ) ;

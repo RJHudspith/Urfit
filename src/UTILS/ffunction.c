@@ -47,7 +47,8 @@ copy_ffunction( struct ffunction *f1 ,
   f1 -> N = f.N ;
   f1 -> NPARAMS = f.NPARAMS ;
   f1 -> CORRFIT = f.CORRFIT ;
-  f1 -> Prior = f.Prior ;
+  f1 -> Prior   = f.Prior ;
+  f1 -> chisq = f.chisq ;
   // copy the data
   for( i = 0 ; i < f.N ; i++ ) {
     f1 -> f[i] = f.f[i] ;

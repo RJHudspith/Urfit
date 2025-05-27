@@ -26,21 +26,21 @@ cg_iter( void *fdesc ,
 
   // allocate the fitfunction
   struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , Fit -> f.N ) ;
-  copy_ffunction( &f2 , Fit -> f ) ;
   f2.Prior = Fit -> f.Prior = Fit -> Prior ;
+  copy_ffunction( &f2 , Fit -> f ) ;
 
   // evaluate the function, and its first derivatives
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
   Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
   Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
-
+  
   // allocate conjugate directions and set s to descent direction "old_df"
   double s[ Fit -> Nlogic ] , old_df[ Fit -> Nlogic ] , newdf[ Fit -> Nlogic ] ;
   get_gradient( old_df , W , Fit ) ;
   memcpy( s , old_df , Fit->Nlogic*sizeof(double) ) ;
 
   // line search the SD step
-  double alpha = line_search( &f2 , Fit -> f , s , *Fit , data , W ) ;
+  double alpha = line_search( &f2 , Fit -> f , s , s , *Fit , data , W ) ;
   for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
     Fit -> f.fparams[i] += alpha*s[i] ;
   }
@@ -67,7 +67,7 @@ cg_iter( void *fdesc ,
       s[i] = newdf[i] + beta*( s[i] ) ;
     }
     // update with a line search
-    alpha = line_search( &f2 , Fit -> f , s , *Fit , data , W ) ;
+    alpha = line_search( &f2 , Fit -> f , newdf , s , *Fit , data , W ) ;
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
       Fit -> f.fparams[i] += alpha*s[i] ;
     }

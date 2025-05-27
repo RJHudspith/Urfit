@@ -34,6 +34,7 @@ ntrialf( ltemps tmp , const double x )
     tmp.f2 -> fparams[j] = tmp.p[j] + x*tmp.xi[j] ;
   }
   tmp.fdesc -> F( tmp.f2 -> f , tmp.data , tmp.f2 -> fparams ) ;
+  tmp.fdesc -> dF( tmp.f2 -> df , tmp.data , tmp.f2 -> fparams ) ;
   return compute_chisq( *tmp.f2 , tmp.W , tmp.f2 -> CORRFIT ) ; 
 }
 
@@ -211,46 +212,6 @@ linmin( const int n , double p[n] , double xi[n] ,
   return xmin ;
 }
 
-// backtracking line search and then golden ratio improvement as we know alpha is positive
-// for the routines that will be calling this function
-double
-line_search( struct ffunction *f2 ,
-	     const struct ffunction f1 ,
-	     const double *descent , 
-	     const struct fit_descriptor fdesc ,
-	     const void *data ,
-	     const double **W )
-{
-  ltemps tmp = { .n = fdesc.Nlogic , .p = f1.fparams , .xi = descent , .f2 = f2 ,
-		 .fdesc = &fdesc , .W = W , .data = data } ;
-  // perform a "backtracking line search" initially
-  // do a rough search 100000 -> 1E-16 for abest step 10
-  // the point is that we bracket the minimum between abest/10 and abest*10 for a better line search
-  const double fac = 0.1 ;
-  double min = 123456789 , abest = 1E-15 , atrial = 1E5 ;
-  while( atrial > 1E-15 ) {
-    atrial *= fac ;
-    register double trial = ntrialf( tmp , atrial ) ;
-    if( isnan( trial ) ) continue ;
-    if( isinf( trial ) ) continue ;
-    if( trial < min ) {
-      abest = atrial ;
-      min = trial ;
-    }
-  }
-  // we know that f(abest*fac) > f(abest) < f(abest/fac) but this isn't very symmetric
-  // as they differ by orders of magnitude so we increment the upper edge by factors of
-  // abest*fac with the idea that likely one iteration here will be enough
-  double aup = abest , fup = min ;
-  while( (fup-min) < 1E-15 ) {
-    aup += abest*fac ;
-    fup = ntrialf( tmp , aup ) ;
-  }  
-  double xmin = 0 ;
-  nline_NR( tmp , abest*fac , abest , aup , &xmin , 1E-7 ) ;
-  return xmin ;
-}
-
 // gets minus the derivative of the \chi^2 function i.e. the descent direction
 void
 get_gradient( double *grad ,
@@ -290,6 +251,140 @@ get_gradient( double *grad ,
     }
     grad[i] *= 2 ;
   }
+}
+
+// gets minus the derivative of the \chi^2 function i.e. the descent direction
+void
+get_gradient2( double *grad ,
+	       const double **W ,
+	       const int Nlogic ,
+	       const struct ffunction f )
+{
+  size_t Nsum = f.N ;
+  switch( f.CORRFIT ) {
+  case UNWEIGHTED : case UNCORRELATED : break ;
+  case CORRELATED : Nsum = f.N * f.N ; break ;
+  }
+  double y[ Nsum ] ; 
+  for( int i = 0 ; i < Nlogic ; i++ ) {
+    switch( f.CORRFIT ) {
+    case UNWEIGHTED :
+      for( int j = 0 ; j < f.N ; j++ ) {
+	y[j] = -f.df[i][j] * f.f[j] ; 
+      }
+      break ;
+    case UNCORRELATED :
+      for( int j = 0 ; j < f.N ; j++ ) {
+	y[j] = -f.df[i][j] * W[0][j] * f.f[j] ; 
+      }
+      break ;
+    case CORRELATED :
+      for( int j = 0 ; j < f.N ; j++ ) {
+	for( int k = 0 ; k < f.N ; k++ ) {
+	  y[k+f.N*j] = -f.df[i][j] * W[j][k] * f.f[k] ; 
+	}
+      }
+      break ;
+    }
+    grad[i] = kahan_summation( y , Nsum ) ;
+    if( f.Prior[i].Initialised == true ) {
+      grad[i] -= ( f.fparams[i] - f.Prior[i].Val ) / 
+	( f.Prior[i].Err * f.Prior[i].Err ) ;
+    }
+    grad[i] *= 2 ;
+  }
+}
+
+// backtracking line search and then golden ratio improvement as we know alpha is positive
+// for the routines that will be calling this function
+double
+line_search( struct ffunction *f2 ,
+	     const struct ffunction f1 ,
+	     const double *der ,
+	     const double *descent , 
+	     const struct fit_descriptor fdesc ,
+	     const void *data ,
+	     const double **W )
+{
+  ltemps tmp = { .n = fdesc.Nlogic , .p = f1.fparams , .xi = descent , .f2 = f2 ,
+		 .fdesc = &fdesc , .W = W , .data = data } ;
+  const double f0 = ntrialf( tmp , 0.0 ) ;
+  double dphi0 = 0 ;
+  for( int i = 0 ; i < tmp.n ; i++ ) {
+    dphi0 -= der[i]*descent[i] ;
+  }
+  // perform a "backtracking line search" initially
+  // do a rough search 100000 -> 1E-16 for abest step 10
+  // the point is that we bracket the minimum between abest/10 and abest*10 for a better line search
+  const double fac = 0.1 ;
+  double min = 123456789 , abest = 1E-15 , atrial = 1E5 ;
+  while( atrial > 2E-16 ) {
+    atrial *= fac ;
+    register double trial = ntrialf( tmp , atrial ) ;    
+    if( isnan( trial ) ) continue ;
+    if( isinf( trial ) ) continue ;
+    if( trial < min ) {
+      abest = atrial ;
+      min = trial ;
+      // if we satisfy the Armijo we just leave
+      if( trial <= f0 + 0.0001*atrial*dphi0 ) break ;
+    }
+  }
+  // we know that f(abest*fac) > f(abest) < f(abest/fac) but this isn't very symmetric
+  // as they differ by orders of magnitude so we increment the upper edge by factors of
+  // abest*fac with the idea that likely one iteration here will be enough
+  double aup = abest , fup = min ;
+  while( (fup-min) < 2E-16 ) {
+    aup += abest*fac ;
+    fup = ntrialf( tmp , aup ) ;
+  }
+  double xmin = 0 ;
+  nline_NR( tmp , abest*fac , abest , aup , &xmin , 1E-5 ) ;
+  return xmin ;
+}
+
+// backtracking line search and then golden ratio improvement as we know alpha is positive
+// for the routines that will be calling this function
+double
+line_search2( struct ffunction *f2 ,
+	      const struct ffunction f1 ,
+	      const double *der ,
+	      const double *descent , 
+	      const struct fit_descriptor fdesc ,
+	      const void *data ,
+	      const double **W )
+{
+  ltemps tmp = { .n = fdesc.Nlogic , .p = f1.fparams , .xi = descent , .f2 = f2 ,
+		 .fdesc = &fdesc , .W = W , .data = data } ;
+
+
+ // perform a "backtracking line search" initially
+  // do a rough search 100000 -> 1E-16 for abest step 10
+  // the point is that we bracket the minimum between abest/10 and abest*10 for a better line search
+  const double fac = 0.1 ;
+  double min = 123456789 , abest = 1E-15 , atrial = 1E5 ;
+  while( atrial > 2E-16 ) {
+    atrial *= fac ;
+    register double trial = ntrialf( tmp , atrial ) ;    
+    if( isnan( trial ) ) continue ;
+    if( isinf( trial ) ) continue ;
+    if( trial < min ) {
+      abest = atrial ;
+      min = trial ;
+
+    }
+  }
+  // we know that f(abest*fac) > f(abest) < f(abest/fac) but this isn't very symmetric
+  // as they differ by orders of magnitude so we increment the upper edge by factors of
+  // abest*fac with the idea that likely one iteration here will be enough
+  double aup = abest , fup = min ;
+  while( (fup-min) < 2E-16 ) {
+    aup += abest*fac ;
+    fup = ntrialf( tmp , aup ) ;
+  }
+  double xmin = 0 ;
+  nline_NR( tmp , abest*fac , abest , aup , &xmin , 1E-5 ) ;
+  return xmin ;
 }
 
 #ifdef BRENT

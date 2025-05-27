@@ -63,7 +63,7 @@ average_equivalent( struct input_params *Input )
     #endif
   }
 
-  printf( "SOrting\n" ) ;
+  printf( "Sorting\n" ) ;
 
 #ifdef INSERTION
   // sort the data

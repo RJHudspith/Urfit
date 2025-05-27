@@ -8,9 +8,7 @@
 #include "ffunction.h"
 #include "line_search.h"
 
-#include <assert.h>
-
-//#define VERBOSE
+#define VERBOSE
 
 #ifdef VERBOSE
 // have a look at the hessian mayhaps
@@ -41,35 +39,30 @@ BFGS_iter( void *fdesc ,
   size_t iters = 0 ;
   const size_t BFGSMAX = 8000 ;
 
-  // allocate the fitfunction
-  struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , Fit -> f.N ) ;
-  copy_ffunction( &f2 , Fit -> f ) ;
-
-  // get priors
-  f2.Prior = Fit -> f.Prior = Fit -> Prior ;
-
   // inverse hessian estimate for initial guess set for now to be the identity matrix
   double H[ Fit -> Nlogic ][ Fit -> Nlogic ] ;  
   Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
   Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
+
+  // allocate the fitfunction
+  struct ffunction f2 = allocate_ffunction( Fit -> Nlogic , Fit -> f.N ) ;
+  copy_ffunction( &f2 , Fit -> f ) ;
+  f2.Prior = Fit -> f.Prior = Fit -> Prior ;
 
   // array temporaries of gradients and things
   double grad[ Fit -> Nlogic ] , s[ Fit -> Nlogic ] , p[ Fit -> Nlogic ] ;
   double y[ Fit -> Nlogic ] , Hy[ Fit -> Nlogic ] ;
   get_gradient( grad , W , Fit ) ;
 
-  // set initial Hessian to be the identity
+  // set initial (inverse of the) Hessian to be the identity
   for( int i = 0 ; i < Fit->Nlogic ; i++ ) {
     memset( H[i] , 0. , Fit->Nlogic*sizeof(double) ) ;
-    H[i][i] = 1. ;
+    H[i][i] = 1.0 ; //(grad[i]*grad[i]) ;
   }
 
-  double chisq_diff = 10 , chiprev = 123456789 , chinew , alpha = 1 ;
+  double chisq_diff = 10 , chiprev = 123456789 , chinew ;
   while( chisq_diff > TOL && iters < BFGSMAX ) {
     // update f which has the gradient direction in
-    chinew = Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
-    chisq_diff = fabs(chinew-chiprev) ;   
-    chiprev = chinew ;
     // obtain direction P = -H_{ij}\Delta_j 
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
       register double sum = 0. ;
@@ -79,7 +72,7 @@ BFGS_iter( void *fdesc ,
       p[i] = sum ;
     }
     // line search in this direction & set s = alpha*p and x = x + s
-    alpha = line_search( &f2 , Fit -> f , p , *Fit , data , W ) ;
+    const double alpha = line_search( &f2 , Fit -> f , grad , p , *Fit , data , W ) ;
     for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
       s[i] = alpha*p[i] ;
       Fit -> f.fparams[i] += s[i] ;
@@ -87,9 +80,12 @@ BFGS_iter( void *fdesc ,
     // recompute gradients and put in y = \Del
     Fit -> F( Fit -> f.f , data , Fit -> f.fparams ) ;
     Fit -> dF( Fit -> f.df , data , Fit -> f.fparams ) ;
+    chinew = Fit -> f.chisq = compute_chisq( Fit -> f , W , Fit -> f.CORRFIT ) ;
+    chisq_diff = fabs(chinew-chiprev) ;   
+    chiprev = chinew ;
+    
     // get new descent direction (-grad hence all the fucking signs)
     get_gradient( y , W , Fit ) ;
-
     // update estimate for inverse Hessian
     double yHy = 0.0 , sty = 0 , sumy = 0 , sums = 0. ;
     for( int i = 0  ; i < Fit -> Nlogic ; i++ ) {
@@ -112,7 +108,7 @@ BFGS_iter( void *fdesc ,
     
     // NR values
     const double fad = 1./yHy , fac = 1./sty , fae = yHy ;
-    if( fac > sqrt(1E-15*sumy*sums) ) {
+    if( fac > sqrt(1E-16*sumy*sums) ) {
       // this is the magic vector that gets added to make it a full BFGS
       for( int i = 0 ; i < Fit -> Nlogic ; i++ ) {
 	y[i] = fac*s[i] - fad*Hy[i] ;
@@ -134,7 +130,7 @@ BFGS_iter( void *fdesc ,
   }
   // tell us how many iterations we hit
 #ifdef VERBOSE
-  if( iters == CGMAX ) {
+  if( iters == BFGSMAX ) {
     printf( "\n[BFGS] stopped by max iterations %zu \n" , iters ) ;
   } else {
     printf( "\n[BFGS] FINISHED in %zu iterations \n" , iters ) ;
@@ -144,7 +140,8 @@ BFGS_iter( void *fdesc ,
     printf( "PARAMS :: %e \n" , Fit -> f.fparams[i] ) ;
   }
 #endif
-  free_ffunction( &f2 , Fit -> Nlogic ) ; 
+  free_ffunction( &f2 , Fit -> Nlogic ) ;
+
   return iters ;
 }
 

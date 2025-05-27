@@ -47,7 +47,10 @@ evaluate_chisq( const int n ,
 		const double **W ,
 		const double *data )
 {
-  Fit -> F( f2 -> f , data , x ) ;
+  for( int j = 0 ; j < n ; j++ ) {
+    f2 -> fparams[j] = x[j] ;
+  }
+  Fit -> F( f2 -> f , data , f2 -> fparams ) ;
   return compute_chisq( *f2 , W , f2 -> CORRFIT ) ;
 }
 
@@ -101,15 +104,15 @@ int simplex_iter( void *fdesc ,
   s[0].p = malloc( n*sizeof(double) ) ;
   memcpy( s[0].p , Fit->f.fparams , n*sizeof(double) ) ;
   s[0].feval = evaluate_chisq( n , s[0].p , &f2 , Fit , W , data ) ;
-  
+
   // probably there are smarter choices for these in the wild
   for( int i = 1 ; i < n+1 ; i++ ) {
     s[i].p = malloc( n*sizeof(double) ) ;
     for( int j = 0 ; j < n ; j++ ) {
       if( (i-1) == j ) {
-	s[i].p[j] = (1.0+0.025)*s[0].p[j] ;
+	s[i].p[j] = (1.0+i*0.025)*s[0].p[j] ;
       } else {
-	s[i].p[j] = 0.005 ;
+	s[i].p[j] = i*0.005 ;
       }
     }
     s[i].feval = evaluate_chisq( n , s[i].p , &f2 , Fit , W , data ) ;
@@ -139,20 +142,18 @@ int simplex_iter( void *fdesc ,
     bool doshrink = false ;
     // expansion
     if( fr < s[0].feval ) {
-      double xe[ n ] ;
       const double fe = trialx( n , xe , beta , xbar , xr , xbar , &f2 , Fit , W , data ) ;
       if( fe < fr ) {
 	replace( n , &s[n] , xe , fe ) ;
       } else {
 	replace( n , &s[n] , xr , fr ) ;
       }
-    } else { // s[n-1].feval > fxr >= s[0].feval 
+    } else { // s[n-1].feval > fxr >= s[0].feval      
       if( fr < s[n-1].feval ) {
 	replace( n , &s[n] , xr , fr ) ;
       } else { // fxr 
 	if( fr < s[n].feval ) {
 	  // outside contraction
-	  double xo[ n ] ;
 	  const double fo = trialx( n , xo , gamma , xbar , xr , xbar , &f2 , Fit , W , data ) ;
 	  if( fo <= fr ) {
 	    replace( n , &s[n] , xo , fo ) ;
@@ -161,7 +162,6 @@ int simplex_iter( void *fdesc ,
 	  }
 	} else {
 	  // inside contraction
-	  double xi[ n ] ;
 	  const double fi = trialx( n , xi , -gamma , xbar , xr , xbar , &f2 , Fit , W , data ) ;
 	  if( fi < s[n].feval ) {
 	    replace( n , &s[n] , xi , fi ) ;
@@ -179,7 +179,7 @@ int simplex_iter( void *fdesc ,
     }
   }
   
-  // copy back to guess vector x and set function return pointer fret
+  // copy back to guess vector x
   memcpy( Fit -> f.fparams , s[0].p , n*sizeof(double) ) ;
   Fit -> f.chisq = s[0].feval ;
   

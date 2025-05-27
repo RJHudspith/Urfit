@@ -61,5 +61,6 @@ compute_chisq( const struct ffunction f ,
       chisq += fac * fac ;
     }
   }
+  
   return chisq ;
 }

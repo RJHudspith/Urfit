@@ -80,8 +80,8 @@ an_wrapper( struct input_params *Input )
   case PCAC :
     return PCAC_analysis( Input ) ;
   case Qcorr :
-    //return fit_Qcorr( Input ) ;
-    return Qmoments( Input ) ;
+    return fit_Qcorr( Input ) ;
+    //return Qmoments( Input ) ;
     //return TraditionalQ( Input ) ;
     //return CumFromMom( Input ) ;
   case Qsusc :

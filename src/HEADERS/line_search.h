@@ -16,10 +16,22 @@ linmin( const int n ,
 double
 line_search( struct ffunction *f2 ,
 	     const struct ffunction f1 ,
+	     const double *der,
 	     const double *descent ,
 	     const struct fit_descriptor fdesc ,
 	     const void *data ,
 	     const double **W ) ;
+
+// my rougher backtrack+golden code
+double
+line_search2( struct ffunction *f2 ,
+	      const struct ffunction f1 ,
+	      const double *der,
+	      const double *descent ,
+	      const struct fit_descriptor fdesc ,
+	      const void *data ,
+	      const double **W ) ;
+
 
 // gets the derivative of the \chi^2 function
 void
