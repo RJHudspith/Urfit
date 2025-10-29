@@ -160,9 +160,11 @@ am__objects_1 = ./ANALYSIS/alphas.$(OBJEXT) \
 	./ANALYSIS/ZV.$(OBJEXT) ./ANALYSIS/sol.$(OBJEXT) \
 	./ANALYSIS/Qcorr_fixed.$(OBJEXT) \
 	./ANALYSIS/SpinOrbit.$(OBJEXT) ./ANALYSIS/Omega_fit.$(OBJEXT) \
-	./ANALYSIS/decay_wilson.$(OBJEXT)
+	./ANALYSIS/decay_wilson.$(OBJEXT) \
+	./ANALYSIS/write_resamples.$(OBJEXT) ./ANALYSIS/phi.$(OBJEXT)
 am__objects_2 = ./EFFMASS/blackbox.$(OBJEXT) \
-	./EFFMASS/effmass.$(OBJEXT) ./EFFMASS/gevp.$(OBJEXT)
+	./EFFMASS/effmass.$(OBJEXT) ./EFFMASS/gevp.$(OBJEXT) \
+	./EFFMASS/gevp_rooted.$(OBJEXT)
 am__objects_3 = ./FITS/alpha_D0.$(OBJEXT) \
 	./FITS/alpha_D0_multi.$(OBJEXT) ./FITS/fit_chooser.$(OBJEXT) \
 	./FITS/cosh.$(OBJEXT) ./FITS/exp_plusc.$(OBJEXT) \
@@ -278,13 +280,15 @@ am__depfiles_remade = ./$(DEPDIR)/URFIT-Mainfile.Po \
 	./ANALYSIS/$(DEPDIR)/nrqcd_baremass.Po \
 	./ANALYSIS/$(DEPDIR)/nrqcd_old.Po \
 	./ANALYSIS/$(DEPDIR)/nrqcd_slope.Po \
-	./ANALYSIS/$(DEPDIR)/pof.Po ./ANALYSIS/$(DEPDIR)/sol.Po \
-	./ANALYSIS/$(DEPDIR)/statpot.Po \
+	./ANALYSIS/$(DEPDIR)/phi.Po ./ANALYSIS/$(DEPDIR)/pof.Po \
+	./ANALYSIS/$(DEPDIR)/sol.Po ./ANALYSIS/$(DEPDIR)/statpot.Po \
 	./ANALYSIS/$(DEPDIR)/su2_shit.Po \
 	./ANALYSIS/$(DEPDIR)/sun_flow.Po \
 	./ANALYSIS/$(DEPDIR)/tetra_gevp.Po \
-	./ANALYSIS/$(DEPDIR)/udcb.Po ./EFFMASS/$(DEPDIR)/blackbox.Po \
-	./EFFMASS/$(DEPDIR)/effmass.Po ./EFFMASS/$(DEPDIR)/gevp.Po \
+	./ANALYSIS/$(DEPDIR)/udcb.Po \
+	./ANALYSIS/$(DEPDIR)/write_resamples.Po \
+	./EFFMASS/$(DEPDIR)/blackbox.Po ./EFFMASS/$(DEPDIR)/effmass.Po \
+	./EFFMASS/$(DEPDIR)/gevp.Po ./EFFMASS/$(DEPDIR)/gevp_rooted.Po \
 	./FITS/$(DEPDIR)/HALexp.Po ./FITS/$(DEPDIR)/HLBL_cont.Po \
 	./FITS/$(DEPDIR)/LargeNB.Po ./FITS/$(DEPDIR)/Nder.Po \
 	./FITS/$(DEPDIR)/Pexp.Po ./FITS/$(DEPDIR)/Qcorr_bessel.Po \
@@ -506,9 +510,9 @@ ANALYSIS_FILES = ./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/su2_shit.c ./ANALYSIS/binding_corr.c ./ANALYSIS/HAL.c \
 	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c ./ANALYSIS/sol.c \
 	./ANALYSIS/Qcorr_fixed.c ./ANALYSIS/SpinOrbit.c ./ANALYSIS/Omega_fit.c \
-	./ANALYSIS/decay_wilson.c
+	./ANALYSIS/decay_wilson.c ./ANALYSIS/write_resamples.c ./ANALYSIS/phi.c 
 
-EFFMASS_FILES = ./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
+EFFMASS_FILES = ./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c ./EFFMASS/gevp_rooted.c
 INIT_FILES = ./INIT/fake.c ./INIT/init.c
 FITS_FILES = ./FITS/alpha_D0.c ./FITS/alpha_D0_multi.c ./FITS/fit_chooser.c \
 	./FITS/cosh.c ./FITS/exp_plusc.c ./FITS/exp.c \
@@ -757,6 +761,10 @@ ANALYSIS/$(DEPDIR)/$(am__dirstamp):
 	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
 ./ANALYSIS/decay_wilson.$(OBJEXT): ANALYSIS/$(am__dirstamp) \
 	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
+./ANALYSIS/write_resamples.$(OBJEXT): ANALYSIS/$(am__dirstamp) \
+	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
+./ANALYSIS/phi.$(OBJEXT): ANALYSIS/$(am__dirstamp) \
+	ANALYSIS/$(DEPDIR)/$(am__dirstamp)
 EFFMASS/$(am__dirstamp):
 	@$(MKDIR_P) ./EFFMASS
 	@: > EFFMASS/$(am__dirstamp)
@@ -768,6 +776,8 @@ EFFMASS/$(DEPDIR)/$(am__dirstamp):
 ./EFFMASS/effmass.$(OBJEXT): EFFMASS/$(am__dirstamp) \
 	EFFMASS/$(DEPDIR)/$(am__dirstamp)
 ./EFFMASS/gevp.$(OBJEXT): EFFMASS/$(am__dirstamp) \
+	EFFMASS/$(DEPDIR)/$(am__dirstamp)
+./EFFMASS/gevp_rooted.$(OBJEXT): EFFMASS/$(am__dirstamp) \
 	EFFMASS/$(DEPDIR)/$(am__dirstamp)
 FITS/$(am__dirstamp):
 	@$(MKDIR_P) ./FITS
@@ -1110,6 +1120,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/nrqcd_baremass.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/nrqcd_old.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/nrqcd_slope.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/phi.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/pof.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/sol.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/statpot.Po@am__quote@ # am--include-marker
@@ -1117,9 +1128,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/sun_flow.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/tetra_gevp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/udcb.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./ANALYSIS/$(DEPDIR)/write_resamples.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./EFFMASS/$(DEPDIR)/blackbox.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./EFFMASS/$(DEPDIR)/effmass.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./EFFMASS/$(DEPDIR)/gevp.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./EFFMASS/$(DEPDIR)/gevp_rooted.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/HALexp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/HLBL_cont.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./FITS/$(DEPDIR)/LargeNB.Po@am__quote@ # am--include-marker
@@ -1471,6 +1484,7 @@ distclean: distclean-am
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_baremass.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_old.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_slope.Po
+	-rm -f ./ANALYSIS/$(DEPDIR)/phi.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/pof.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/sol.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/statpot.Po
@@ -1478,9 +1492,11 @@ distclean: distclean-am
 	-rm -f ./ANALYSIS/$(DEPDIR)/sun_flow.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/tetra_gevp.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/udcb.Po
+	-rm -f ./ANALYSIS/$(DEPDIR)/write_resamples.Po
 	-rm -f ./EFFMASS/$(DEPDIR)/blackbox.Po
 	-rm -f ./EFFMASS/$(DEPDIR)/effmass.Po
 	-rm -f ./EFFMASS/$(DEPDIR)/gevp.Po
+	-rm -f ./EFFMASS/$(DEPDIR)/gevp_rooted.Po
 	-rm -f ./FITS/$(DEPDIR)/HALexp.Po
 	-rm -f ./FITS/$(DEPDIR)/HLBL_cont.Po
 	-rm -f ./FITS/$(DEPDIR)/LargeNB.Po
@@ -1668,6 +1684,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_baremass.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_old.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/nrqcd_slope.Po
+	-rm -f ./ANALYSIS/$(DEPDIR)/phi.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/pof.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/sol.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/statpot.Po
@@ -1675,9 +1692,11 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./ANALYSIS/$(DEPDIR)/sun_flow.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/tetra_gevp.Po
 	-rm -f ./ANALYSIS/$(DEPDIR)/udcb.Po
+	-rm -f ./ANALYSIS/$(DEPDIR)/write_resamples.Po
 	-rm -f ./EFFMASS/$(DEPDIR)/blackbox.Po
 	-rm -f ./EFFMASS/$(DEPDIR)/effmass.Po
 	-rm -f ./EFFMASS/$(DEPDIR)/gevp.Po
+	-rm -f ./EFFMASS/$(DEPDIR)/gevp_rooted.Po
 	-rm -f ./FITS/$(DEPDIR)/HALexp.Po
 	-rm -f ./FITS/$(DEPDIR)/HLBL_cont.Po
 	-rm -f ./FITS/$(DEPDIR)/LargeNB.Po

@@ -55,9 +55,13 @@ fit_bags( struct input_params *Input )
 
   Input -> Data.Nsim = Input -> Data.Nsim/3 ;
   Input -> Data.Ntot = Input -> Data.Ntot/3 ;
-  
-  struct resampled *effmass = effective_mass( Input , LOGBWD_EFFMASS ) ;
-  
+
+  // compute an effective mass
+  effmass_type Type[ Input -> Data.Nsim ] ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    Type[i] = LOGBWD_EFFMASS ;
+  }
+  struct resampled *effmass = effective_mass( Input , Type ) ;
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     free( effmass[i].resampled ) ;
   }

@@ -14,8 +14,12 @@ nrqcd_analysis( struct input_params *Input )
 {
   size_t i ;
 
-  // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
+  // compute an effective mass
+  effmass_type Type[ Input -> Data.Nsim ] ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    Type[i] = ATANH_EFFMASS ;
+  }
+  struct resampled *effmass = effective_mass( Input , Type ) ;
   
   // free effective mass
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {

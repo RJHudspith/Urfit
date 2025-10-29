@@ -32,14 +32,17 @@ wall_local_analysis( struct input_params *Input )
   printf( "Effmass\n" ) ;
     
   // compute an effective mass ? TODO
-  struct resampled *effmass = effective_mass( Input , ASINH_EFFMASS ) ;
-
+  // compute an effective mass
+  effmass_type Type[ Input -> Data.Nsim ] ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    Type[i] = ATANH_EFFMASS ;
+  }
+  struct resampled *effmass = effective_mass( Input , Type ) ;
 #ifdef FIT_EFFMASS
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     equate( &Input -> Data.y[i] , effmass[i] ) ;
   }
 #endif
-
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     free( effmass[i].resampled ) ;
   }

@@ -115,10 +115,12 @@ pof_analysis( struct input_params *Input )
   fprintf( stdout , "Effective mass\n") ;
   
   // compute an effective mass
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
-
+  effmass_type Type[ Input -> Data.Nsim ] ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    Type[i] = ATANH_EFFMASS ;
+  }
+  struct resampled *effmass = effective_mass( Input , Type ) ;
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
-    //divide_constant( &Input -> Data.y[ i ] , 1E14 ) ;
     free( effmass[i].resampled ) ;
   }
   free( effmass ) ;
@@ -127,8 +129,6 @@ pof_analysis( struct input_params *Input )
     free( y[i].resampled ) ;
   }
   free( y ) ;
-
-  fprintf( stdout , "Fit?\n") ;
 
   // perform a fit ?
   const size_t Nsim_prev = Input -> Data.Nsim , Ntot_prev = Input -> Data.Ntot ;

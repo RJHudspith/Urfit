@@ -19,8 +19,8 @@
 //#define FIT_EFFMASS
 //#define PADE_LAPLACE
 
-#define EFFMASS_TYPE ACOSH_ITERATIVE_EFFMASS
-//#define EFFMASS_TYPE ASINH_ITERATIVE_EFFMASS
+//#define EFFMASS_TYPE ACOSH_ITERATIVE_EFFMASS
+#define EFFMASS_TYPE ASINH_ITERATIVE_EFFMASS
 //#define EFFMASS_TYPE ASINH_EFFMASS
 //#define EFFMASS_TYPE ACOSH_EFFMASS
 //#define EFFMASS_TYPE LOG_EFFMASS
@@ -183,18 +183,26 @@ correlator_analysis( struct input_params *Input )
 #ifdef PADE_LAPLACE
   boot_pade_laplace( Input ) ;
 #endif
-
-  /*
-  // average 1 and 2
-  for( i = 0 ; i < Input -> Data.Ndata[0] ; i++ ) {
-    add( &Input -> Data.y[i] , Input -> Data.y[i+Input -> Data.Ndata[0]]) ;
-    divide_constant(  &Input -> Data.y[i] , 2 ) ;
-  }
-  */
   
-  // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , EFFMASS_TYPE ) ; 
-
+  // compute an effective mass
+  effmass_type Type[ Input -> Data.Nsim ] ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    switch( Input -> Traj[i].Fold ) {
+    case PLUS_PLUS :
+    case MINUS_MINUS :
+      Type[i] = ACOSH_ITERATIVE_EFFMASS ;
+      break ;
+    case PLUS_MINUS :
+    case MINUS_PLUS :
+      Type[i] = ASINH_ITERATIVE_EFFMASS ;
+      break ;
+    default :
+      Type[i] = ATANH_EFFMASS ;
+      break ;
+    }
+  }
+  struct resampled *effmass = effective_mass( Input , Type ) ;
+  
 #ifdef FIT_EFFMASS
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     equate( &Input -> Data.y[i] , effmass[i] ) ;
@@ -236,7 +244,6 @@ correlator_analysis( struct input_params *Input )
   if( Input -> Fit.Fitdef == PP_AA_WW ||
       Input -> Fit.Fitdef == PP_AA ||
       Input -> Fit.Fitdef == PPAA ) {
-
     FILE *massfile = fopen( "massfits.dat" , "w" ) ;
     for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
       write_fitmass_graph( massfile , Fit[0] ,
@@ -244,52 +251,36 @@ correlator_analysis( struct input_params *Input )
 			   Input -> Traj[i].Fit_High ) ;
     }
     fclose( massfile ) ;
-
-
     struct resampled Mass = init_dist( &Fit[0] ,
 				       Fit[0].NSAMPLES ,
 				       Fit[0].restype ) ;
-
-
     write_flat_dist( &Fit[0] , &Fit[0] , 1 , "Mass.flat" ) ;
-    
     struct resampled dec = decay( Fit , *Input , 0 , 2 ) ;
-
     write_flat_dist( &dec , &dec , 1 , "Decay.flat" ) ;
-
     divide( &Fit[0] , dec ) ;
-
     raise( &Fit[0] , 2 ) ;
-    
     printf( "(M/F)^2 %e %e \n" , Fit[0].avg , Fit[0].err ) ;
-
     write_flat_dist( &Fit[0] , &Fit[0] , 1 , "MovFsq.flat" ) ;
-
-
     equate( &dec , Fit[2] ) ;
     mult( &dec , Fit[1] ) ;
     printf( "<AP> %e %e \n" , dec.avg , dec.err ) ;
-
     //////////////// PCAC ? /////////////////////
     // is d_t A_t^P P^W / 2P^L P^W
     // which I make
     //
     // m_\pi/2 | A^L/P^L |
     equate( &dec , Fit[2] ) ;
-
     printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
     divide( &dec , Fit[1] ) ;
     printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
     mult( &dec , Mass ) ;
     printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
     mult_constant( &dec , 0.5 ) ;
-
     printf( "PCAC %e %e \n" , dec.avg , dec.err ) ;
-    
     free( dec.resampled ) ;
   }
 
-  // compute a decay constant
+  // compute a decay constant for the COSH?
   if( Input -> Fit.Fitdef == COSH ) {
     struct resampled dec = decay( Fit , *Input , 1 , 0 ) ;
     free( dec.resampled ) ;
@@ -298,33 +289,19 @@ correlator_analysis( struct input_params *Input )
   // write out a flat file
   if( Input -> Fit.Fitdef == EXP ||
       Input -> Fit.Fitdef == COSH ||
-      Input -> Fit.Fitdef == SINH ) {
+      Input -> Fit.Fitdef == SINH ||
+      Input -> Fit.Fitdef == COSH_ASYMM 
+      ) {
+    if( Input -> Data.Nsim == 2 ) {
+      struct resampled dec = decay_AP( Fit , *Input , 1 , 2 , 0 ) ;
+      write_flat_dist( &dec , &dec , 1 , "Decay.flat" ) ;
+      free( dec.resampled ) ;
+    }
     
     struct resampled mpi2 = init_dist( NULL ,
 				       Fit[1].NSAMPLES ,
 				       Fit[1].restype ) ;
     write_flat_dist( &Fit[1] , &mpi2 , 1 , "Mass_0.flat" ) ;
-    #if 0
-    size_t shift = 0 , j ;
-    for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
-      for( j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
-	double psq = 0 ;
-	size_t mu ;
-	for( mu = 0 ; mu < 3 ; mu++ ) {
-	  const double ptilde = sin( Input -> Traj[0].mom[mu]*2.*M_PI/
-				     Input -> Traj[0].Dimensions[mu] ) ;
-	  psq += ptilde*ptilde ;
-	}
-	equate_constant( &mpi2 , 1./0.1318 , Fit[1].NSAMPLES , Fit[1].restype  ) ;
-	//equate_constant( &mpi2 , psq , Fit[1].NSAMPLES , Fit[1].restype ) ;
-	char str[256] ;
-	sprintf( str , "Mass_%zu.flat" , j+i*2*Input->Fit.N ) ;
-	write_flat_dist( &Fit[j+1+i*2*Input -> Fit.N] , &mpi2 , 1 , str ) ;
-      }
-    }
-    free( mpi2.resampled ) ;
-    #endif
-
     FILE *massfile = fopen( "massfits.dat" , "w+a" ) ;
     for( size_t i = 0 ; i < Input -> Data.Nsim ; i++ ) {
       for( size_t j = 0 ; j < 2*Input -> Fit.N ; j+= 2 ) {
@@ -335,16 +312,6 @@ correlator_analysis( struct input_params *Input )
       shift += Input -> Data.Ndata[i] ;
     }
     fclose( massfile ) ;
-
-    struct resampled Omega = init_dist( NULL ,
-					Fit[0].NSAMPLES ,
-					Fit[0].restype ) ;
-
-    equate_constant( &Omega , 1.67245 , Fit[0].NSAMPLES , Fit[0].restype ) ;
-    divide( &Omega , Fit[1] ) ;
-    fprintf( stdout , "ainverse %f %f\n" , Omega.avg , Omega.err ) ; 
-    
-    free( Omega.resampled ) ;
   }
 
     // write out a flat file
@@ -367,6 +334,20 @@ correlator_analysis( struct input_params *Input )
     }
     fclose( massfile ) ;
     free( mpi2.resampled ) ;
+  }
+
+  if( Input -> Fit.Fitdef == COSH_ASYMM ) {
+    FILE *massfile = fopen( "massfits.dat" , "w+a" ) ;
+    size_t i , j ;
+    for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+      for( j = 0 ; j < 2 ; j++ ) {
+	write_fitmass_graph( massfile , Fit[j*2+1] ,
+			     Input -> Traj[i].Fit_Low ,
+			     Input -> Traj[i].Fit_High ) ;
+      }
+      shift += Input -> Data.Ndata[i] ;
+    }
+    fclose( massfile ) ;
   }
   
   free_fitparams( Fit , Input -> Fit.Nlogic ) ;

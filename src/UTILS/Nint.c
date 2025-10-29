@@ -21,14 +21,14 @@ simp_eval( const double *fparams ,
 {
   struct x_desc xdesc = { x , Data.LT[shift] , Fit.N , Fit.M } ;
 
-  double sum = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+  double sum = fdesc.func( xdesc , fparams , 2 ) ; //Fit.map[shift].bnd ) ;
 
   xdesc.X = x+h/2. ;
   
-  sum += 4*fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+  sum += 4*fdesc.func( xdesc , fparams , 2 ) ; //Fit.map[shift].bnd ) ;
 
   xdesc.X = x+h ; 
-  sum += fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+  sum += fdesc.func( xdesc , fparams , 2 ) ; //Fit.map[shift].bnd ) ;
 
   return h*sum ;
 }
@@ -59,19 +59,19 @@ adaptive_simpsons( const double *fparams ,
     while( nsteps < max_steps ) {
 
       xdesc.X = x ;
-      fx      = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+      fx      = fdesc.func( xdesc , fparams , 2 ) ; //Fit.map[shift].bnd ) ;
 
       xdesc.X = x+h/4. ;
-      fxph_4  = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+      fxph_4  = fdesc.func( xdesc , fparams , 2 ) ; //Fit.map[shift].bnd ) ;
 
       xdesc.X = x+h/2. ;
-      fxph_2  = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+      fxph_2  = fdesc.func( xdesc , fparams , 2 ) ; //Fit.map[shift].bnd ) ;
 
       xdesc.X = x+3*h/4. ;
-      fxp3h_4 = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+      fxp3h_4 = fdesc.func( xdesc , fparams , 2 ) ; //Fit.map[shift].bnd ) ;
 
       xdesc.X = x+h ;
-      fxph    = fdesc.func( xdesc , fparams , Fit.map[shift].bnd ) ;
+      fxph    = fdesc.func( xdesc , fparams , 2 ) ; //Fit.map[shift].bnd ) ;
 
       step  = h * ( fx + 4. * fxph_2 + fxph ) ;
       step2 = h * ( fx + 4. * ( fxph_4 + fxp3h_4 ) + 2. * fxph_2 + fxph ) / 2.0 ;
@@ -351,16 +351,19 @@ Nint_fit( struct resampled *f ,
   for( j = 0 ; j < f[0].NSAMPLES ; j++ ) {
     double fparams[ fdesc.Nparam ] ;
     for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-      fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
+      //fparams[ p ] = f[ Fit.map[shift].p[p] ].resampled[j] ;
+      fparams[ p ] = f[ p ].resampled[j] ;
+      //printf( "%f \n" , fparams[p] ) ;
     }
     Int.resampled[j] = adaptive_simpsons( fparams , Data , Fit ,
 					  fdesc , low , upp , eps ,
 					  shift ) ;
   }
+  
   // do the average
   double fparams[ fdesc.Nparam ] ;
   for( p = 0 ; p < fdesc.Nparam ; p++ ) {
-    fparams[ p ] = f[ Fit.map[shift].p[p] ].avg ;
+    fparams[ p ] = f[ p ].avg ; //f[ Fit.map[shift].p[p] ].avg ;
   }
   Int.avg = adaptive_simpsons( fparams , Data , Fit ,
 			       fdesc , low , upp , eps ,

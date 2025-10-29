@@ -31,6 +31,7 @@
 #include "sun_flow.h"
 #include "tetra_gevp.h"
 #include "Wall_Local.h"
+#include "write_resamples.h"
 #include "ZV.h"
 
 #include "nrqcd_baremass.h"
@@ -74,6 +75,8 @@ an_wrapper( struct input_params *Input )
     return nrqcd_analysis( Input ) ;
     //return nrqcd_old_analysis( Input ) ;
     //return nrqcd_slope_analysis( Input ) ;
+  case Phi :
+    return phi_analysis( Input ) ;
   case Pof :
     return pof_analysis( Input ) ;
     //return pof_analysis_fixed( Input ) ;
@@ -105,6 +108,8 @@ an_wrapper( struct input_params *Input )
   case Wflow :
     //return sun_wflow_analysis( Input ) ;
     return sun_set( Input ) ;
+  case Write :
+    return write_distributions( Input ) ;
   case ZV :
     return ZV_analysis( Input ) ;
   case Fit :

@@ -31,3 +31,32 @@ decay( const struct resampled *fitparams ,
   
   return result ;
 }
+
+// computes the decay constant for a given amplitude from our simultaneous fit
+// this one does < A | P >^2 / < P | P >
+struct resampled
+decay_AP( const struct resampled *fitparams ,
+	  const struct input_params Input ,
+	  const size_t Mass_idx  ,
+	  const size_t ALPW_idx ,
+	  const size_t PWPW_idx )
+{
+  struct resampled result = init_dist( &fitparams[ ALPW_idx ] ,
+				       fitparams[ ALPW_idx ].NSAMPLES ,
+				       fitparams[ ALPW_idx ].restype ) ;
+
+  const double vol_fac = 2./( Input.Traj[0].Dimensions[0] *
+			      Input.Traj[0].Dimensions[1] *
+			      Input.Traj[0].Dimensions[2] ) ;
+
+  // f = sqrt{ (2/V)*(A^LP^W)^2/(P^W|P^W*m_\pi) }
+  mult( &result , fitparams[ ALPW_idx ] ) ;
+  mult_constant( &result , vol_fac ) ;
+  divide( &result , fitparams[ Mass_idx ] ) ;
+  divide( &result , fitparams[ PWPW_idx ] ) ;
+  root( &result ) ;
+
+  fprintf( stdout , "Decay/Z_A :: %e,%e \n" , result.avg , result.err ) ;
+  
+  return result ;
+}

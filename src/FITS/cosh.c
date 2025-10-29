@@ -41,10 +41,10 @@ cosh_df( double **df , const void *data , const double *fparams )
   const struct data *DATA = (const struct data*)data ;
   size_t i , j ;
   for( i = 0 ; i < DATA -> n ; i++ ) {
-    for( j = 0 ; j < 2*DATA -> N ; j+= 2 ) {
+    for( j = 0 ; j < 2*DATA -> N ; j+= 2 ) {      
       const double t = DATA -> x[i] ;
       const double fwd = exp( -fparams[ DATA -> map[i].p[j+1] ] * t ) ;
-      const double bwd = exp( -fparams[ DATA -> map[i].p[j+1] ] * ( DATA -> LT[i] - t ) ) ;
+      const double bwd = exp( -fparams[ DATA -> map[i].p[j+1] ] * ( DATA -> LT[i] - t ) ) ;      
       df[ DATA -> map[i].p[j+0] ][i] = fwd + bwd ;
       df[ DATA -> map[i].p[j+1] ][i] = -fparams[ DATA -> map[i].p[j] ] *
 	( t * fwd + ( DATA -> LT[i] - t ) * bwd ) ;

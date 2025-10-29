@@ -149,15 +149,17 @@ time_fold( struct resampled *sample ,
     break ;
   case PLUS_MINUS :
     sample[0].resampled[meas] = part( C[0] ) ;
-    for( t = 1 ; t < L2 ; t++ ) {
+    for( t = 1 ; t < L2-1 ; t++ ) {
       sample[t].resampled[meas] = 0.5 * part( C[t] - C[LT-t] ) ;
     }
+    sample[t].resampled[meas] = C[t] ;
     break ;
   case MINUS_PLUS :
     sample[0].resampled[meas] = -part( C[0] ) ;
-    for( t = 1 ; t < L2 ; t++ ) {
+    for( t = 1 ; t < L2-1 ; t++ ) {
       sample[t].resampled[meas] = -0.5 * part( C[t] - C[LT-t] ) ;
     }
+    sample[t].resampled[meas] = -C[t] ;
     break ;
   case MINUS_MINUS :
     sample[0].resampled[meas] = -part( C[0] ) ;

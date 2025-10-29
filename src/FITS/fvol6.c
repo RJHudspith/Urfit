@@ -6,47 +6,37 @@
 
 #include "Nder.h"
 
-#define ASQ
+static const double MPIL[ 15 ] = {
+  3.5997872, 3.54, 3.4590432,
+  3.442263, 3.5079968,
+  3.704123, 3.4551776,
+  3.476592,
+  3.6751712,
 
-//#define WITH_COARSE
-
-static const double MPIL[ 7 ] = {
-#ifdef WITH_COARSE
-  3.925310162857608,
-#endif
-  4.553798776021403,
-#ifdef WITH_LOW_MPIL
-  3.2893626608991835,
-#endif
-  4.37582088369264, 5.485644183071164,
-  4.507345118239786, 4.791676434717644
+  10000,19999,19999,19999,19999,19999
 } ;
 
-static const double Aval[ 7 ] = {
-#ifdef WITH_COARSE
-  0.151,
-#endif
-  0.1207,
-#ifdef WITH_LOW_MPIL
-  0.1202,
-#endif
-  0.1184, 0.1189,
-  0.0888, 0.0872
+static const double Asq[ 15 ] = {
+  0.36730945821854916, 0.36730945821854916, 0.36730945821854916,
+  0.25767218944059367, 0.25767218944059367,
+  0.1625910509885536, 0.1625910509885536,
+  0.10078105316200554,
+  0.06376900316294255,
+
+  //
+  //0,//0,0,
+  0.36730945821854916, 0.25767218944059367, 0.1625910509885536, 0.10078105316200554, 0.06376900316294255, 0.0
 } ;
 
-static const double xcont = 0.135*0.135 ;
+static const double xcont = 0.07810406884989159 ;
 
 double
 ffvol6( const struct x_desc X , const double *fparams , const size_t Npars )
 {  
   return fparams[0] * ( 1 + fparams[1]*(X.X-xcont)
 			+fparams[2]*exp( -MPIL[Npars] ) //MPIL[Npars]
-			#ifdef ASQ
-			+fparams[3]*Aval[Npars]*Aval[Npars]
-			#else
-			+fparams[3]*Aval[Npars]
-			#endif
-			+fparams[4]*Aval[Npars]*Aval[Npars]*Aval[Npars]*Aval[Npars]
+			+fparams[3]*Asq[Npars]
+			+fparams[4]*Asq[Npars]*Asq[Npars]
 			) ;
 }
 
@@ -82,25 +72,14 @@ fvol6_df( double **df , const void *data , const double *fparams )
     const double fv1 = fparams[ DATA -> map[ i ].p[ 2 ] ] ;
     const double B   = fparams[ DATA -> map[ i ].p[ 3 ] ] ;
     const double C   = fparams[ DATA -> map[ i ].p[ 4 ] ] ;
-    #ifdef ASQ
-    const double asq = Aval[i]*Aval[i] ;
-    #else
-    const double asq = Aval[i] ;
-    #endif
-    const double a4 = Aval[i]*Aval[i]*Aval[i]*Aval[i] ;
+    const double asq = Asq[i] ;
+    const double a4  = Asq[i]*Asq[i] ;
 
     df[ DATA -> map[ i ].p[ 0 ] ][i] = ( 1 + mpi*(X.X-xcont) + fv1*exp( -MPIL[i] )+ B*asq + C*a4 ) ; 
     df[ DATA -> map[ i ].p[ 1 ] ][i] = A * (X.X-xcont) ;
-    df[ DATA -> map[ i ].p[ 2 ] ][i] = A * exp( -MPIL[i] )/MPIL[i] ;
+    df[ DATA -> map[ i ].p[ 2 ] ][i] = A * exp( -MPIL[i] ) ; ///MPIL[i] ;
     df[ DATA -> map[ i ].p[ 3 ] ][i] = A * asq ;
     df[ DATA -> map[ i ].p[ 4 ] ][i] = A * a4 ;
-    /*
-    #ifdef ASQ
-    df[ DATA -> map[ i ].p[ 4 ] ][i] = A * B * 2* fparams[ DATA -> map[ i ].p[ 4 ] ] ;
-    #else
-    df[ DATA -> map[ i ].p[ 4 ] ][i] = A * B ;
-    #endif
-    */
   }
   return ;
 }

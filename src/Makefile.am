@@ -18,9 +18,9 @@ ANALYSIS_FILES=./ANALYSIS/alphas.c ./ANALYSIS/an_wrapper.c \
 	./ANALYSIS/su2_shit.c ./ANALYSIS/binding_corr.c ./ANALYSIS/HAL.c \
 	./ANALYSIS/pof.c ./ANALYSIS/HLBL.c ./ANALYSIS/ZV.c ./ANALYSIS/sol.c \
 	./ANALYSIS/Qcorr_fixed.c ./ANALYSIS/SpinOrbit.c ./ANALYSIS/Omega_fit.c \
-	./ANALYSIS/decay_wilson.c
+	./ANALYSIS/decay_wilson.c ./ANALYSIS/write_resamples.c ./ANALYSIS/phi.c 
 
-EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c
+EFFMASS_FILES=./EFFMASS/blackbox.c ./EFFMASS/effmass.c ./EFFMASS/gevp.c ./EFFMASS/gevp_rooted.c
 
 INIT_FILES=./INIT/fake.c ./INIT/init.c
 

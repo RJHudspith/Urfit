@@ -30,6 +30,11 @@ binding_corr_analysis( struct input_params *Input )
   const size_t N = Input -> Fit.N ;
   const size_t LT = Input -> Data.Ndata[0] ;
 
+  effmass_type Type[ Input -> Data.Nsim ] ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    Type[i] = ATANH_EFFMASS ;
+  }
+
   for( j = 0 ; j < LT ; j++ ) {
     mult( &Input -> Data.y[ j+(Input -> Data.Nsim-2)*LT ] ,
 	  Input -> Data.y[ j+(Input -> Data.Nsim-1)*LT ] ) ;
@@ -80,9 +85,8 @@ binding_corr_analysis( struct input_params *Input )
   Input -> Data.Nsim = N ;
   Input -> Data.Ntot = N*Input->Data.Ndata[0] ;
     
-  // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
-
+  // compute an effective mass
+  struct resampled *effmass = effective_mass( Input , Type ) ;
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     free( effmass[i].resampled ) ;
   }
@@ -149,8 +153,12 @@ binding_corr_analysis2( struct input_params *Input )
     divide( &Input -> Data.y[ j ] , Input->Data.y[j+LT] ) ;
   }
 
-  // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , LOG_EFFMASS ) ;
+  // compute an effective mass
+  effmass_type Type[ Input -> Data.Nsim ] ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    Type[i] = ATANH_EFFMASS ;
+  }
+  struct resampled *effmass = effective_mass( Input , Type ) ;
 
   // perform a fit
   double Chi ;

@@ -27,8 +27,8 @@
 #include "fvol5.h"
 #include "fvol6.h"
 
-//#include "fvol_delta.h"
-#include "fvol_delta_fitt0v2.h"
+#include "fvol_delta.h"
+//#include "fvol_delta_fitt0v2.h"
 #include "c4c7.h"
 #include "HALexp.h"
 #include "HLBL_cont.h"
@@ -103,7 +103,7 @@ get_Nparam( const struct fit_info Fit )
  case FVOL2 : return 9 ; //return 4 ;
  case FVOL3 : return 5 ;
  case FVOL4 : return 5 ;
- case FVOL5 : return 4 ;
+ case FVOL5 : return 5 ;
  case FVOL6 : return 5 ;
  case FVOL_DELTA : return 14 ;
  case PADE : return Fit.N + Fit.M ;
@@ -115,7 +115,7 @@ get_Nparam( const struct fit_info Fit )
  case PP_AA_EXP : return 5 ;
  case PP_AA_WW : return 5 ;
  case PP_AA_WW_R2 : return 5 + 2*Fit.N ;
- case QCORR_BESSEL : return 2 ;
+ case QCORR_BESSEL : return 2*Fit.N ;
  case QSLAB_FIXED : return 2 ;
  case QSLAB : return 3 ;
  case QSUSC_SU2 : return 3 ;
@@ -289,11 +289,11 @@ init_fit( const struct data_info Data ,
     fdesc.guesses    = fvol6_guesses ;
     break ; 
   case FVOL_DELTA :
-    fdesc.func       = ffvol_deltav2 ;
-    fdesc.F          = fvol_deltav2_f ;
-    fdesc.dF         = fvol_deltav2_df ;
-    fdesc.d2F        = fvol_deltav2_d2f ;
-    fdesc.guesses    = fvol_deltav2_guesses ;
+    fdesc.func       = ffvol_delta ;
+    fdesc.F          = fvol_delta_f ;
+    fdesc.dF         = fvol_delta_df ;
+    fdesc.d2F        = fvol_delta_d2f ;
+    fdesc.guesses    = fvol_delta_guesses ;
     break ;
   case HALEXP :
     fdesc.func       = fHALexp ;

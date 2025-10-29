@@ -3,6 +3,6 @@
 
 struct resampled *
 effective_mass( struct input_params *Input ,
-		const effmass_type type ) ;
+		const effmass_type type[] ) ;
 
 #endif

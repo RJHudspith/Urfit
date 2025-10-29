@@ -95,15 +95,34 @@ gen_ops( struct input_params *Input )
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
 	     spin_average , "SpinAve" , mpi2 , j ) ;
 
+      /*
       // computes x^1/2 / y
-      raise( &Input -> Data.y[j] , 0.5 ) ;
+      raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
       //mult_constant( &Input -> Data.y[j] , 12 ) ;
       //raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
       
       do_op( Input -> Data.y[j] ,
 	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
-	     divide , "x^2Dy^2" , mpi2 , j ) ;
+	     divide , "Divsq" , mpi2 , j ) ;
       //#endif
+      */
+
+      /*
+      // compute 8*y^2*x^2
+      raise( &Input -> Data.y[j] , 2 ) ;
+      raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
+      mult_constant( &Input -> Data.y[j] , 8 ) ;
+      do_op( Input -> Data.y[j] ,
+	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
+	     mult , "phi" , mpi2 , j ) ;
+      */
+      // compute x^2/y^2
+      raise( &Input -> Data.y[j] , 2 ) ;
+      raise( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 2 ) ;
+      mult_constant( &Input -> Data.y[j+Input -> Data.Ndata[0]] , 4*M_PI*M_PI ) ;
+      do_op( Input -> Data.y[j] ,
+	     Input -> Data.y[j+Input -> Data.Ndata[0]] ,
+	     divide , "rat" , mpi2 , j ) ;
     }
   }
   return SUCCESS ;

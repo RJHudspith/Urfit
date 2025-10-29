@@ -14,7 +14,7 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
-#define CONTINUOUS
+//#define CONTINUOUS
 
 static double
 get_rw( double *rwfac ,
@@ -24,7 +24,7 @@ get_rw( double *rwfac ,
   *rwfac = 0.0 ;
   size_t cidx ;
 
-  //fprintf( stdout , "searching for cnfg %zu\n" , cnfg ) ;
+  fprintf( stdout , "searching for cnfg %zu\n" , cnfg ) ;
 
 #ifndef CONTINUOUS
   while( fscanf( file , "%zu %le\n" , &cidx , rwfac ) != EOF ) {

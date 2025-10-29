@@ -12,6 +12,8 @@
 #include "resampled_ops.h"
 #include "bootstrap.h"
 
+#include "Nint.h"
+
 //#define SUBZERO
 
 //#define ZRESCALE
@@ -21,10 +23,10 @@ int
 fit_Qcorr( struct input_params *Input )
 {   
   size_t i , j , shift = 0 ;
-  const double fac = 1.0/ ( Input -> Traj[0].Dimensions[0] *
-			    Input -> Traj[0].Dimensions[1] *
-			    Input -> Traj[0].Dimensions[2] *
-			    Input -> Traj[0].Dimensions[3] ) ;
+  const double fac = 2*M_PI*M_PI/ ( Input -> Traj[0].Dimensions[0] *
+				    Input -> Traj[0].Dimensions[1] *
+				    Input -> Traj[0].Dimensions[2] *
+				    Input -> Traj[0].Dimensions[3] ) ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
       // as a function of R
@@ -33,13 +35,49 @@ fit_Qcorr( struct input_params *Input )
       //raise( &Input -> Data.y[j] , 2 ) ;
       //raise( &Input -> Data.y[j] , 0.5 ) ;
       // divide by V
-      mult_constant( &Input -> Data.y[j] , -fac ) ;
+      mult_constant( &Input -> Data.y[j] , -fac ) ; //*pow( Input -> Data.x[j].avg , 3 ) ) ;
     }
     shift = j ;
   }
+
+    double chisq ;
+  struct resampled *fit = fit_and_plot_and_Nint( *Input , &chisq ) ;
+
+#if 0
+  // full integral
+  struct resampled Ntot = Nint_pt( Input -> Data.x ,
+				   Input -> Data.y ,
+				   Input -> Data.Ndata[0] ,
+				   Input -> Data.x[ Input -> Data.Ndata[0]-2 ].avg ,
+				   true ) ;
+  printf( "Full integral %e %e\n" , Ntot.avg , Ntot.err ) ;
+  
+  struct resampled Nint = Nint_pt( Input -> Data.x ,
+				   Input -> Data.y ,
+				   Input -> Data.Ndata[0] ,
+				   Input -> Traj[0].Fit_Low ,
+				   true ) ;
   
   double chisq ;
   struct resampled *fit = fit_and_plot( *Input , &chisq ) ;
+  Input -> Fit.map = parammap( Input -> Data , Input -> Fit ) ;
+
+  
+  // integrate fit parameters
+  struct resampled Nfit = Nint_fit( fit ,
+				    Input -> Data ,
+				    Input -> Fit ,
+				    1000 ,
+				    Input -> Traj[0].Fit_Low ,
+				    1E-6 ,
+				    0 ) ;
+  add( &Nint , Nfit ) ;
+  mult_constant( &Nint , -1 ) ;
+  //raise( &Nint , 0.25 ) ;
+
+  printf( "Total susc %e +/- %e\n" , Nint.avg , Nint.err ) ;
+
+#endif
 
   free_fitparams( fit , Input -> Fit.Nlogic ) ;
   

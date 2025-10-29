@@ -331,7 +331,7 @@ fit_and_plot_and_Nint( struct input_params Input ,
   fprintf( stdout, "CHECK LINT %e %e %e\n" ,
 	   Input.Data.x[n].avg , LInt.avg , LInt.err ) ;
 
-  double stp = 1 ;
+  double stp = 0.1 ;
   const size_t N = (size_t)((64-Data.x[0].avg)/stp)+1 ;
   
   struct resampled *Y = malloc( N*sizeof( struct resampled ) ) ;
@@ -340,31 +340,26 @@ fit_and_plot_and_Nint( struct input_params Input ,
 
   // and then do the fit for the rest
   for( size_t j = 0 ; j < n ; j++ ) {
-    mult_constant( &Input.Data.y[j] ,
-		   pow( Input.Data.x[j].avg , 3 ) ) ;
-    printf( "Grand %e %e %e\n" , Input.Data.x[j].avg ,
-	    Input.Data.y[j].avg , Input.Data.y[j].err ) ;
+    mult_constant( &Input.Data.y[j] , pow( Input.Data.x[j].avg , 3 ) ) ;
+    printf( "Grand %e %e %e\n" , Input.Data.x[j].avg , Input.Data.y[j].avg , Input.Data.y[j].err ) ;
   }
 
   // and then do the fit for the rest
   idx=0 ;
   for( double x = Data.x[0].avg ; x < 64 ; x+=stp ) {
-    Y[idx] = extrap_fitfunc( fitparams , Data ,
-			     Input.Fit ,
-			     x , 0 ) ;
+    Y[idx] = extrap_fitfunc( fitparams , Data , Input.Fit , x , 0 ) ;
     X[idx].resampled = malloc( Y[idx].NSAMPLES*sizeof(double) ) ;
     equate_constant( &X[idx] , x , Y[idx].NSAMPLES , Y[idx].restype ) ;
-
-    //mult_constant( &Y[idx] , pow( x , 3 )/0.06426 ) ;
+    
     mult_constant( &Y[idx] , pow( x , 3 ) ) ;
-    printf( "Grand %e %e %e %e\n" , X[idx].avg , Y[idx].err_hi , Y[idx].avg , Y[idx].err_lo ) ;
+    printf( "Grand %e %e %e\n" , X[idx].avg , Y[idx].avg , Y[idx].err ) ;
     idx++ ;
   }
   
   for( n = 1 ; n < N ; n++ ) { 
     struct resampled Int = Nint( X , Y , n , true ) ;
     add( &Int , LInt ) ;
-    fprintf( stdout , "Gral %e %e %e %e\n" , X[n-1].avg , Int.err_hi , Int.avg , Int.err_lo ) ;
+    fprintf( stdout , "Gral %e %e %e\n" , X[n-1].avg , Int.avg , Int.err ) ;
     if( n == (N-1) ) {
       struct resampled mpi2 = init_dist( NULL ,
 					 Int.NSAMPLES ,

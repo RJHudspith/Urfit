@@ -133,7 +133,6 @@ acosh_effmass( struct resampled *effmass ,
   add( effmass , y3 ) ;
   divide( effmass , y2 ) ;
   mult_constant( effmass , 0.5 ) ;
-    
   // if it is still negative we set to zero
   if( acosh_range( *effmass ) == true ) {
     zero_effmass( effmass , y2 ) ;
@@ -239,7 +238,7 @@ iterative_mass( struct resampled *effmass ,
 // computes the effective mass and plots a graph of it
 struct resampled *
 effective_mass( struct input_params *Input ,
-		const effmass_type type )
+		const effmass_type Type[] )
 {
   make_xmgrace_graph( "effmass.agr" , "t/a" , "am\\seff" ) ;
   
@@ -247,6 +246,7 @@ effective_mass( struct input_params *Input ,
 
   size_t i , j , shift = 0 ;
   for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    const effmass_type type = Type[i] ;
     for( j = shift ; j < shift + Input -> Data.Ndata[i] ; j++ ) {
 
       effmass[j].NSAMPLES = Input -> Data.y[j].NSAMPLES ;
@@ -280,6 +280,9 @@ effective_mass( struct input_params *Input ,
 	case ATANH_EFFMASS :
 	  atanh_effmass( &effmass[j] ,
 			 Input -> Data.y[j-1] , Input -> Data.y[j+1] ) ;
+	  //if( Input -> Data.x[j].avg > Input -> Traj[i].Dimensions[3]/2 ) {
+	  //  mult_constant( &effmass[j] , -1 ) ;
+	  // }
 	  break ;
 	case ACOSH_EFFMASS :
 	  acosh_effmass( &effmass[j] ,

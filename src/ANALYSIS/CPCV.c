@@ -16,6 +16,7 @@ CVCP_analysis( struct input_params *Input )
   const size_t Ntot_prev = Input -> Data.Ntot ;
   const size_t Nsim_prev = Input -> Data.Nsim ;
 
+
   Input -> Data.Ntot /= 2 ;
   Input -> Data.Nsim /= 2 ;
 
@@ -33,9 +34,12 @@ CVCP_analysis( struct input_params *Input )
   
   printf( "Effmass\n" ) ;
   
-  // compute an effective mass 
-  struct resampled *effmass = effective_mass( Input , ASINH_EFFMASS ) ;
-
+  // compute an effective mass
+  effmass_type Type[ Input -> Data.Nsim ] ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    Type[i] = ATANH_EFFMASS ;
+  }
+  struct resampled *effmass = effective_mass( Input , Type ) ;
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     free( effmass[i].resampled ) ;
   }

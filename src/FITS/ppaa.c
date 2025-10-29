@@ -79,7 +79,7 @@ ppaa_f( double *f , const void *data , const double *fparams )
     }
     const struct x_desc X = { DATA -> x[i] , DATA -> LT[i] ,
 			      DATA -> N , DATA -> M } ;
-    f[i] = fppaa( X , fparams , DATA -> map[i].bnd ) - DATA -> y[i] ;
+    f[i] = fppaa( X , p , DATA -> map[i].bnd ) - DATA -> y[i] ;
   }
   return ;
 }
@@ -99,23 +99,23 @@ ppaa_df( double **df , const void *data , const double *fparams )
     for( j = 0 ; j < 3*DATA -> N ; j+=3 ) {
       const double t = DATA -> x[i] ;
       const double bck = DATA -> LT[i] - t ;
-      const double fwd = exp( -fparams[ j ] * t ) ;
-      const double bwd = exp( -fparams[ j ] * bck ) ;
+      const double fwd = exp( -fparams[ DATA -> map[ i ].p[j] ] * t ) ;
+      const double bwd = exp( -fparams[ DATA -> map[ i ].p[j] ] * bck ) ;
       
       switch( DATA -> map[i].bnd ) {
       case PLPL :
 	// derivative wrt mass
-	df[j+0][i] = -fparams[j+1] * fparams[j+1] * ( t * fwd + bck * bwd ) ;
+	df[ DATA -> map[ i ].p[j+0 ] ][i] = -fparams[ DATA -> map[ i ].p[j+1] ] * fparams[ DATA -> map[ i ].p[j+1] ] * ( t * fwd + bck * bwd ) ;
 	// derivative wrt amplitudes
-	df[j+1][i] = 2 * fparams[j+1] * ( fwd + bwd ) ;
-	df[j+2][i] = 0.0 ;
+	df[ DATA -> map[ i ].p[j+1 ] ][i] = 2 * fparams[ DATA -> map[ i ].p[j+1] ] * ( fwd + bwd ) ;
+	df[ DATA -> map[ i ].p[j+2 ] ][i] = 0.0 ;
 	break ;
       case PLAL :
 	// derivative wrt mass
-	df[j+0][i] = -fparams[j+1] * fparams[j+2] * ( t * fwd - bck * bwd ) ;
+	df[DATA -> map[ i ].p[j+0]][i] = -fparams[ DATA -> map[ i ].p[j+1] ] * fparams[ DATA -> map[ i ].p[j+2] ] * ( t * fwd - bck * bwd ) ;
 	// derivative wrt amplitudes
-	df[j+1][i] = fparams[j+2] * ( fwd - bwd ) ;
-	df[j+2][i] = fparams[j+1] * ( fwd - bwd ) ;
+	df[DATA -> map[ i ].p[j+1]][i] = fparams[ DATA -> map[ i ].p[j+2] ] * ( fwd - bwd ) ;
+	df[DATA -> map[ i ].p[j+2]][i] = fparams[ DATA -> map[ i ].p[j+1] ] * ( fwd - bwd ) ;
 	break ;
       }
     }

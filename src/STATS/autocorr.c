@@ -14,11 +14,11 @@
 
    Setting a cutoff point "n"
 
-   Tau(n) = 0.5 + Nsep * \sum_{T}^{n} R(T)
+   Tau(n) = 1 + 2*Nsep * \sum_{T}^{n} R(T)
 
    We estimate the error on Tau(T) by
 
-   S_E(n) = n * \sqrt( ( 0.5 + \sum_{t}^{n} R(T) ) / N ) 
+   S_E(n) = n * \sqrt( ( 1 + 2*\sum_{t}^{n} R(T) ) / N ) 
 
    The computation of C(T) is performed by convolution with FFTs
 

@@ -53,7 +53,7 @@ typedef enum { Raw , JackKnife , BootStrap } resample_type ;
 // file type we expect to read
 typedef enum { Corr_File , Distribution_File , Fake_File , Flat_File , GLU_Tcorr_File , GLU_File , GLU_Qmoment_File , Adler_File } file_type ;
 
-typedef enum { Adler , Alphas , Beta_crit , Binding_Corr , Correlator , Exceptional , Fit , Fpi_CLS , General , HLBL , HVP , KKops , KK_BK , Nrqcd , PCAC, Pof , Qcorr , Qsusc , Qslab , QslabFix , Ren_Rats , SpinOrbit, StaticPotential , TetraGEVP , TetraGEVP_Fixed , Wflow , Sol , ZV } analysis_type ;
+typedef enum { Adler , Alphas , Beta_crit , Binding_Corr , Correlator , Exceptional , Fit , Fpi_CLS , General , HLBL , HVP , KKops , KK_BK , Nrqcd , PCAC, Phi , Pof , Qcorr , Qsusc , Qslab , QslabFix , Ren_Rats , SpinOrbit, StaticPotential , TetraGEVP , TetraGEVP_Fixed , Wflow , Write , Sol , ZV } analysis_type ;
 
 // x-data descriptor
 struct x_desc {

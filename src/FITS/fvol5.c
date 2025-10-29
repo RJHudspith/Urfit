@@ -10,6 +10,7 @@
 //#define HIGH_LOOPS
 
 //#define ORDERA
+//#define SANSSU3
 
 static const double mpi = 0.1348 ;
 static const double mK  = 0.4942 ;
@@ -34,28 +35,83 @@ static const double phiK[ 16 ] = {
 
 static const double MKL[ 23 ] = {
   // A653, A654 , B650
-  5.08632, 5.45088 , 7.4208,
-  // U103, H101, H102, H105, X150
-  4.3269264, 5.82944, 6.12608, 6.4736, 8.055268, 9.6663216,
+  #ifndef SANSSU3
+  5.08632,
+  #endif
+  5.45088 , 7.4208,
+  // U103, H101, H102, H105, X150, N101
+  #ifndef SANSSU3
+  4.3269264, 5.82944,
+  #endif
+  6.12608, 6.4736, 8.055268, 9.6663216,
   // B450, X451
-  5.14016, 7.1212,
-  // H200, N202, N293, N200
-  4.3312, 6.44352, 6.91296, 7.23408, 10.0032,
+  #ifndef SANSSU3
+  5.14016,
+  #endif
+  7.1212,
+  // H200, N202, N203, N200, D200
+  #ifndef SANSSU3
+  4.3312, 6.44352,
+  #endif
+  6.91296, 7.23408, 10.0032,
+  // N300
+  #ifndef SANSSU3
+  5.07312,
+  #endif
+  -1, -1, -1, -1, -1, -1
+} ;
+
+static const double MPIL[ 23 ] = {
+  // A653, A654 , B650
+  #ifndef SANSSU3
+  5.08632,
+  #endif
+  3.99528, 4.1056,
+  // U103, H101, H102, H105, X150, N101
+  #ifndef SANSSU3
+  4.3269264, 5.82944,
+  #endif
+  4.9264, 3.88352, 4.873028, 5.832,
+  // B450, X451
+  #ifndef SANSSU3
+  5.14016,
+  #endif
+  4.418844,
+  // H200, N202 
+  #ifndef SANSSU3
+  4.3312, 6.44352,
+  #endif
+  //N203, N200, D200
+  5.40192, 4.43232, 4.16448,
+  #ifndef SANSSU3
   // N300
   5.07312,
+  #endif
   -1, -1, -1, -1, -1, -1
 } ;
 
 static const double asq[ 23 ] = {
-  0.2532819643738654,0.2532819643738654,0.2532819643738654,
-  0.19152593500567394,0.19152593500567394,0.19152593500567394,0.19152593500567394,0.19152593500567394,0.19152593500567394,
-  0.14965075255622193,0.14965075255622193,
-  0.10603283349102183,0.10603283349102183,0.10603283349102183,0.10603283349102183,0.10603283349102183,
+  #ifndef SANSSU3
+  0.2532819643738654,
+  #endif
+  0.2532819643738654,0.2532819643738654,
+  #ifndef SANSSU3
+  0.19152593500567394,0.19152593500567394,
+  #endif
+  0.19152593500567394,0.19152593500567394,0.19152593500567394,0.19152593500567394,
+  #ifndef SANSSU3
+  0.14965075255622193,
+  #endif
+  0.14965075255622193,
+  #ifndef SANSSU3
+  0.10603283349102183,0.10603283349102183,
+  #endif
+  0.10603283349102183,0.10603283349102183,0.10603283349102183,
+  #ifndef SANSSU3
   0.06370463879342395,
-
+  #endif
   0.2532819643738654, 0.19152593500567394, 0.14965075255622193, 0.10603283349102183, 0.06370463879342395,
   0.0
-  
 } ;
 
 static inline double
@@ -86,27 +142,28 @@ msqIQ0( const double phi , const double sub , const double MQL )
   if( MQL != -1.0 ) {
 #ifdef HIGH_LOOPS
     //fv += 4*phi*phi*fv_correction_k1( MQL ) ;
-    fv += 4*fv_correction_k1( MQL ) ;
+    fv += fv_correction_k1( MQL ) ;
 #else
     //fv += 4*phi*phi*exp( -MQL )*sqrt(M_PI/(2*MQL)) ;
-    fv += 4*exp( -MQL ) ; ///MQL ;
+    fv += exp( -MQL ) ; ///MQL ;
 #endif
   } 
-  return fv/(16*M_PI*M_PI) ; //(phi*phi*log(phi/musq) - sub + fv )/(16*M_PI*M_PI) ;
+  return fv ; //*4./(16*M_PI*M_PI) ; //(phi*phi*log(phi/musq) - sub + fv )/(16*M_PI*M_PI) ;
 }
 
 double
 ffvol5( const struct x_desc X , const double *fparams , const size_t Npars )
 {
-  const double FV = msqIQ0( phiK[Npars] , log( phiKcont / musq ) , MKL[ Npars ] )/phif ;
- 
+  const double FVK  = msqIQ0( phiK[Npars] , log( phiKcont / musq ) , MKL[ Npars ] ) ; ///phif ;
+  const double FVPI = msqIQ0( phiK[Npars] , log( phiKcont / musq ) , MPIL[ Npars ] ) ; ///phif ;
   return fparams[0] * ( 1 + fparams[1]*(X.X-phipicont)
-			+fparams[2]*FV
 			#ifdef ORDERA
-			+fparams[3]*sqrt(asq[Npars])
+			+fparams[2]*sqrt(asq[Npars])
 			#else
-			+fparams[3]*asq[Npars]
+			+fparams[2]*asq[Npars]
 			#endif
+			+fparams[3]*FVK
+			+fparams[4]*FVPI
 			) ; 
 }
 
@@ -139,25 +196,27 @@ fvol5_df( double **df , const void *data , const double *fparams )
 
     const size_t *mp = DATA->map[i].p ;
 
-    const double FV = msqIQ0( phiK[i] , log( phiKcont / musq ) , MKL[ i ] )/phif ;
-  
+    const double FVK  = msqIQ0( phiK[i] , log( phiKcont / musq ) , MKL[ i ] ) ; ///phif ;
+
+    const double FVPI = msqIQ0( phiK[i] , log( phiKcont / musq ) , MPIL[ i ] ) ; ///phif ;
+
     df[ mp[0] ][ i ] = ( 1 + fparams[ mp[1] ]*(X.X-phipicont)
-			 +fparams[ mp[2] ]*FV
 			 #ifdef ORDERA
-			 +fparams[ mp[3] ]*sqrt(asq[i])
+			 +fparams[ mp[2] ]*sqrt(asq[i])
 			 #else
-			 +fparams[ mp[3] ]*asq[i]
+			 +fparams[ mp[2] ]*asq[i]
 			 #endif
+			 +fparams[ mp[3] ]*FVK
+			 +fparams[ mp[4] ]*FVPI
 			 ) ;
     df[ mp[1] ][ i ] = fparams[mp[0]]*(X.X-phipicont) ;
-    df[ mp[2] ][ i ] = fparams[mp[0]]*FV ;
     #ifdef ORDERA
-    df[ mp[3] ][ i ] = fparams[mp[0]]*sqrt(asq[i]) ; //fparams[mp[4]]*fparams[mp[4]] ; //asq[i] ;
+    df[ mp[2] ][ i ] = fparams[mp[0]]*sqrt(asq[i]) ;
     #else
-    df[ mp[3] ][ i ] = fparams[mp[0]]*asq[i] ; //fparams[mp[4]]*fparams[mp[4]] ; //asq[i] ;
+    df[ mp[2] ][ i ] = fparams[mp[0]]*asq[i] ;
     #endif
-
-    //df[ mp[4] ][ i ] = 0.0 ; //2*fparams[mp[0]]*fparams[mp[3]]*fparams[mp[4]] ; //asq[i] ;
+    df[ mp[3] ][ i ] = fparams[mp[0]]*FVK ;
+    df[ mp[4] ][ i ] = fparams[mp[0]]*FVPI ;
   }
   return ;
 }

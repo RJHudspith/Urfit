@@ -136,7 +136,7 @@ plot_fitfunction_HACK( const struct resampled *f ,
 
   size_t h = 0 , i ;
 
-  const size_t MAX = 21 ; //fvol2_NMAX( ) ;
+  const size_t MAX = 23 ; //fvol2_NMAX( ) ;
   //const size_t MAX = 15 ; //fvol3_NMAX( ) ;
 
   printf( "FUUUUCKKK -----> %zu %zu\n" , Data.Ntot , MAX ) ;
@@ -146,9 +146,8 @@ plot_fitfunction_HACK( const struct resampled *f ,
   for( size_t j = 0 ; j < Data.Nsim ; j++ ) {
     printf( "Stars\n" ) ;
     for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ ) {
-      struct resampled data = extrap_fitfunc_HACK( f , Data , Fit ,
-						   Data.x[shift].avg ,
-						   j , shift ) ;
+      struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , Data.x[shift].avg , shift , h ) ;
+      //struct resampled data = extrap_fitfunc_HACK( f , Data , Fit , Data.x[shift].avg , j , shift ) ;
       printf( "%f %f %f\n" , Data.x[shift].avg , data.avg , data.err ) ;
     }
     h += Data.Ndata[j] ;
@@ -160,13 +159,13 @@ plot_fitfunction_HACK( const struct resampled *f ,
   for( size_t j = 0 ; j < Data.Nsim ; j++ ) {
     //for( size_t j = 0 ; j < 1 ; j++ ) {
     
-    //for( size_t shift = MAX-6 ; shift < MAX ; shift++ )
-    for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ )
+    for( size_t shift = MAX-6 ; shift < MAX ; shift++ )
+      //for( size_t shift = h ; shift < h+Data.Ndata[j] ; shift++ )
     {
       //size_t shift = h ;
       
-      const double xmin = 0.0 ; //0.078276961035739 ;
-      const double xmax = 0.5 ;
+      const double xmin = 0.078276961035739 ;
+      const double xmax = 1.0 ;
 
       //const double xmin = 0.078 ; //0.07822077018599871;
       //const double xmax = 1.2;

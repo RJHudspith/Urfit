@@ -8,7 +8,7 @@
    
    where A and B are real matrices
 
-   Uses GSL's eigenvalue sort routines for the eigenvalues
+   Uses GSL's eigenvalue sort routines for the eigenvalues or does some diagonalisation
  */
 #include "gens.h"
 
@@ -409,19 +409,18 @@ allocate_G( struct GEVP_temps *G ,
   G -> a = gsl_matrix_alloc( N , N ) ;
   G -> b = gsl_matrix_alloc( N , N ) ;
 #ifdef SYMMETRIC_GEVP
-  G -> work  = gsl_eigen_gensymmv_alloc( N ) ;
-  G -> evec  = gsl_matrix_alloc( N , N ) ;
-  G -> evec_norm = malloc( N*sizeof(double) ) ;
-  G -> eval = gsl_vector_alloc( N ) ;
-  G -> ev = malloc( N*sizeof(double) ) ;
+    G -> work  = gsl_eigen_gensymmv_alloc( N ) ;
+    G -> evec  = gsl_matrix_alloc( N , N ) ;
+    G -> evec_norm = malloc( N*sizeof(double) ) ;
+    G -> eval = gsl_vector_alloc( N ) ;
+    G -> ev = malloc( N*sizeof(double) ) ;
 #else
-  // allocations for GSL
-  G -> work  = gsl_eigen_genv_alloc( N ) ;
-  G -> alpha = gsl_vector_complex_alloc( N ) ;
-  G -> beta  = gsl_vector_alloc( N ) ;
-  G -> evec  = gsl_matrix_complex_alloc( N , N ) ;
-  G -> evec_norm = malloc( N*sizeof(double) ) ;
-  G -> ev = malloc( N*sizeof( double complex ) ) ;
+    G -> work  = gsl_eigen_genv_alloc( N ) ;
+    G -> alpha = gsl_vector_complex_alloc( N ) ;
+    G -> beta  = gsl_vector_alloc( N ) ;
+    G -> evec  = gsl_matrix_complex_alloc( N , N ) ;
+    G -> evec_norm = malloc( N*sizeof(double) ) ;
+    G -> ev = malloc( N*sizeof( double complex ) ) ;
 #endif
   G -> N = N ;
 }
@@ -430,19 +429,19 @@ static void
 free_G( struct GEVP_temps *G )
 {
 #ifdef SYMMETRIC_GEVP
-  gsl_matrix_free( G -> evec ) ;
-  gsl_eigen_gensymmv_free( G-> work ) ;
-  gsl_vector_free( G->eval ) ;
-  free( G -> evec_norm ) ;
+    gsl_matrix_free( G -> evec ) ;
+    gsl_eigen_gensymmv_free( G-> work ) ;
+    gsl_vector_free( G->eval ) ;
+    free( G -> evec_norm ) ;
 #else
-  gsl_matrix_complex_free( G -> evec ) ;
-  gsl_vector_complex_free( G -> alpha ) ;
-  gsl_vector_free( G -> beta ) ;
-  gsl_eigen_genv_free( G-> work ) ;
-  gsl_matrix_free( G -> a ) ;
-  gsl_matrix_free( G -> b ) ;
-  free( G -> ev ) ;
-  free( G -> evec_norm ) ;
+    gsl_matrix_complex_free( G -> evec ) ;
+    gsl_vector_complex_free( G -> alpha ) ;
+    gsl_vector_free( G -> beta ) ;
+    gsl_eigen_genv_free( G-> work ) ;
+    gsl_matrix_free( G -> a ) ;
+    gsl_matrix_free( G -> b ) ;
+    free( G -> ev ) ;
+    free( G -> evec_norm ) ;
 #endif
 }
 
@@ -478,7 +477,7 @@ solve_GEVP( const struct resampled *y ,
 
   struct GEVP_temps *G = malloc( Ndata*sizeof( struct GEVP_temps ) ) ;
 
-  double C0[ N*M ] , C1[ N*M ] ;
+  double C0[ N*M ] = {} , C1[ N*M ] = {} ;
   
   // ugh loop order is all weird
   for( j = 0 ; j < Ndata ; j++ ) {

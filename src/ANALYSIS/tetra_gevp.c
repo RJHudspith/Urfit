@@ -13,14 +13,10 @@
 #include "resampled_ops.h"
 #include "stats.h"
 
-static const int t0 = 2 ;
-static const int td = 4 ;
+#define ROOTED
 
-//static const int t0 = 4 ;
-//static const int td = 8 ;
-
-//static const int t0 = 4 ;
-//static const int td = 6 ;
+static const int t0 = 1 ;
+static const int td = 2 ;
 
 static int
 write_fitmass_graph( FILE *file , 
@@ -76,7 +72,12 @@ tetra_gevp_analysis( struct input_params *Input )
 {
   const size_t N = Input -> Fit.N ;
   const size_t LT = Input -> Data.Ndata[0] ;
-  size_t i , j , shift = 0 ; 
+  size_t i , j , shift = 0 ;
+
+  effmass_type Type[ Input -> Data.Nsim ] ;
+  for( i = 0 ; i < Input -> Data.Nsim ; i++ ) {
+    Type[i] = ATANH_EFFMASS ;
+  }
 
   printf( "[TET GEVP] In here :: %d %d %zu %zu\n" , t0 , td , N , LT ) ;
   
@@ -102,13 +103,22 @@ tetra_gevp_analysis( struct input_params *Input )
   }
 
   fprintf( stdout , "Solving GEVP here ...\n" ) ;
-  
+
+
   // compute evalues
+#ifdef ROOTED
+  struct resampled *evalues = solve_GEVP_rooted( Input -> Data.y ,
+						 Input -> Data.Ndata[0] ,
+						 Input -> Fit.N ,
+						 Input -> Fit.M ,
+						 t0 , td ) ;
+#else
   struct resampled *evalues = solve_GEVP( Input -> Data.y ,
 					  Input -> Data.Ndata[0] ,
 					  Input -> Fit.N ,
 					  Input -> Fit.M ,
 					  t0 , td ) ;
+#endif
   
   if( evalues == NULL ) {
     goto end ;
@@ -143,8 +153,8 @@ tetra_gevp_analysis( struct input_params *Input )
   Input -> Data.Ntot = N*Input->Data.Ndata[0] ;
   
   // compute an effective mass
-  struct resampled *effmass = effective_mass( Input , ATANH_EFFMASS ) ;
-
+  struct resampled *effmass = effective_mass( Input , Type ) ;
+  
   // subtract the ground state?
   for( j = 0 ; j < Input->Data.Ndata[0] ; j++ ) {
     struct resampled sub = init_dist( &effmass[j] ,
@@ -156,7 +166,6 @@ tetra_gevp_analysis( struct input_params *Input )
     }
     free( sub.resampled ) ;
   }
-
   for( i = 1 ; i < Input -> Fit.N ; i++ ) {
     for( j = 0 ; j < Input->Data.Ndata[0] ; j++ ) {
       printf( "Subbed %e %e %e \n" , Input -> Data.x[j].avg ,
@@ -165,7 +174,6 @@ tetra_gevp_analysis( struct input_params *Input )
     }
     printf( "\n" ) ;
   }
-
   for( i = 0 ; i < Input -> Data.Ntot ; i++ ) {
     free( effmass[i].resampled ) ;
   }

@@ -206,6 +206,10 @@ read_inputs( struct input_params *Input ,
       Input -> Analysis = HVP ;
     } else if( are_equal( Flat[ an_tag ].Value , "Wflow" ) ) {
       Input -> Analysis = Wflow ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Write" ) ) {
+      Input -> Analysis = Write ;
+    } else if( are_equal( Flat[ an_tag ].Value , "Phi" ) ) {
+      Input -> Analysis = Phi ;
     } else if( are_equal( Flat[ an_tag ].Value , "Fit" ) ) {
       Input -> Analysis = Fit ;
     } else if( are_equal( Flat[ an_tag ].Value , "Fpi_CLS" ) ) {
